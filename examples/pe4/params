@@ -1,0 +1,4 @@
+conf=conf.gro
+top=topol.top
+alpha=0.00001
+dt=0.001

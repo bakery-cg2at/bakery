@@ -1,0 +1,4 @@
+Backmapping of 75 polyethyelen chains of length 100 monomers from CG representation to atomistic.
+Force field: OPLS/UA
+CG mapping: Each of CG beads contains 4 united-atoms.
+CG potential by Yonas
