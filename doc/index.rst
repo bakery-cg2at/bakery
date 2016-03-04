@@ -7,6 +7,8 @@
 Welcome to Baker's documentation!
 ##################################
 
+.. image:: _static/simulation_setup.png
+
 Baker is a general purpose backmapping tool that allows to
 transform your coarse-grained coordinate file to atomistic representation.
 
