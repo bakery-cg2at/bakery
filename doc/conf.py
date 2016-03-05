@@ -22,6 +22,7 @@ import datetime
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../src'))
+sys.path.append(os.path.abspath('sphinxext'))
 
 # -- General configuration ------------------------------------------------
 
@@ -35,7 +36,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinxarg.ext',
-    'alabaster'
+    'alabaster',
+    'sphinxtogithub'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -127,7 +129,7 @@ html_theme_path = [alabaster.get_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+#html_title = 
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
