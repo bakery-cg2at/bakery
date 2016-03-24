@@ -1,0 +1,60 @@
+# Configuration for preparing mapping file for backmapper
+# It's replicates beads and cg_bonds section in xml file so that it is easier to use
+# for polymer chains.
+
+IDENT='PE'
+NAME='PE'
+
+CHAIN_LENGTH=100
+HALF_CHAIN=CHAIN_LENGTH/2
+
+CG_BEADS = [{
+    'name': 'A1',
+    'type': 'B',
+    'mapping': 'A',
+    'beads': '1:PE:C1 1:PE:C99 1:PE:H1 1:PE:H2 1:PE:H197 1:PE:H198 1:PE:H199'
+}]
+ppid = 1
+for i in range(2, CHAIN_LENGTH-2, 2):
+    CG_BEADS.append(
+        {'name': 'B{}'.format(ppid),
+         'type': 'B',
+         'mapping': 'B',
+         'beads': '1:PE:C{} 1:PE:C{} 1:PE:H{} 1:PE:H{} 1:PE:H{} 1:PE:H{}'.format(
+             i, i+1, 2*i-1, 2*i, 2*i+1, 2*i+2)
+        })
+    ppid += 1
+
+CG_BEADS.append({
+    'name': 'A{}'.format(2),
+    'type': 'B',
+    'mapping': 'A',
+    'beads': '1:PE:C98 1:PE:C100 1:PE:H195 1:PE:H196 1:PE:H200 1:PE:H201 1:PE:H202'})
+
+
+BONDS = {
+    'bond': ['A1 B1']
+}
+for i in range(1, HALF_CHAIN-2):
+    BONDS['bond'].append('B{} B{}'.format(i, i+1))
+BONDS['bond'].append('B48 A2')
+
+ANGLES = {
+    'angle': ['A1 B1 B2'],
+}
+for i in range(1, HALF_CHAIN-3):
+    ANGLES['angle'].append('B{} B{} B{}'.format(i, i+1, i+2))
+ANGLES['angle'].append('B47 B48 A2')
+
+
+DIHEDRALS = {
+    'dihedral': ['A1 B1 B2 B3']
+}
+for i in range(1, HALF_CHAIN-4):
+    DIHEDRALS['dihedral'].append('B{} B{} B{} B{}'.format(i, i+1, i+2, i+3))
+DIHEDRALS['dihedral'].append('B46 B47 B48 A2')
+
+MAPPING = {
+    'A': '12.011 12.011 1.008 1.008 1.008 1.008',
+    'B': '12.011 12.011 1.008 1.008 1.008 1.008 1.008'
+}
