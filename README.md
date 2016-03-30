@@ -13,3 +13,5 @@ Structure:
    - prepare_files.py - prepare hybrid files
 
  - ``examples/`` - the set of examples
+
+[![DOI](https://zenodo.org/badge/20122/MrTheodor/bakery.svg)](https://zenodo.org/badge/latestdoi/20122/MrTheodor/bakery)
