@@ -14,7 +14,7 @@ CG_BEADS = [{
     'mapping': 'A',
     'beads': '1:PE:C1 1:PE:C99 1:PE:H1 1:PE:H2 1:PE:H197 1:PE:H198 1:PE:H199'
 }]
-ppid = 1
+ppid = 2
 for i in range(2, CHAIN_LENGTH-2, 2):
     CG_BEADS.append(
         {'name': 'B{}'.format(ppid),
@@ -33,28 +33,28 @@ CG_BEADS.append({
 
 
 BONDS = {
-    'bond': ['A1 B1']
+    'bond': ['A1 B2']
 }
-for i in range(1, HALF_CHAIN-2):
+for i in range(2, HALF_CHAIN):
     BONDS['bond'].append('B{} B{}'.format(i, i+1))
-BONDS['bond'].append('B48 A2')
+BONDS['bond'].append('B49 A50')
 
 ANGLES = {
-    'angle': ['A1 B1 B2'],
+    'angle': ['A1 B2 B3'],
 }
-for i in range(1, HALF_CHAIN-3):
+for i in range(2, HALF_CHAIN):
     ANGLES['angle'].append('B{} B{} B{}'.format(i, i+1, i+2))
-ANGLES['angle'].append('B47 B48 A2')
+ANGLES['angle'].append('B48 B49 A50')
 
 
 DIHEDRALS = {
-    'dihedral': ['A1 B1 B2 B3']
+    'dihedral': ['A1 B2 B3 B4']
 }
-for i in range(1, HALF_CHAIN-4):
+for i in range(2, HALF_CHAIN):
     DIHEDRALS['dihedral'].append('B{} B{} B{} B{}'.format(i, i+1, i+2, i+3))
-DIHEDRALS['dihedral'].append('B46 B47 B48 A2')
+DIHEDRALS['dihedral'].append('B47 B48 B49 A50')
 
 MAPPING = {
-    'A': '12.011 12.011 1.008 1.008 1.008 1.008',
-    'B': '12.011 12.011 1.008 1.008 1.008 1.008 1.008'
+    'B': '12.011 12.011 1.008 1.008 1.008 1.008',
+    'A': '12.011 12.011 1.008 1.008 1.008 1.008 1.008'
 }

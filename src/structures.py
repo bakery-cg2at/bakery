@@ -107,9 +107,13 @@ class BackmapperSettings(object):
             active_site = x.find('active_site')
             if active_site is not None:
                 active_site = active_site.text.strip()
-            cg_bead_mass[BeadID(name, degree)] = {
-                b_name: mapping2mass[mapping][i] for i, b_name in enumerate(beads)
-            }
+            cg_bead_mass[BeadID(name, degree)] = {}
+            for i, b_name in enumerate(beads):
+                try:
+                    cg_bead_mass[BeadID(name, degree)][b_name] = mapping2mass[mapping][i]
+                except Exception as ex:
+                    print i, b_name
+                    raise ex
             cg_beads[BeadID(name, degree)] = files_io.TopoAtom(
                 atom_type=atom_type,
                 name=name,

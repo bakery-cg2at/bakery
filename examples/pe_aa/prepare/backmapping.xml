@@ -7,8 +7,8 @@
   <topology>
       <cg_beads>
       <cg_bead>
-        <name>B1</name>
-        <type>B</type>
+        <name>A1</name>
+        <type>A</type>
         <mapping>A</mapping>
         <beads>1:PE:C1 1:PE:C99 1:PE:H1 1:PE:H2 1:PE:H197 1:PE:H198 1:PE:H199</beads>
       </cg_bead>
@@ -301,7 +301,7 @@
         <beads>1:PE:C96 1:PE:C97 1:PE:H191 1:PE:H192 1:PE:H193 1:PE:H194</beads>
       </cg_bead>
       <cg_bead>
-        <name>B50</name>
+        <name>A50</name>
         <type>B</type>
         <mapping>A</mapping>
         <beads>1:PE:C98 1:PE:C100 1:PE:H195 1:PE:H196 1:PE:H200 1:PE:H201 1:PE:H202</beads>
@@ -311,7 +311,7 @@
       <dihedral>
         <name>dihedral</name>
         <params>8 1 1.0 ; table_d1.xvg</params>
-        <beads>B1 B2 B3 B4
+        <beads>A1 B2 B3 B4
 B2 B3 B4 B5
 B3 B4 B5 B6
 B4 B5 B6 B7
@@ -357,13 +357,13 @@ B43 B44 B45 B46
 B44 B45 B46 B47
 B45 B46 B47 B48
 B46 B47 B48 B49
-B47 B48 B49 B50
+B47 B48 B49 A50
 </beads>
       </dihedral>
       <angle>
         <name>angle</name>
         <params>8 1 1.0 ; table_a1.xvg</params>
-        <beads>B1 B2 B3
+        <beads>A1 B2 B3
 B2 B3 B4
 B3 B4 B5
 B4 B5 B6
@@ -410,12 +410,12 @@ B44 B45 B46
 B45 B46 B47
 B46 B47 B48
 B47 B48 B49
-B48 B49 B50</beads>
+B48 B49 A50</beads>
       </angle>
       <bond>
         <name>bond</name>
         <params>8 1 1.0 ; table_b1.xvg</params>
-        <beads>B1 B2
+        <beads>A1 B2
 B2 B3
 B3 B4
 B4 B5
@@ -463,7 +463,7 @@ B45 B46
 B46 B47
 B47 B48
 B48 B49
-B49 B50</beads>
+B49 A50</beads>
       </bond>
     </cg_bonded>
   </topology>
