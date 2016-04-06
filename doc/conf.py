@@ -122,7 +122,12 @@ html_theme = 'alabaster'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = {
+    'github_button': True,
+    'github_banner': True,
+    'github_user': 'MrTheodor',
+    'github_repo': 'bakery'
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = [alabaster.get_path()]
@@ -186,7 +191,7 @@ html_sidebars = {
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 #html_show_sphinx = True

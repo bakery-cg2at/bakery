@@ -388,17 +388,18 @@ def warmup_capped(system, integrator, verletList, rc, potential_matrix,
 
 
 def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonded_params=None,  # NOQA
-                                hadress=False, ftpl=None):
+                                hadress=False, ftpl=None, interaction=None):
     """ Set lennard jones interactions which were read from gromacs based on the atomypes"""
     defaults = input_conf.defaults
     atomtypeparams = input_conf.atomtypeparams
-    if ftpl:
-        if hadress:
-            interaction = espressopp.interaction.VerletListHadressLennardJones(verletlist, ftpl)
+    if interaction is None:
+        if ftpl:
+            if hadress:
+                interaction = espressopp.interaction.VerletListHadressLennardJones(verletlist, ftpl)
+            else:
+                interaction = espressopp.interaction.VerletListAdressLennardJones(verletlist, ftpl)
         else:
-            interaction = espressopp.interaction.VerletListAdressLennardJones(verletlist, ftpl)
-    else:
-        interaction = espressopp.interaction.VerletListLennardJones(verletlist)
+            interaction = espressopp.interaction.VerletListLennardJones(verletlist)
 
     if nonbonded_params is None:
         nonbonded_params = {}
@@ -532,12 +533,12 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
             if use_charge:
                 tmp.append(input_conf.charges[pid])
             if particle_type == 'V':
-                tmp.append(0)
+                tmp.append(0)  # adrat
                 if tmptuple != []:
                     adress_tuple.append(tmptuple[:])
                 tmptuple = [pid+1]
             else:
-                tmp.append(1)
+                tmp.append(1)  # adrat
                 tmptuple.append(pid+1)
             particle_list.append(Particle(*tmp))
         # Set Adress tuples

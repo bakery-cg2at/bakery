@@ -206,6 +206,7 @@ def main():  #NOQA
     print('Dihedrals: {}'.format(sum(len(x) for x in input_conf.dihedraltypes.values())))
     print('Pairs: {}'.format(sum(len(x) for x in input_conf.pairtypes.values())))
 
+    print('Setting dynamic resolution')
     dynamic_res = espressopp.integrator.DynamicResolution(
         system,
         verletlist,

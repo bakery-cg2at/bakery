@@ -3,13 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-##################################
-Welcome to Baker's documentation!
-##################################
+#######################
+Documentation of bakery
+#######################
 
 .. image:: _static/simulation_setup.png
 
-Baker is a general purpose backmapping tool that allows to
+Baker is a general purpose reverse mapping tool that allows to
 transform your coarse-grained coordinate file to atomistic representation.
 
 .. toctree::

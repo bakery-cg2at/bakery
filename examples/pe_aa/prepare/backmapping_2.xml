@@ -8,7 +8,7 @@
     <cg_beads>
       <cg_bead>
         <name>A1</name>
-        <type>B</type>
+        <type>A</type>
         <mapping>A</mapping>
         <beads>1:PE:C1 1:PE:C99 1:PE:H1 1:PE:H2 1:PE:H197 1:PE:H198 1:PE:H199</beads>
       </cg_bead>
@@ -302,7 +302,7 @@
       </cg_bead>
       <cg_bead>
         <name>A50</name>
-        <type>B</type>
+        <type>A</type>
         <mapping>A</mapping>
         <beads>1:PE:C98 1:PE:C100 1:PE:H195 1:PE:H196 1:PE:H200 1:PE:H201 1:PE:H202</beads>
       </cg_bead>
