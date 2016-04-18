@@ -443,7 +443,6 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
                 interaction.setPotentialAT(type1=type_1, type2=type_2, potential=ljpot)
             else:
                 interaction.setPotential(type1=type_1, type2=type_2, potential=ljpot)
-    system.addInteraction(interaction)
     return interaction
 
 
@@ -513,6 +512,8 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
     num_particles = len(input_conf.types)
     if adress:
         props.append('adrat')   # Set to 1 if AT particle otherwise 0
+        props.append('lambda_adr')
+        props.append('vp')
         Particle = collections.namedtuple('Particle', props)
         adress_tuple = []
         tmptuple = []
@@ -534,11 +535,15 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
                 tmp.append(input_conf.charges[pid])
             if particle_type == 'V':
                 tmp.append(0)  # adrat
+                tmp.append(1.0)
+                tmp.append(True)
                 if tmptuple != []:
                     adress_tuple.append(tmptuple[:])
                 tmptuple = [pid+1]
             else:
                 tmp.append(1)  # adrat
+                tmp.append(0.0)
+                tmp.append(False)
                 tmptuple.append(pid+1)
             particle_list.append(Particle(*tmp))
         # Set Adress tuples
@@ -572,17 +577,15 @@ def setBondedInteractions(system, input_conf, ftpl=None):
         b1 = bondlist[0][0]
         is_cg = input_conf.atomtypeparams[input_conf.types[b1-1]]['particletype'] == 'V'
 
-        if is_cg or ftpl is None:
-            fpl = espressopp.FixedPairList(system.storage)
-        elif ftpl:
-            fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
+        fpl = espressopp.FixedPairList(system.storage)
 
         fpl.addBonds(bondlist)
         if not cross_bonds:
             is_cg = None
         bdinteraction = bondtypeparams[bid].createEspressoInteraction(system, fpl, is_cg=is_cg)
         if bdinteraction:
-            system.addInteraction(bdinteraction)
+            system.addInteraction(bdinteraction, 'bond_{}{}'.format(
+                bid, '_cross' if cross_bonds else ''))
             ret_list.update({(bid, cross_bonds): bdinteraction})
 
     return ret_list
@@ -617,7 +620,8 @@ def setPairInteractions(system, input_conf, cutoff, ftpl=None):
         else:
             interaction = espressopp.interaction.FixedPairListAdressLennardJones(
                 system, fpl, pot, is_cg)
-        system.addInteraction(interaction)
+        system.addInteraction(interaction, 'lj-14_{}{}'.format(
+            pid, '_cross' if cross_bonds else ''))
         ret_list[(pid, cross_bonds)] = interaction
     return ret_list
 
@@ -640,7 +644,8 @@ def setAngleInteractions(system, input_conf, ftpl=None):
             is_cg = None
         angleinteraction = angletypeparams[aid].createEspressoInteraction(system, fpl, is_cg=is_cg)
         if angleinteraction:
-            system.addInteraction(angleinteraction)
+            system.addInteraction(angleinteraction, 'angle_{}{}'.format(
+                aid, '_cross' if cross_angles else ''))
             ret_list.update({(aid, cross_angles): angleinteraction})
     return ret_list
 
@@ -664,7 +669,8 @@ def setDihedralInteractions(system, input_conf, ftpl=None):
         dihedralinteraction = dihedraltypeparams[did].createEspressoInteraction(
             system, fpl, is_cg=is_cg)
         if dihedralinteraction:
-            system.addInteraction(dihedralinteraction)
+            system.addInteraction(dihedralinteraction, 'dihedral_{}{}'.format(
+                did, '_cross' if cross_dih else ''))
             ret_list.update({(did, cross_dih): dihedralinteraction})
     return ret_list
 

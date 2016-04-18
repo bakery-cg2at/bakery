@@ -988,7 +988,7 @@ def setBondedInteractions(system, bonds, bondtypeparams, ftpl=None):
         fpl.addBonds(bondlist)
         bdinteraction=bondtypeparams[bid].createEspressoInteraction(system, fpl)
         if bdinteraction:
-            system.addInteraction(bdinteraction)
+            system.addInteraction(bdinteraction, 'bond_{}'.format(bid))
             ret_list.update({bid: bdinteraction})
     return ret_list
 
@@ -1011,7 +1011,7 @@ def setPairInteractions(system, pairs, pairtypeparams, cutoff, ftpl=None):
                     epsilon=params['eps'],
                     shift='auto',
                     cutoff=cutoff))
-            system.addInteraction(interaction)
+            system.addInteraction(interaction, 'lj14_{}'.format(pid))
             ret_list[pid] = interaction
     return ret_list
 
@@ -1027,7 +1027,7 @@ def setAngleInteractions(system, angles, angletypeparams, ftpl=None):
         fpl.addTriples(anglelist)
         angleinteraction=angletypeparams[aid].createEspressoInteraction(system, fpl)
         if angleinteraction:
-            system.addInteraction(angleinteraction)
+            system.addInteraction(angleinteraction, 'angle_{}'.format(aid))
             ret_list.update({aid: angleinteraction})
     return ret_list
 
@@ -1042,7 +1042,7 @@ def setDihedralInteractions(system, dihedrals, dihedraltypeparams, ftpl=None):
         fpl.addQuadruples(dihedrallist)
         dihedralinteraction=dihedraltypeparams[did].createEspressoInteraction(system, fpl)
         if dihedralinteraction:
-            system.addInteraction(dihedralinteraction)
+            system.addInteraction(dihedralinteraction, 'dihedral_{}'.format(did))
             ret_list.update({did: dihedralinteraction})
     return ret_list
 
@@ -1099,7 +1099,7 @@ def setLennardJonesInteractions(system, defaults, atomtypeparams, verletlist, cu
             else:
                 interaction.setPotential(type1=type_1, type2=type_2, potential=ljpot)
 
-    system.addInteraction(interaction)
+    system.addInteraction(interaction, 'lj')
     return interaction
 
 
@@ -1119,7 +1119,7 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
         })
 
     print('Number of coulombic pairs: {}'.format(len(type_pairs)))
-    if len(type_pairs) > 0:
+    if type_pairs:
         if pot is None:
             pot = espressopp.interaction.ReactionFieldGeneralized(
                 prefactor=pref, kappa=kappa, epsilon1=epsilon1, epsilon2=epsilon2, cutoff=rc)
@@ -1127,12 +1127,8 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
             if hadress and adress:
                 raise RuntimeError('Ambiguous option, it is only possible to use Adress or HAdress.')
 
-            if hadress:
-                interaction = espressopp.interaction.VerletListHadressReactionFieldGeneralized(
-                    verletlist, ftpl)
-            elif adress:
-                interaction = espressopp.interaction.VerletListAdressReactionFieldGeneralized(
-                    verletlist, ftpl)
+            if adress:
+                interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(verletlist)
             else:
                 interaction = espressopp.interaction.VerletListReactionFieldGeneralized(verletlist)
 
@@ -1144,7 +1140,6 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
         for type_1, type_2 in type_pairs:
             print('Set coulomb interaction: {}-{}'.format(type_1, type_2))
             setPotential_fn(type1=type_1, type2=type_2, potential=pot)
-        system.addInteraction(interaction)
         return interaction
     else:
         return None
@@ -1183,7 +1178,7 @@ def setCoulombInteractionsProtein(system, verletlist, rc, types, epsilon1, epsil
 	        else:
 	            interaction.setPotential(type1=i, type2=k, potential=potprot)
 
-    system.addInteraction(interaction)
+    system.addInteraction(interaction, 'coulomb_protein')
     return interaction
 
 
@@ -1208,7 +1203,7 @@ def setCoulomb14Interactions(system, defaults, onefourlist, rc, types):
         for k in range(i, max(types)+1):
             interaction.setPotential(type1=i, type2=k, potential=pot)
 
-    system.addInteraction(interaction)
+    system.addInteraction(interaction, 'coulomb14')
     return interaction
 
 
@@ -1262,7 +1257,7 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
                         filename=table_name,
                         cutoff=cutoff))
         if interaction and not ftpl:
-            system.addInteraction(interaction)
+            system.addInteraction(interaction, 'lj_tab')
 
         return interaction
     else:
