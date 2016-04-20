@@ -168,6 +168,11 @@ def main():  #NOQA
     vs_list = espressopp.FixedVSList(system.storage)
     vs_list.addTuples(adress_tuple)
 
+    at_particle_group = espressopp.ParticleGroup(system.storage)
+    for a in adress_tuple:
+        for at in a[1:]:
+            at_particle_group.add(at)
+
     integrator = espressopp.integrator.VelocityVerletHybrid(system, vs_list)
     integrator.dt = args.dt
 
@@ -225,9 +230,13 @@ def main():  #NOQA
         interaction=espressopp.interaction.VerletListHybridTabulated(
             verletlistCG, True
         ))
-    #system.addInteraction(lj_interaction, 'xyz-lj')
-    #system.addInteraction(coulomb_interaction, 'xyz-coulomb')
+    system.addInteraction(lj_interaction, 'xyz-lj')
+    system.addInteraction(coulomb_interaction, 'xyz-coulomb')
     system.addInteraction(tab_cg, 'xyz-cg')
+    print lj_interaction
+    lj_interaction.scale_factor = 0.0
+    print coulomb_interaction
+    coulomb_interaction.scale_factor = 0.0
 
     print('Prepared:')
     print('Bonds: {}'.format(sum(len(x) for x in input_conf.bondtypes.values())))
@@ -250,14 +259,9 @@ def main():  #NOQA
         temperature = args.temperature*kb
     print('Temperature: {}, gamma: {}'.format(args.temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
-    if args.thermostat == 'lv':
-        thermostat = espressopp.integrator.LangevinThermostat(system)
-        thermostat.temperature = temperature
-        thermostat.gamma = args.thermostat_gamma
-    elif args.thermostat == 'vr':
-        thermostat = espressopp.integrator.StochasticVelocityRescaling(system)
-        thermostat.temperature = temperature
-        thermostat.coupling = args.thermostat_gamma
+    thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
+    thermostat.temperature = temperature
+    thermostat.gamma = args.thermostat_gamma
     integrator.addExtension(thermostat)
 
     print("Added tuples, decomposing now ...")
@@ -335,6 +339,11 @@ def main():  #NOQA
             print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
                 args.energy_collect))
             ext_analysis.interval = args.energy_collect
+            integrator.dt = 0.001
+            print('Set LJ and Coulombic interaction with full scale')
+            lj_interaction.scale_factor = 1.0
+            coulomb_interaction.scale_factor = 1.0
+
         integrator.run(integrator_step)
 
         # total_velocity.reset()
