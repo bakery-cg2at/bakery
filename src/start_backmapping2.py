@@ -315,10 +315,13 @@ def main():  #NOQA
 
     system_analysis.dump()
 
+    k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
+
     print('Dynamic resolution, rate={}'.format(args.alpha))
     print('CG equilibration for {}'.format(k_eq_step*integrator_step))
     print('Measuring energy with higher resolution for {}'.format(
         (end_dynamic_res_time-k_eq_step)*integrator_step))
+    print('Collect trajectory every {} step'.format(k_trj_collect*integrator_step))
     print('Atomistic long run for {}'.format(long_step*integrator_step))
     print('Running for {} steps...'.format(sim_step*integrator_step))
 
@@ -347,9 +350,9 @@ def main():  #NOQA
         integrator.run(integrator_step)
 
         # total_velocity.reset()
-        if k % 10 == 0:
+        if k_trj_collect > 0 and k % k_trj_collect == 0:
             traj_file.dump(k*integrator_step, k*integrator_step*args.dt)
-        if k % 100 == 0:
+        if k_trj_collect > 0 and k % 100 == 0:
             traj_file.flush()
         system_analysis.info()
     else:
