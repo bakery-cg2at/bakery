@@ -73,5 +73,7 @@ def _args_backmapping():
                         help='Collect energy every (step)')
     parser.add_argument('--energy_collect_bck', default=1, type=int,
                         help='Collect energy every (step) during backmapping')
+    parser.add_argument('--trj_collect', default=1000, type=int,
+                        help='Collect trajectory every (step)')
 
     return parser

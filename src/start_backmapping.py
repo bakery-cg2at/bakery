@@ -183,18 +183,18 @@ def main():  #NOQA
     vl_interaction = tools.setLennardJonesInteractions(
         system, input_conf, verletlist, lj_cutoff, input_conf.nonbond_params,
         ftpl=adress_fixed_list)
-    coulombinteraction = gromacs_topology.setCoulombInteractions(
+    gromacs_topology.setCoulombInteractions(
         system, verletlist, lj_cutoff, input_conf.atomtypeparams,
         epsilon1=args.coulomb_epsilon1,
         epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
         adress=True, ftpl=adress_fixed_list)
-    bondedinteractions = tools.setBondedInteractions(
+    tools.setBondedInteractions(
         system, input_conf, ftpl=adress_fixed_list)
-    angleinteractions = tools.setAngleInteractions(
+    tools.setAngleInteractions(
         system, input_conf, ftpl=adress_fixed_list)
-    dihedralinteractions = tools.setDihedralInteractions(
+    tools.setDihedralInteractions(
         system, input_conf, ftpl=adress_fixed_list)
-    pairinteractions = tools.setPairInteractions(
+    tools.setPairInteractions(
         system, input_conf, lj_cutoff, ftpl=adress_fixed_list)
     tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
@@ -278,44 +278,19 @@ def main():  #NOQA
         print('System analysis: adding {}'.format(label))
         system_analysis.add_observable(
             label, espressopp.analysis.PotentialEnergy(system, interaction))
-    # Adding partial potential energies.
-    for (lb, cross), interHarmonic in bondedinteractions.iteritems():
-        if not cross:
-            system_analysis.add_observable(
-                'bond_%d%s' % (lb, '_cross' if cross else ''),
-                espressopp.analysis.PotentialEnergy(system, interHarmonic),
-                False)
-    for (lb, cross), interAngularHarmonic in angleinteractions.iteritems():
-        if cross:
-            system_analysis.add_observable(
-                'angle_%d%s' % (lb, '_cross' if cross else ''),
-                espressopp.analysis.PotentialEnergy(system, interAngularHarmonic), False)
-    for (lb, cross), interDihHarmonic in dihedralinteractions.iteritems():
-        if cross:
-            system_analysis.add_observable(
-                'dihedral_%d%s' % (lb, '_cross' if cross else ''),
-                espressopp.analysis.PotentialEnergy(system, interDihHarmonic),
-                False)
-    for (lb, cross), interaction14 in pairinteractions.iteritems():
-        if cross:
-            system_analysis.add_observable(
-                'lj-14_%d%s' % (lb, '_cross' if cross else ''),
-                espressopp.analysis.PotentialEnergy(system, interaction14),
-                False)
-    if coulombinteraction:
-        system_analysis.add_observable(
-            'coul',
-            espressopp.analysis.PotentialEnergy(system, coulombinteraction), True)
 
     ext_analysis = espressopp.integrator.ExtAnalyze(system_analysis, args.energy_collect)
     integrator.addExtension(ext_analysis)
 
     system_analysis.dump()
 
+    k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
+
     print('Dynamic resolution, rate={}'.format(args.alpha))
     print('CG equilibration for {}'.format(k_eq_step*integrator_step))
     print('Measuring energy with higher resolution for {}'.format(
         (end_dynamic_res_time-k_eq_step)*integrator_step))
+    print('Collect trajectory every {} step'.format(k_trj_collect*integrator_step))
     print('Atomistic long run for {}'.format(long_step*integrator_step))
     print('Running for {} steps...'.format(sim_step*integrator_step))
 
@@ -336,9 +311,9 @@ def main():  #NOQA
             ext_analysis.interval = args.energy_collect
         integrator.run(integrator_step)
         # total_velocity.reset()
-        if k % 10 == 0:
+        if k_trj_collect > 0 and k % k_trj_collect == 0:
             traj_file.dump(k*integrator_step, k*integrator_step*args.dt)
-        if k % 100 == 0:
+        if k_trj_collect > 0 and k % 100 == 0:
             traj_file.flush()
         system_analysis.info()
     else:
