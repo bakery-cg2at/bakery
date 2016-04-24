@@ -30,6 +30,8 @@ import time
 import tools_sim as tools
 import gromacs_topology
 
+import tools_backmapping
+
 from app_args import _args_backmapping as _args
 
 # GROMACS units, kJ/mol K
@@ -64,11 +66,7 @@ def main():  #NOQA
     integrator_step = args.int_step
     k_eq_step = int(args.eq/integrator_step)
     long_step = int(args.long/integrator_step)
-    dynamic_res_time = int(int(1.0/args.alpha)/integrator_step) if args.alpha > 0.0 else 0
-    sim_step = dynamic_res_time + k_eq_step + long_step
-    end_dynamic_res_time = k_eq_step + dynamic_res_time
-    if end_dynamic_res_time == k_eq_step:
-        end_dynamic_res_time += 1
+    dynamic_res_time = int(int(1.0/args.alpha)/integrator_step)+1 if args.alpha > 0.0 else 0
 
     if args.skin:
         skin = args.skin
@@ -191,58 +189,10 @@ def main():  #NOQA
         filename='details.gro',
         unfolded=True,
         append=True)
-    ext_dump_details = espressopp.integrator.ExtAnalyze(dump_gro_details, 100)
+    ext_dump_details = espressopp.integrator.ExtAnalyze(dump_gro_details, 10)
     dump_gro_details.dump()
     integrator.addExtension(ext_dump_details)
 
-# Exclude all bonded interaction from the lennard jones
-    exclusionlistAT = [p for p in input_conf.exclusions 
-                       if p[0] in at_particle_ids and p[1] in at_particle_ids]
-    exclusionlistCG = [p for p in input_conf.exclusions
-                       if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
-    print('Excluded pairs for LJ interaction (AT): {}'.format(len(exclusionlistAT)))
-    print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
-    verletlistAT = espressopp.VerletListHybridAT(
-        system, cutoff=lj_cutoff, exclusionlist=exclusionlistAT)
-
-    verletlistCG = espressopp.VerletListHybridCG(
-        system, cutoff=cg_cutoff, exclusionlist=exclusionlistCG)
-
-    lj_interaction = espressopp.interaction.VerletListHybridLennardJones(
-        verletlistAT, False)
-    lj_interaction = tools.setLennardJonesInteractions(
-        system, input_conf, verletlistAT, lj_cutoff,
-        input_conf.nonbond_params,
-        interaction=lj_interaction)
-    coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
-        verletlistAT, False)
-    coulomb_interaction = gromacs_topology.setCoulombInteractions(
-        system, verletlistAT, 0.9, input_conf.atomtypeparams,
-        epsilon1=args.coulomb_epsilon1,
-        epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
-        interaction=coulomb_interaction)
-    tools.setBondedInteractions(
-        system, input_conf)
-    tools.setAngleInteractions(
-        system, input_conf)
-    tools.setDihedralInteractions(
-        system, input_conf)
-    pair14_interactions = tools.setPairInteractions(
-        system, input_conf, lj_cutoff)
-    tab_cg = tools.setTabulatedInteractions(
-        system, input_conf.atomtypeparams,
-        vl=verletlistCG,
-        cutoff=cg_cutoff,
-        interaction=espressopp.interaction.VerletListHybridTabulated(
-            verletlistCG, True
-        ))
-    if lj_interaction is not None:
-        system.addInteraction(lj_interaction, 'xyz-lj')
-    if coulomb_interaction is not None:
-        system.addInteraction(coulomb_interaction, 'xyz-coulomb')
-    if tab_cg is not None:
-        system.addInteraction(tab_cg, 'xyz-cg')
-    
     print('Prepared:')
     print('Bonds: {}'.format(sum(len(x) for x in input_conf.bondtypes.values())))
     print('Angles: {}'.format(sum(len(x) for x in input_conf.angletypes.values())))
@@ -258,6 +208,16 @@ def main():  #NOQA
     integrator.addExtension(dynamic_res)
     dynamic_res.active = False
     dynamic_res.resolution = args.initial_resolution
+
+# Define interactions.
+    verletlistAT = None
+    verletlistCG = None
+    if args.two_phase:
+        verletlistCG = tools_backmapping.setupFirstPhase(
+            system, args, input_conf, at_particle_ids, cg_particle_ids)
+    else:
+        verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
+            system, args, input_conf, at_particle_ids, cg_particle_ids)
 
 # Define the thermostat
     if args.temperature:
@@ -324,11 +284,8 @@ def main():  #NOQA
 
     print('Dynamic resolution, rate={}'.format(args.alpha))
     print('CG equilibration for {}'.format(k_eq_step*integrator_step))
-    print('Measuring energy with higher resolution for {}'.format(
-        (end_dynamic_res_time-k_eq_step)*integrator_step))
     print('Collect trajectory every {} step'.format(k_trj_collect*integrator_step))
     print('Atomistic long run for {}'.format(long_step*integrator_step))
-    print('Running for {} steps...'.format(sim_step*integrator_step))
 
     traj_file.dump(integrator.step, integrator.step*args.dt)
 
@@ -339,6 +296,112 @@ def main():  #NOQA
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
 
     system.storage.decompose()
+    system_analysis.info()
+
+############# SIMULATION #####################
+    global_int_step = 0
+    # First run the eq phase.
+    for k in range(k_eq_step):
+        integrator.run(integrator_step)
+        system_analysis.info()
+        global_int_step += 1
+    else:
+        global_int_step += 1
+        system_analysis.dump()
+        traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
+
+    # Now run backmapping.
+    dynamic_res.active = True
+    integrator.dt = args.dt_dyn
+    ext_analysis.interval = args.energy_collect_bck
+    if has_capforce:
+        integrator.addExtension(cap_force)
+    print('End of CG simulation. Start dynamic resolution, dt={}'.format(
+        args.dt_dyn))
+    if args.two_phase:
+        for k in range(dynamic_res_time+5):
+            integrator.run(integrator_step)
+            system_analysis.info()
+            global_int_step += 1
+
+        # Change interactions.
+        print('Switch on non-bonded interactions.')
+        verletlistCG.disconnect()
+        verletlistAT, verletlistCG = tools_backmapping.setupSecondPhase(
+            system, args, input_conf, at_particle_ids, cg_particle_ids)
+        # Reset dynamic res, start again.
+        dynamic_res.active = True
+        dynamic_res.resolution = args.initial_resolution
+
+        # Reset system analysis.
+        ext_analysis.disconnect()
+
+        energy_file = '{}energy_{}_{}_two.csv'.format(args.output_prefix, args.alpha, args.rng_seed)
+        print('Energy saved to: {}'.format(energy_file))
+        system_analysis2 = espressopp.analysis.SystemMonitor(
+            system,
+            integrator,
+            espressopp.analysis.SystemMonitorOutputCSV(energy_file))
+        system_analysis2.add_observable('T', temp_comp)
+        system_analysis2.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
+        system_analysis2.add_observable(
+            'res', espressopp.analysis.Resolution(system, dynamic_res))
+
+        for label, interaction in sorted(system.getAllInteractions().items()):
+            print('System analysis: adding {}'.format(label))
+            system_analysis2.add_observable(
+                label, espressopp.analysis.PotentialEnergy(system, interaction))
+
+        ext_analysis2 = espressopp.integrator.ExtAnalyze(
+            system_analysis2, args.energy_collect_bck)
+        integrator.addExtension(ext_analysis2)
+
+        # Simulation
+        for k in range(dynamic_res_time+5):
+            integrator.run(integrator_step)
+            system_analysis2.info()
+            global_int_step += 1
+
+        #ext_analysis2.disconnect()
+        #ext_analysis.connect()
+    else:
+        for k in range(dynamic_res_time):
+            integrator.run(integrator_step)
+            system_analysis.info()
+            global_int_step += 1
+        else:
+            global_int_step += 1
+            system_analysis.dump()
+            system_analysis.info()
+            traj_file.dump(global_int_step*integrator_step,
+                           global_int_step*integrator_step*args.dt)
+            traj_file.close()
+
+    # Now run AT simulation.
+    print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
+        args.energy_collect))
+    print('Set back time-step to: {}'.format(args.dt))
+    ext_analysis.interval = args.energy_collect
+    if args.two_phase:
+        ext_analysis2.interval = args.energy_collect
+    integrator.dt = args.dt
+    for k in range(long_step):
+        integrator.run(integrator_step)
+        global_int_step += 1
+        if args.two_phase:
+            system_analysis2.info()
+        else:
+            system_analysis.info()
+    else:
+        global_int_step += 1
+        if args.two_phase:
+            system_analysis2.info()
+            system_analysis2.dump()
+        else:
+            system_analysis.info()
+            system_analysis.dump()
+        traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
+        traj_file.close()
 
     confout_aa = '{}confout_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
     dump_gro = espressopp.io.DumpGRO(
@@ -347,40 +410,6 @@ def main():  #NOQA
         filename=confout_aa,
         unfolded=True,
         append=True)
-    
-    system_analysis.info()
-    for k in range(sim_step):
-        if k == k_eq_step:
-            print('End of CG simulation. Start dynamic resolution. dt={}'.format(args.dt_dyn))
-            dynamic_res.active = True
-            integrator.dt = args.dt_dyn
-            ext_analysis.interval = args.energy_collect_bck
-            if has_capforce:
-                integrator.addExtension(cap_force)
-        if k == end_dynamic_res_time:
-            print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
-                args.energy_collect))
-            dump_gro.dump()
-            ext_analysis.interval = args.energy_collect
-            print('Set back time-step to: {}'.format(args.dt))
-            integrator.dt = args.dt
-            if has_capforce:
-                cap_force.disconnect()
-
-        integrator.run(integrator_step)
-        system_analysis.info()
-
-        # total_velocity.reset()
-        #if k_trj_collect > 0 and k % k_trj_collect == 0:
-        #    traj_file.dump(k*integrator_step, k*integrator_step*integrator.dt)
-        #if k_trj_collect > 0 and k % 100 == 0:
-        #    traj_file.flush()
-    else:
-        system_analysis.dump()
-        system_analysis.info()
-        traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*args.dt)
-        traj_file.close()
-
     dump_gro.dump()
 
     print('Finished!')

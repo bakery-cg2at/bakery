@@ -573,7 +573,8 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
         return props, particle_list
 
 
-def setBondedInteractions(system, input_conf, ftpl=None):
+def setBondedInteractions(system, input_conf, force_static=False, only_at=False,
+                          only_cg=None):
     ret_list = {}
     bonds = input_conf.bondtypes
     bondtypeparams = input_conf.bondtypeparams
@@ -582,10 +583,16 @@ def setBondedInteractions(system, input_conf, ftpl=None):
         b1 = bondlist[0][0]
         is_cg = input_conf.atomtypeparams[input_conf.types[b1-1]]['particletype'] == 'V'
 
+        if only_at and is_cg:
+            continue
+
+        if only_cg is not None and only_cg and not is_cg:
+            continue
+
         fpl = espressopp.FixedPairList(system.storage)
 
         fpl.addBonds(bondlist)
-        if not cross_bonds:
+        if not cross_bonds or force_static:
             is_cg = None
         bdinteraction = bondtypeparams[bid].createEspressoInteraction(system, fpl, is_cg=is_cg)
         if bdinteraction:
@@ -631,7 +638,8 @@ def setPairInteractions(system, input_conf, cutoff, ftpl=None):
     return ret_list
 
 
-def setAngleInteractions(system, input_conf, ftpl=None):
+def setAngleInteractions(system, input_conf, ftpl=None, force_static=False, only_at=False,
+                         only_cg=None):
     ret_list = {}
     angletypeparams = input_conf.angletypeparams
     angles = input_conf.angletypes
@@ -640,12 +648,18 @@ def setAngleInteractions(system, input_conf, ftpl=None):
         b1 = anglelist[0][0]
         is_cg = input_conf.atomtypeparams[input_conf.types[b1-1]]['particletype'] == 'V'
 
+        if only_at and is_cg:
+            continue
+
+        if only_cg is not None and only_cg and not is_cg:
+            continue
+
         if is_cg or ftpl is None:
             fpl = espressopp.FixedTripleList(system.storage)
         else:
             fpl = espressopp.FixedTripleListAdress(system.storage, ftpl)
         fpl.addTriples(anglelist)
-        if not cross_angles:
+        if not cross_angles or force_static:
             is_cg = None
         angleinteraction = angletypeparams[aid].createEspressoInteraction(system, fpl, is_cg=is_cg)
         if angleinteraction:
@@ -655,7 +669,8 @@ def setAngleInteractions(system, input_conf, ftpl=None):
     return ret_list
 
 
-def setDihedralInteractions(system, input_conf, ftpl=None):
+def setDihedralInteractions(system, input_conf, ftpl=None, force_static=False, only_at=False,
+                            only_cg=None):
     ret_list = {}
     dihedrals = input_conf.dihedraltypes
     dihedraltypeparams = input_conf.dihedraltypeparams
@@ -664,12 +679,18 @@ def setDihedralInteractions(system, input_conf, ftpl=None):
         b1 = dihedrallist[0][0]
         is_cg = input_conf.atomtypeparams[input_conf.types[b1-1]]['particletype'] == 'V'
 
+        if only_at and is_cg:
+            continue
+
+        if only_cg is not None and only_cg and not is_cg:
+            continue
+
         if is_cg or ftpl is None:
             fpl = espressopp.FixedQuadrupleList(system.storage)
         else:
             fpl = espressopp.FixedQuadrupleListAdress(system.storage, ftpl)
         fpl.addQuadruples(dihedrallist)
-        if not cross_dih:
+        if not cross_dih or force_static:
             is_cg = None
         dihedralinteraction = dihedraltypeparams[did].createEspressoInteraction(
             system, fpl, is_cg=is_cg)
@@ -678,79 +699,3 @@ def setDihedralInteractions(system, input_conf, ftpl=None):
                 did, '_cross' if cross_dih else ''))
             ret_list.update({(did, cross_dih): dihedralinteraction})
     return ret_list
-
-
-def _args_md():
-    parser = tools.MyArgParser(description='Runs classical MD simulation',
-                               fromfile_prefix_chars='@')
-    parser.add_argument('--conf', required=True, help='Input .gro coordinate file')
-    parser.add_argument('--top', '--topology', required=True, help='Topology file',
-                        dest='top')
-    parser.add_argument('--node_grid')
-    parser.add_argument('--skin', type=float, default=0.16,
-                        help='Skin value for Verlet list')
-    parser.add_argument('--coord', help='Input coordinate h5md file')
-    parser.add_argument('--coord_frame', default=-1, type=int,
-                        help='Time frame of input coordinate h5md file')
-    parser.add_argument('--run', type=int, default=10000,
-                        help='Number of simulation steps')
-    parser.add_argument('--int_step', default=1000, type=int, help='Steps in integrator')
-    parser.add_argument('--rng_seed', type=int, help='Seed for RNG', required=False,
-                        default=random.randint(1000, 10000))
-    parser.add_argument('--output_prefix',
-                        default='sim', type=str,
-                        help='Prefix for output files')
-    parser.add_argument('--output_file',
-                        default='trjout.h5', type=str,
-                        help='Name of output trajectory file')
-    parser.add_argument('--thermostat',
-                        default='lv',
-                        choices=('lv', 'vr'),
-                        help='Thermostat to use, lv: Langevine, vr: Stochastic velocity rescale')
-    parser.add_argument('--barostat', default='lv', choices=('lv', 'br'),
-                        help='Barostat to use, lv: Langevine, br: Berendsen')
-    parser.add_argument('--barostat_tau', default=5.0, type=float,
-                        help='Tau parameter for Berendsen barostat')
-    parser.add_argument('--barostat_mass', default=50.0, type=float,
-                        help='Mass parameter for Langevin barostat')
-    parser.add_argument('--barostat_gammaP', default=1.0, type=float,
-                        help='gammaP parameter for Langevin barostat')
-    parser.add_argument('--thermostat_gamma', type=float, default=0.5,
-                        help='Thermostat coupling constant')
-    parser.add_argument('--temperature', default=423.0, type=float, help='Temperature')
-    parser.add_argument('--pressure', help='Pressure', type=float)
-    parser.add_argument('--trj_collect', default=1000, type=int,
-                        help='Collect trajectory every (step)')
-    parser.add_argument('--energy_collect', default=1000, type=int,
-                        help='Collect energy every (step)')
-    parser.add_argument('--dt', default=0.001, type=float,
-                        help='Integrator time step')
-    parser.add_argument('--lj_cutoff', default=1.2, type=float,
-                        help='Cutoff of atomistic non-bonded interactions')
-    parser.add_argument('--cg_cutoff', default=1.4, type=float,
-                        help='Cuoff of coarse-grained non-bonded interactions')
-    parser.add_argument('--coulomb_epsilon1', default=1.0, type=float,
-                        help='Epsilon_1 for coulomb interactions')
-    parser.add_argument('--coulomb_epsilon2', default=80.0, type=float,
-                        help='Epsilon_2 for coulomb interactions')
-    parser.add_argument('--coulomb_kappa', default=1.0, type=float,
-                        help='Kappa paramter for coulomb interactions')
-    parser.add_argument('--table_groups', default='A,B',
-                        help='Name of CG groups to read from tables')
-    parser.add_argument('--initial_step', default=0,
-                        help='Initial integrator step (useful for continue simulation',
-                        type=int)
-    parser.add_argument('--reactions', default=None,
-                        help='Configuration file with chemical reactions')
-    parser.add_argument('--debug', default=None, help='Turn on logging mechanism')
-    parser.add_argument('--start_ar', default=0, type=int, help='When to start chemical reactions')
-    parser.add_argument('--interactive', default=False, type=ast.literal_eval,
-                        help='Run interactive mode')
-    parser.add_argument('--store_species', default=False, type=ast.literal_eval,
-                        help='Store particle types')
-    parser.add_argument('--store_state', default=True, type=ast.literal_eval,
-                        help='Store chemical state')
-    parser.add_argument('--store_lambda', default=False, type=ast.literal_eval,
-                        help='Store lambda parameter')
-
-    return parser

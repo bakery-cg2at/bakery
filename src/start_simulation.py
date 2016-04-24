@@ -33,6 +33,8 @@ import tools_sim as tools
 import tools as general_tools
 import gromacs_topology
 
+from app_args import _args_md
+
 # GROMACS units, kJ/mol K
 kb = 0.0083144621
 
@@ -53,9 +55,9 @@ def sort_trajectory(trj, ids):
 
 
 def main():  #NOQA
-    args = tools._args_md().parse_args()
+    args = _args_md().parse_args()
 
-    tools._args_md().save_to_file('{}params.out'.format(args.output_prefix), args)
+    _args_md().save_to_file('{}params.out'.format(args.output_prefix), args)
 
     if args.debug:
         for s in args.debug.split(','):
