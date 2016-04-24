@@ -41,8 +41,6 @@ simulation_email = 'xxx@xxx.xxx'
 
 # Mostly you do not need to modify lines below.
 
-
-
 def main():  #NOQA
     h5md_group = 'atoms'
     print h5md_group
@@ -169,9 +167,13 @@ def main():  #NOQA
     vs_list.addTuples(adress_tuple)
 
     at_particle_group = espressopp.ParticleGroup(system.storage)
+    at_particle_ids = set()
+    cg_particle_ids = set()
     for a in adress_tuple:
+        cg_particle_ids.add(a[0])
         for at in a[1:]:
             at_particle_group.add(at)
+            at_particle_ids.add(at)
 
     integrator = espressopp.integrator.VelocityVerletHybrid(system, vs_list)
     integrator.dt = args.dt
@@ -194,24 +196,28 @@ def main():  #NOQA
     integrator.addExtension(ext_dump_details)
 
 # Exclude all bonded interaction from the lennard jones
-    exclusionlist = input_conf.exclusions
-    print('Excluded pairs from LJ interaction: {}'.format(len(exclusionlist)))
+    exclusionlistAT = [p for p in input_conf.exclusions 
+                       if p[0] in at_particle_ids and p[1] in at_particle_ids]
+    exclusionlistCG = [p for p in input_conf.exclusions
+                       if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
+    print('Excluded pairs for LJ interaction (AT): {}'.format(len(exclusionlistAT)))
+    print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
     verletlistAT = espressopp.VerletListHybridAT(
-        system, cutoff=lj_cutoff, exclusionlist=exclusionlist)
+        system, cutoff=lj_cutoff, exclusionlist=exclusionlistAT)
 
     verletlistCG = espressopp.VerletListHybridCG(
-        system, cutoff=cg_cutoff, exclusionlist=exclusionlist)
+        system, cutoff=cg_cutoff, exclusionlist=exclusionlistCG)
 
     lj_interaction = espressopp.interaction.VerletListHybridLennardJones(
         verletlistAT, False)
-    tools.setLennardJonesInteractions(
+    lj_interaction = tools.setLennardJonesInteractions(
         system, input_conf, verletlistAT, lj_cutoff,
         input_conf.nonbond_params,
         interaction=lj_interaction)
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
-    gromacs_topology.setCoulombInteractions(
-        system, verletlistAT, lj_cutoff, input_conf.atomtypeparams,
+    coulomb_interaction = gromacs_topology.setCoulombInteractions(
+        system, verletlistAT, 0.9, input_conf.atomtypeparams,
         epsilon1=args.coulomb_epsilon1,
         epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
         interaction=coulomb_interaction)
@@ -221,7 +227,7 @@ def main():  #NOQA
         system, input_conf)
     tools.setDihedralInteractions(
         system, input_conf)
-    tools.setPairInteractions(
+    pair14_interactions = tools.setPairInteractions(
         system, input_conf, lj_cutoff)
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
@@ -230,14 +236,13 @@ def main():  #NOQA
         interaction=espressopp.interaction.VerletListHybridTabulated(
             verletlistCG, True
         ))
-    system.addInteraction(lj_interaction, 'xyz-lj')
-    system.addInteraction(coulomb_interaction, 'xyz-coulomb')
-    system.addInteraction(tab_cg, 'xyz-cg')
-    print lj_interaction
-    lj_interaction.scale_factor = 0.0
-    print coulomb_interaction
-    coulomb_interaction.scale_factor = 0.0
-
+    if lj_interaction is not None:
+        system.addInteraction(lj_interaction, 'xyz-lj')
+    if coulomb_interaction is not None:
+        system.addInteraction(coulomb_interaction, 'xyz-coulomb')
+    if tab_cg is not None:
+        system.addInteraction(tab_cg, 'xyz-cg')
+    
     print('Prepared:')
     print('Bonds: {}'.format(sum(len(x) for x in input_conf.bondtypes.values())))
     print('Angles: {}'.format(sum(len(x) for x in input_conf.angletypes.values())))
@@ -327,39 +332,13 @@ def main():  #NOQA
 
     traj_file.dump(integrator.step, integrator.step*args.dt)
 
-    cap_force = espressopp.integrator.CapForce(system, 1000.)
-    integrator.addExtension(cap_force)
+    has_capforce = False
+    if args.cap_force > 0.0:
+        has_capforce = True
+        print('Define maximum cap-force during the backmapping')
+        cap_force = espressopp.integrator.CapForce(system, args.cap_force)
 
     system.storage.decompose()
-
-    system_analysis.info()
-    for k in range(sim_step):
-        if k == k_eq_step:
-            print('End of CG simulation. Start dynamic resolution.')
-            dynamic_res.active = True
-            ext_analysis.interval = args.energy_collect_bck
-        if k == end_dynamic_res_time:
-            print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
-                args.energy_collect))
-            ext_analysis.interval = args.energy_collect
-            integrator.dt = 0.001
-            print('Set LJ and Coulombic interaction with full scale')
-            lj_interaction.scale_factor = 1.0
-            coulomb_interaction.scale_factor = 1.0
-
-        integrator.run(integrator_step)
-
-        # total_velocity.reset()
-        if k_trj_collect > 0 and k % k_trj_collect == 0:
-            traj_file.dump(k*integrator_step, k*integrator_step*args.dt)
-        if k_trj_collect > 0 and k % 100 == 0:
-            traj_file.flush()
-        system_analysis.info()
-    else:
-        system_analysis.dump()
-        system_analysis.info()
-        traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*args.dt)
-        traj_file.close()
 
     confout_aa = '{}confout_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
     dump_gro = espressopp.io.DumpGRO(
@@ -367,7 +346,41 @@ def main():  #NOQA
         integrator,
         filename=confout_aa,
         unfolded=True,
-        append=False)
+        append=True)
+    
+    system_analysis.info()
+    for k in range(sim_step):
+        if k == k_eq_step:
+            print('End of CG simulation. Start dynamic resolution. dt={}'.format(args.dt_dyn))
+            dynamic_res.active = True
+            integrator.dt = args.dt_dyn
+            ext_analysis.interval = args.energy_collect_bck
+            if has_capforce:
+                integrator.addExtension(cap_force)
+        if k == end_dynamic_res_time:
+            print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
+                args.energy_collect))
+            dump_gro.dump()
+            ext_analysis.interval = args.energy_collect
+            print('Set back time-step to: {}'.format(args.dt))
+            integrator.dt = args.dt
+            if has_capforce:
+                cap_force.disconnect()
+
+        integrator.run(integrator_step)
+        system_analysis.info()
+
+        # total_velocity.reset()
+        #if k_trj_collect > 0 and k % k_trj_collect == 0:
+        #    traj_file.dump(k*integrator_step, k*integrator_step*integrator.dt)
+        #if k_trj_collect > 0 and k % 100 == 0:
+        #    traj_file.flush()
+    else:
+        system_analysis.dump()
+        system_analysis.info()
+        traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*args.dt)
+        traj_file.close()
+
     dump_gro.dump()
 
     print('Finished!')

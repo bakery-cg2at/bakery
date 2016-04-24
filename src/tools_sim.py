@@ -414,6 +414,9 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
                 type_pairs.add(tuple(sorted([type_1, type_2])))
     type_pairs = sorted(type_pairs)
 
+    if not type_pairs:
+        return None
+
     print('Number of pairs: {}'.format(len(type_pairs)))
     for type_1, type_2 in type_pairs:
         pi = atomtypeparams[type_1]
@@ -459,6 +462,8 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
         for type_2, v2 in atomtypeparams.iteritems():
             if v1.get('particletype', 'A') == 'V' and v2.get('particletype', 'A') == 'V':
                 type_pairs.add(tuple(sorted([type_1, type_2])))
+    if not type_pairs:
+        return None
     for type_1, type_2 in type_pairs:
         print('Set tabulated potential {}-{}'.format(type_1, type_2))
         name_1 = atomtypeparams[type_1]['atnum']

@@ -57,6 +57,7 @@ def _args_backmapping():
                         default=423.0, type=float,
                         help='Temperature')
     parser.add_argument('--dt', default=0.001, type=float, help='Integrator time step')
+    parser.add_argument('--dt_dyn', default=0.001, type=float, help='Integrator time step during backmapping')
     parser.add_argument('--lj_cutoff',
                         default=1.2, help='Cutoff of atomistic non-bonded interactions',
                         type=float)
@@ -75,5 +76,9 @@ def _args_backmapping():
                         help='Collect energy every (step) during backmapping')
     parser.add_argument('--trj_collect', default=1000, type=int,
                         help='Collect trajectory every (step)')
+    parser.add_argument('--cap_force', default=1000.0, type=float,
+        help='Max force or 0.0 to switch it off cap-force')
+    parser.add_argument('--two_phase', default=False, action='store_true',
+                        help='Two phase process, first bonded terms and then non-bonded')
 
     return parser
