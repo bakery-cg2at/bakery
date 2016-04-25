@@ -189,7 +189,7 @@ def main():  #NOQA
         filename='details.gro',
         unfolded=True,
         append=True)
-    ext_dump_details = espressopp.integrator.ExtAnalyze(dump_gro_details, 10)
+    ext_dump_details = espressopp.integrator.ExtAnalyze(dump_gro_details, 1000)
     dump_gro_details.dump()
     integrator.addExtension(ext_dump_details)
 
