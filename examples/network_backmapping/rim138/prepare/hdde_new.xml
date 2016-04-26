@@ -1,0 +1,57 @@
+<cg_molecule>
+  <name>HDD</name>
+	<ident>HDD</ident>
+  <topology>
+    <cg_beads>
+      <cg_bead>
+        <name>E1</name>
+        <type>E</type>
+        <symmetry>1</symmetry>
+        <mapping>E</mapping>
+        <beads> 1:HDD:C1 1:HDD:O1 1:HDD:C2 1:HDD:H1 1:HDD:H2 1:HDD:H3 1:HDD:O2 1:HDD:C3 1:HDD:H4 1:HDD:H5 </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>F1</name>
+        <type>F</type>
+        <symmetry>1</symmetry>
+        <mapping>F</mapping>
+        <beads> 1:HDD:C4 1:HDD:C5 1:HDD:C6 1:HDD:H6 1:HDD:H7 1:HDD:H8 1:HDD:H9 1:HDD:H10 1:HDD:H11 1:HDD:C7 1:HDD:C8 1:HDD:C9 1:HDD:H12 1:HDD:H13 1:HDD:H14 1:HDD:H15 1:HDD:H16 1:HDD:H17 </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>E2</name>
+        <type>E</type>
+        <symmetry>1</symmetry>
+        <mapping>E</mapping>
+        <beads> 1:HDD:C11 1:HDD:O4 1:HDD:C12 1:HDD:H20 1:HDD:H21 1:HDD:H22 1:HDD:O3 1:HDD:C10 1:HDD:H18 1:HDD:H19 </beads>
+      </cg_bead>
+      </cg_beads>
+
+    <cg_bonded>
+      <bond>
+        <name>bond2</name>
+        <beads>
+        E1 F1 
+        F1 E2 
+        </beads>
+      </bond>
+      <angle>
+        <name>angle2</name>
+        <beads>
+        E1 F1 E2 
+        </beads>
+      </angle>
+    </cg_bonded>
+
+  </topology>
+
+  <maps>
+    <map>
+      <name>E</name>
+      <weights> 12.011 15.9994 12.011 1.008 1.008 1.008 15.9994 12.011 1.008 1.008 </weights>
+    </map>
+    <map>
+      <name>F</name>
+      <weights> 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008 </weights>
+    </map>
+  </maps>
+</cg_molecule>
