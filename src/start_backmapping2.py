@@ -178,21 +178,6 @@ def main():  #NOQA
 
     system.storage.decompose()
 
-    try:
-        os.remove('details.gro')
-        print('removed old details.gro')
-    except OSError:
-        pass
-    dump_gro_details = espressopp.io.DumpGRO(
-        system,
-        integrator,
-        filename='details.gro',
-        unfolded=True,
-        append=True)
-    ext_dump_details = espressopp.integrator.ExtAnalyze(dump_gro_details, 1000)
-    dump_gro_details.dump()
-    integrator.addExtension(ext_dump_details)
-
     print('Prepared:')
     print('Bonds: {}'.format(sum(len(x) for x in input_conf.bondtypes.values())))
     print('Angles: {}'.format(sum(len(x) for x in input_conf.angletypes.values())))
@@ -319,10 +304,21 @@ def main():  #NOQA
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
     if args.two_phase:
+        # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time+5):
             integrator.run(integrator_step)
             system_analysis.info()
             global_int_step += 1
+
+	confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+	dump_gro_phase_one = espressopp.io.DumpGRO(
+	    system,
+	    integrator,
+	    filename=confout_aa,
+	    unfolded=True,
+	    append=False)
+	dump_gro_phase_one.dump()
+        print('Atomistic configuration write to: {}'.format(confout_aa))
 
         # Change interactions.
         print('Switch on non-bonded interactions.')
@@ -342,6 +338,7 @@ def main():  #NOQA
             system,
             integrator,
             espressopp.analysis.SystemMonitorOutputCSV(energy_file))
+        system_analysis2.copy_state(system_analysis)
         system_analysis2.add_observable('T', temp_comp)
         system_analysis2.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
         system_analysis2.add_observable(
@@ -377,6 +374,15 @@ def main():  #NOQA
                            global_int_step*integrator_step*args.dt)
             traj_file.close()
 
+    confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+    dump_gro_phase_two = espressopp.io.DumpGRO(
+        system,
+        integrator,
+        filename=confout_aa,
+        unfolded=True,
+        append=False)
+    dump_gro_phase_two.dump()
+    print('Atomistic configuration write to: {}'.format(confout_aa))
     # Now run AT simulation.
     print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
         args.energy_collect))
@@ -385,6 +391,7 @@ def main():  #NOQA
     if args.two_phase:
         ext_analysis2.interval = args.energy_collect
     integrator.dt = args.dt
+    print('Running for {} steps'.format(long_step*integrator_step))
     for k in range(long_step):
         integrator.run(integrator_step)
         global_int_step += 1

@@ -540,7 +540,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
                 tmp.append(input_conf.charges[pid])
             if particle_type == 'V':
                 tmp.append(0)  # adrat
-                tmp.append(1.0)
+                tmp.append(0.0)
                 tmp.append(True)
                 if tmptuple != []:
                     adress_tuple.append(tmptuple[:])
