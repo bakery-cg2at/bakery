@@ -1235,11 +1235,12 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
             name_1 = atomtypeparams[type_1]['atnum']
             name_2 = atomtypeparams[type_2]['atnum']
             name_1, name_2 = sorted([name_1, name_2])
-            table_name = '{}-{}.tab'.format(name_1, name_2)
-            orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
-            print('Converting table_{name1}_{name2}.xvg to {name1}-{name2}.tab'.format(
-                name1=name_1, name2=name_2))
-            convertTable(orig_table_name, table_name)
+            table_name = 'table_{}_{}.tab'.format(name_1, name_2)
+            if not os.path.exists(table_name):
+                orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
+                print('Converting table_{name1}_{name2}.xvg to table_{name1}_{name2}.tab'.format(
+                    name1=name_1, name2=name_2))
+                convertTable(orig_table_name, table_name)
             if ftpl:
                 interaction.setPotentialCG(
                     type1=type_1,

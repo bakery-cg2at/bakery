@@ -195,11 +195,11 @@ def main():  #NOQA
     pairinteractions = gromacs_topology.setPairInteractions(
         system, input_conf.pairtypes, input_conf.pairtypeparams, lj_cutoff)
     coulomb_interaction = gromacs_topology.setCoulombInteractions(
-        system, verletlist, lj_cutoff, input_conf.atomtypeparams,
+        system, verletlist, args.coulomb_cutoff, input_conf.atomtypeparams,
         epsilon1=args.coulomb_epsilon1,
         epsilon2=args.coulomb_epsilon2,
         kappa=args.coulomb_kappa)
-   
+
     if coulomb_interaction: 
         system.addInteraction(coulomb_interaction, 'coulomb')
 
@@ -284,7 +284,6 @@ def main():  #NOQA
     total_velocity.reset()
 
     integrator.step = args.initial_step
-    traj_file.dump(integrator.step, integrator.step*dt)
 
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
     k_energy_collect = int(math.ceil(float(args.energy_collect) / integrator_step))
@@ -293,15 +292,11 @@ def main():  #NOQA
     print('Collect trajectory every {} step'.format(k_trj_collect*integrator_step))
     print('Collect energy every {} step'.format(k_energy_collect*integrator_step))
 
-    system_analysis.dump()
-    system_analysis.info()
-
     if args.interactive:
         import IPython
         IPython.embed()
 
     for k in range(sim_step):
-        integrator.run(integrator_step)
         if k_energy_collect > 0 and k % k_energy_collect == 0:
             system_analysis.info()
         if k_trj_collect > 0 and k % k_trj_collect == 0:
@@ -309,10 +304,7 @@ def main():  #NOQA
             traj_file.dump(int_step, int_step*dt)
         if k_trj_collect > 0 and k % 100 == 0:
             traj_file.flush()
-        if k == 5:
-            integrator.dt = 0.0001
-        if k == 10:
-            integrator.dt = 0.001
+        integrator.run(integrator_step)
     else:
         traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*dt)
         traj_file.close()
