@@ -22,7 +22,7 @@
         <type>H</type>
         <symmetry>1</symmetry>
         <mapping>H</mapping>
-        <beads> 1:JEF:N1 1:JEF:H39 1:JEF:H40 1:JEF:C19 1:JEF:C20 1:JEF:C21  1:JEF:H41 1:JEF:H42 1:JEF:H43 1:JEF:H44 1:JEF:H45 1:JEF:H46  1:JEF:C16 1:JEF:C17 1:JEF:C18 1:JEF:O6 1:JEF:H33 1:JEF:H34 1:JEF:H35 1:JEF:H36 1:JEF:H37 1:JEF:H38 1:JEF:O5 </beads>
+        <beads> 1:JEF:N2 1:JEF:H39 1:JEF:H40 1:JEF:C19 1:JEF:C20 1:JEF:C21  1:JEF:H41 1:JEF:H42 1:JEF:H43 1:JEF:H44 1:JEF:H45 1:JEF:H46  1:JEF:C16 1:JEF:C17 1:JEF:C18 1:JEF:O6 1:JEF:H33 1:JEF:H34 1:JEF:H35 1:JEF:H36 1:JEF:H37 1:JEF:H38 1:JEF:O5 </beads>
       </cg_bead>
       </cg_beads>
 

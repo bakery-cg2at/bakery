@@ -51,14 +51,15 @@ class TopoAtom(object):
     mass = None
     active_site = None
 
-    def __init__(self, atom_id=None, atom_type=None, chain_idx=None, chain_name=None, name=None,
+    def __init__(self, atom_id=None, atom_type=None, chain_idx=None,
+                 chain_name=None, name=None,
                  cgnr=None, charge=None, mass=None, active_site=None):
         self.atom_id = atom_id
         self.atom_type = atom_type
         self.chain_idx = chain_idx
         self.chain_name = chain_name
         self.name = name
-        self.chnr = cgnr
+        self.cgnr = cgnr
         self.charge = charge
         self.mass = mass
         self.active_site = active_site
@@ -384,7 +385,8 @@ class GROMACSTopologyFile(TopologyFile):
             'angles': self._parse_angles,
             'moleculetype': self._parse_moleculetype,
             'system': self._parse_system,
-            'molecules': self._parse_molecules
+            'molecules': self._parse_molecules,
+            'atomtypes': self._parse_atomtypes
             }
 
         self.writers = {
@@ -438,7 +440,7 @@ class GROMACSTopologyFile(TopologyFile):
                 at_id,
                 name=g_at.name,
                 res_id=g_at.chain_idx,
-                position=None,
+                position=(-1, -1, -1),
                 chain_name=g_at.chain_name)
 
         for (b1, b2), params in self.bonds.iteritems():
@@ -579,6 +581,17 @@ class GROMACSTopologyFile(TopologyFile):
 
         self.bonds_def[atom_tuple[0]].add(atom_tuple[1])
         self.bonds_def[atom_tuple[1]].add(atom_tuple[0])
+
+    def _parse_atomtypes(self, raw_data):
+        name, mass, charge, at_type, sigma, epsilon = raw_data
+        self.atomtypes[name] = {
+            'name': name,
+            'mass': mass,
+            'charge': charge,
+            'type': at_type,
+            'sigma': sigma,
+            'epsilon': epsilon
+        }
 
     def _parse_atoms(self, raw_data):
         at = TopoAtom()
@@ -750,6 +763,7 @@ class GROMACSTopologyFile(TopologyFile):
 class LammpsReader(object):
     """Very simple LAMMPS data file and input parser."""
     def __init__(self):
+        self.atom_charges = {}
         self.data_parsers = {
             'Atoms': self._read_atom,
             'Velocities': self._read_velocity,
@@ -763,7 +777,7 @@ class LammpsReader(object):
         }
         self.force_field = collections.defaultdict(dict)
         self.init()
-        # We shift box to the origin and we need to do the same with atom position.
+        # We shift box to the origin and we need to do the same with the atom position.
         self._box_translate = {}
 
     def init(self):
@@ -801,8 +815,8 @@ class LammpsReader(object):
 
         with open(file_name, 'r') as f:
             for line in f:
-                line = line.strip()
-                if not line:
+                line = line.strip().split('#')[0]
+                if not line or line.startswith('#'):
                     continue
                 section_line = line.split('#')[0].strip()
                 if section_line in self.data_parsers:
@@ -828,11 +842,12 @@ class LammpsReader(object):
         """
         with open(file_name, 'r') as f:
             for line in f:
-                line = line.strip()
-                if not line:  # skip empty lines
+                line = line.split('#')[0].strip()
+                if not line or line.startswith('#'):  # skip empty lines
                     continue
                 if '_style' in line:
                     sp_line = line.split()
+                    print('Reads  {}'.format(sp_line[0]))
                     self.force_field[sp_line[0]] = sp_line[1:]
                 elif 'bond_coeff' in line or 'angle_coeff' in line or 'dihedral_coeff' in line:
                     sp_line = line.split()
@@ -851,6 +866,11 @@ class LammpsReader(object):
                     self.units = line.split()[1]
                     if self.units == 'real':
                         self.distance_scale_factor = 10**-1
+                elif 'read_data' in line:
+                    sp_line = line.split()
+                    data_file = sp_line[1].strip()
+                    print('Reads data file: {}'.format(data_file))
+                    self.read_data(data_file)
 
     def update_atoms(self, file_name):
         """Reads LAMMPS data file and updates only atom section.
@@ -868,7 +888,7 @@ class LammpsReader(object):
                     self.previous_section = self.current_section
                     self.current_section = section_line
                     if section_line == 'Atoms':
-                        print('Found "Atoms" section, updating atoms')
+                        print('{}: Found "Atoms" section, updating atoms'.format(file_name))
                 elif self.current_section is not None and self.current_section == 'Atoms':
                     self._read_atom(line, update=True)
                 else:
@@ -891,8 +911,8 @@ class LammpsReader(object):
             Each of edges has attribute `bond_type` with a number that corresponds to bond type
             in force field data.
         """
-        type2chain_name = settings.cg_configuration['LAMMPS']['type2chain']
-        name_seq = settings.cg_configuration['LAMMPS']['name_seq']
+        type2chain_name = settings.type2chain
+        name_seq = settings.name_seq
         output_graph = networkx.Graph(box=(self.box['x'], self.box['y'], self.box['z']))
         seq_idx = {k: 0 for k in name_seq}
         for at_id, lmp_at in self.atoms.iteritems():
@@ -965,6 +985,13 @@ class LammpsReader(object):
 
         if at_type > self._type_counters['atom']:
             raise RuntimeError(('Atom type {} not found.'.format(at_type)))
+
+        if at_type in self.atom_charges:
+            if q != self.atom_charges[at_type]:
+                raise RuntimeError('Charge of atom type {} is different, {} != {}'.format(
+                    at_type, q, self.atom_charges[at_type]
+                ))
+        self.atom_charges[at_type] = q
 
         if update:  # Update
             if at_id not in self.atoms:
@@ -1059,7 +1086,9 @@ def read_coordinates(file_name):
         'gro': GROFile
         }
     file_suffix = file_name.split('.')[-1]
-    return file_suffix_class[file_suffix](file_name)
+    f = file_suffix_class[file_suffix](file_name)
+    f.read()
+    return f
 
 
 def read_topology(file_name, settings):

@@ -1,237 +1,300 @@
 <settings>
-<cg_molecule>
-  <name>EPO</name>
-  <ident>EPO</ident>
-  <source_file>single_conf.gro</source_file>
-  <source_topology>epon-828.itp</source_topology>
-  <topology>
-    <cg_beads>
-      <cg_bead>
-        <name>A1</name>
-        <type>A</type>
-        <symmetry>1</symmetry>
-        <mapping>A</mapping>
-        <active_site>EPO:C1</active_site>
-        <delete>1:EPO:H1 1:EPO:H2</delete>
-        <beads> 1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5 </beads>
-      </cg_bead>
-      <cg_bead>
-        <name>B1</name>
-        <type>B</type>
-        <symmetry>1</symmetry>
-        <mapping>B</mapping>
-        <beads> 1:EPO:C4 1:EPO:C5 1:EPO:C6 1:EPO:C7 1:EPO:C8 1:EPO:C9 1:EPO:H6 1:EPO:H7 1:EPO:H8 1:EPO:H9 1:EPO:C10 1:EPO:C11 1:EPO:C12 1:EPO:H10 1:EPO:H11 1:EPO:H12 1:EPO:H13 1:EPO:H14 1:EPO:H15 1:EPO:C13 1:EPO:C14 1:EPO:C15 1:EPO:C16 1:EPO:C17 1:EPO:C18 1:EPO:H16 1:EPO:H17 1:EPO:H18 1:EPO:H19 </beads>
-      </cg_bead>
-      <cg_bead>
-        <name>A2</name>
-        <type>A</type>
-        <symmetry>1</symmetry>
-        <mapping>A</mapping>
-        <active_site>EPO:C21</active_site>
-        <delete>1:EPO:H23 1:EPO:H24</delete>
-        <beads> 1:EPO:C20 1:EPO:O4 1:EPO:C21 1:EPO:H22 1:EPO:H23 1:EPO:H24  1:EPO:C19 1:EPO:O3 1:EPO:H20 1:EPO:H21 </beads>
-      </cg_bead>
-    </cg_beads>
-    <cg_bonded>
-      <bond>
-        <name>bond1</name>
-        <params>8 1 1.0 ; table_b1.xvg</params>
-        <beads>
-        A1 B1 
-        B1 A2
-        </beads>
-      </bond>
-      <angle>
-        <name>angle1</name>
-        <params>8 1 1.0 ; table_a1.xvg</params>
-        <beads>
-        A1 B1 A2 
-        </beads>
-      </angle>
+    <cg_molecule>
+        <name>EPO</name>
+        <ident>EPO</ident>
+        <source_file>single_conf.gro</source_file>
+        <source_topology>epon-828.itp</source_topology>
+        <!-- A1 beads -->
+        <cg_bead>
+            <name>A1</name>
+            <type>A</type>
+            <beads degree="1">
+                1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5
+            </beads>
+            <beads degree="2" active_site="EPO:C1:4">
+                1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5
+            </beads>
+            <beads degree="3" active_site="EPO:C1:4">
+                1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5
+            </beads>
+        </cg_bead>
 
-    </cg_bonded>
-  </topology>
+        <!-- B1 bead -->
+        <cg_bead>
+            <name>B1</name>
+            <type>B</type>
+            <beads>1:EPO:C4 1:EPO:C5 1:EPO:C6 1:EPO:C7 1:EPO:C8 1:EPO:C9 1:EPO:H6 1:EPO:H7 1:EPO:H8 1:EPO:H9 1:EPO:C10
+                1:EPO:C11 1:EPO:C12 1:EPO:H10 1:EPO:H11 1:EPO:H12 1:EPO:H13 1:EPO:H14 1:EPO:H15 1:EPO:C13 1:EPO:C14
+                1:EPO:C15 1:EPO:C16 1:EPO:C17 1:EPO:C18 1:EPO:H16 1:EPO:H17 1:EPO:H18 1:EPO:H19
+            </beads>
+        </cg_bead>
 
-  <maps>
-    <map>
-      <name>A</name>
-      <weights> 12.011 15.9994 12.011 1.008 1.008 1.008 12.011 15.9994 1.008 1.008 </weights>
-    </map>
-    <map>
-      <name>B</name>
-      <weights> 12.011 12.011 12.011 12.011 12.011 12.011 1.008 1.008 1.008 1.008 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008  12.011 12.011 12.011 12.011 12.011 12.011 1.008 1.008 1.008 1.008 </weights>
-    </map>
-  </maps>
-</cg_molecule>
+        <!-- A2 bead -->
+        <cg_bead>
+            <name>A2</name>
+            <type>A</type>
+            <beads degree="1">1:EPO:C20 1:EPO:O4 1:EPO:C21 1:EPO:H22 1:EPO:H23 1:EPO:H24 1:EPO:C19 1:EPO:O3 1:EPO:H20
+                1:EPO:H21
+            </beads>
+            <beads degree="2" active_site="EPO:C21:4">1:EPO:C20 1:EPO:O4 1:EPO:C21 1:EPO:H22 1:EPO:H24 1:EPO:C19
+                1:EPO:O3
+                1:EPO:H20 1:EPO:H21
+            </beads>
+            <beads degree="3" active_site="EPO:C21:4">1:EPO:C20 1:EPO:O4 1:EPO:C21 1:EPO:H22 1:EPO:C19 1:EPO:O3
+                1:EPO:H20
+                1:EPO:H21
+            </beads>
+        </cg_bead>
+    </cg_molecule>
 
-<cg_molecule>
-  <name>HDD</name>
-	<ident>HDD</ident>
-  <topology>
-    <cg_beads>
-      <cg_bead>
-        <name>E1</name>
-        <type>E</type>
-        <symmetry>1</symmetry>
-        <mapping>E</mapping>
-        <delete>1:HDD:H1 1:HDD:H2</delete>
-        <beads> 1:HDD:C1 1:HDD:O1 1:HDD:C2 1:HDD:H1 1:HDD:H2 1:HDD:H3 1:HDD:O2 1:HDD:C3 1:HDD:H4 1:HDD:H5 </beads>
-      </cg_bead>
-      <cg_bead>
-        <name>F1</name>
-        <type>F</type>
-        <symmetry>1</symmetry>
-        <mapping>F</mapping>
-        <beads> 1:HDD:C4 1:HDD:C5 1:HDD:C6 1:HDD:H6 1:HDD:H7 1:HDD:H8 1:HDD:H9 1:HDD:H10 1:HDD:H11 1:HDD:C7 1:HDD:C8 1:HDD:C9 1:HDD:H12 1:HDD:H13 1:HDD:H14 1:HDD:H15 1:HDD:H16 1:HDD:H17 </beads>
-      </cg_bead>
-      <cg_bead>
-        <name>E2</name>
-        <type>E</type>
-        <symmetry>1</symmetry>
-        <mapping>E</mapping>
-        <delete>1:HDD:H21 1:HDD:H22</delete>
-        <beads> 1:HDD:C11 1:HDD:O4 1:HDD:C12 1:HDD:H20 1:HDD:H21 1:HDD:H22 1:HDD:O3 1:HDD:C10 1:HDD:H18 1:HDD:H19 </beads>
-      </cg_bead>
-      </cg_beads>
+    <cg_molecule>
+        <name>HDD</name>
+        <ident>HDD</ident>
+        <source_file>single_conf.gro</source_file>
+        <source_topology>hdde.itp</source_topology>
+        <!-- E1 bead -->
+        <cg_bead>
+            <name>E1</name>
+            <type>E</type>
+            <beads degree="1">1:HDD:C1 1:HDD:O1 1:HDD:C2 1:HDD:H1 1:HDD:H2 1:HDD:H3 1:HDD:O2 1:HDD:C3 1:HDD:H4
+                1:HDD:H5
+            </beads>
+            <beads degree="2" active_site="HDD:C1:4">1:HDD:C1 1:HDD:O1 1:HDD:C2 1:HDD:H2 1:HDD:H3 1:HDD:O2 1:HDD:C3
+                1:HDD:H4 1:HDD:H5
+            </beads>
+        </cg_bead>
+        <!-- F1 bead -->
+        <cg_bead>
+            <name>F1</name>
+            <type>F</type>
+            <beads>1:HDD:C4 1:HDD:C5 1:HDD:C6 1:HDD:H6 1:HDD:H7 1:HDD:H8 1:HDD:H9 1:HDD:H10 1:HDD:H11 1:HDD:C7
+                1:HDD:C8 1:HDD:C9 1:HDD:H12 1:HDD:H13 1:HDD:H14 1:HDD:H15 1:HDD:H16 1:HDD:H17
+            </beads>
+        </cg_bead>
+        <!-- E2 bead -->
+        <cg_bead>
+            <name>E2</name>
+            <type>E</type>
+            <degree>1</degree>
+            <beads degree="1">1:HDD:C11 1:HDD:O4 1:HDD:C12 1:HDD:H20 1:HDD:H21 1:HDD:H22 1:HDD:O3 1:HDD:C10
+                1:HDD:H18 1:HDD:H19
+            </beads>
+            <beads degree="2" active_site="HDD:C12:4">1:HDD:C11 1:HDD:O4 1:HDD:C12 1:HDD:H20 1:HDD:H22 1:HDD:O3
+                1:HDD:C10 1:HDD:H18 1:HDD:H19
+            </beads>
+        </cg_bead>
+    </cg_molecule>
 
-    <cg_bonded>
-      <bond>
-        <name>bond2</name>
-        <params>8 2 1.0 ; table_b2.xvg</params>
-        <beads>
-        E1 F1 
-        F1 E2 
-        </beads>
-      </bond>
-      <angle>
-        <name>angle2</name>
-        <beads>
-        <params>8 2 1.0 ; table_a2.xvg</params>
-        E1 F1 E2 
-        </beads>
-      </angle>
-    </cg_bonded>
-  </topology>
+    <cg_molecule>
+        <name>IPD</name>
+        <ident>IPD</ident>
+        <source_file>single_conf.gro</source_file>
+        <source_topology>ipd.itp</source_topology>
+        <!-- monomer -->
+        <cg_bead>
+            <name>K1</name>
+            <type>K</type>
+            <beads degree="0">
+                1:IPD:C1  1:IPD:C2  1:IPD:C3
+                1:IPD:C4  1:IPD:C5  1:IPD:C6
+                1:IPD:C7  1:IPD:C8  1:IPD:C9
+                1:IPD:C10 1:IPD:H1  1:IPD:H2
+                1:IPD:H3  1:IPD:H4  1:IPD:H5
+                1:IPD:H6  1:IPD:H7  1:IPD:H10
+                1:IPD:H11 1:IPD:H14 1:IPD:H15
+                1:IPD:H16 1:IPD:H17 1:IPD:H18
+                1:IPD:H19 1:IPD:H20 1:IPD:H21
+                1:IPD:H22 1:IPD:N1  1:IPD:H8
+                1:IPD:H9  1:IPD:N2  1:IPD:H12
+                1:IPD:H13
+            </beads>
+            <beads degree="1" active_site="IPD:N1:3">
+                1:IPD:C1  1:IPD:C2  1:IPD:C3
+                1:IPD:C4  1:IPD:C5  1:IPD:C6
+                1:IPD:C7  1:IPD:C8  1:IPD:C9
+                1:IPD:C10 1:IPD:H1  1:IPD:H2
+                1:IPD:H3  1:IPD:H4  1:IPD:H5
+                1:IPD:H6  1:IPD:H7  1:IPD:H10
+                1:IPD:H11 1:IPD:H14 1:IPD:H15
+                1:IPD:H16 1:IPD:H17 1:IPD:H18
+                1:IPD:H19 1:IPD:H20 1:IPD:H21
+                1:IPD:H22 1:IPD:N1
+                1:IPD:H9  1:IPD:N2  1:IPD:H12
+                1:IPD:H13
+            </beads>
+            <beads degree="2" active_site="IPD:N1:3 IPD:N2:3">
+                1:IPD:C1  1:IPD:C2  1:IPD:C3
+                1:IPD:C4  1:IPD:C5  1:IPD:C6
+                1:IPD:C7  1:IPD:C8  1:IPD:C9
+                1:IPD:C10 1:IPD:H1  1:IPD:H2
+                1:IPD:H3  1:IPD:H4  1:IPD:H5
+                1:IPD:H6  1:IPD:H7  1:IPD:H10
+                1:IPD:H11 1:IPD:H14 1:IPD:H15
+                1:IPD:H16 1:IPD:H17 1:IPD:H18
+                1:IPD:H19 1:IPD:H20 1:IPD:H21
+                1:IPD:H22 1:IPD:N1
+                1:IPD:H9  1:IPD:N2
+                1:IPD:H13
+            </beads>
+            <beads degree="3" active_site="IPD:N1:3 IPD:N2:3">
+                1:IPD:C1  1:IPD:C2  1:IPD:C3
+                1:IPD:C4  1:IPD:C5  1:IPD:C6
+                1:IPD:C7  1:IPD:C8  1:IPD:C9
+                1:IPD:C10 1:IPD:H1  1:IPD:H2
+                1:IPD:H3  1:IPD:H4  1:IPD:H5
+                1:IPD:H6  1:IPD:H7  1:IPD:H10
+                1:IPD:H11 1:IPD:H14 1:IPD:H15
+                1:IPD:H16 1:IPD:H17 1:IPD:H18
+                1:IPD:H19 1:IPD:H20 1:IPD:H21
+                1:IPD:H22 1:IPD:N1
+                1:IPD:N2
+            </beads>
+            <beads degree="4" active_site="IPD:N1:3 IPD:N2:3">
+                1:IPD:C1 1:IPD:C2 1:IPD:C3 1:IPD:C4 1:IPD:C5 1:IPD:C6 1:IPD:C7 1:IPD:C8 1:IPD:C9 1:IPD:C10 1:IPD:H1
+                1:IPD:H2 1:IPD:H3 1:IPD:H4 1:IPD:H5 1:IPD:H6 1:IPD:H7 1:IPD:H10 1:IPD:H11 1:IPD:H14 1:IPD:H15
+                1:IPD:H16 1:IPD:H17 1:IPD:H18 1:IPD:H19 1:IPD:H20 1:IPD:H21 1:IPD:H22 1:IPD:N1 1:IPD:N2
+            </beads>
+        </cg_bead>
+    </cg_molecule>
 
-  <maps>
-    <map>
-      <name>E</name>
-      <weights> 12.011 15.9994 12.011 1.008 1.008 1.008 15.9994 12.011 1.008 1.008 </weights>
-    </map>
-    <map>
-      <name>F</name>
-      <weights> 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008 </weights>
-    </map>
-  </maps>
-</cg_molecule>
+    <cg_molecule>
+        <name>JEF</name>
+        <ident>JEF</ident>
+        <source_file>single_conf.gro</source_file>
+        <source_topology>jeff400.itp</source_topology>
+        <cg_bead>
+            <name>H1</name>
+            <type>H</type>
+            <beads degree="1">
+                1:JEF:N1 1:JEF:H1 1:JEF:H2
+                1:JEF:C1 1:JEF:C2 1:JEF:C3
+                1:JEF:O1 1:JEF:H3 1:JEF:H4
+                1:JEF:H5 1:JEF:H6 1:JEF:H7
+                1:JEF:H8 1:JEF:C4 1:JEF:C5
+                1:JEF:C6 1:JEF:O2 1:JEF:H9
+                1:JEF:H10 1:JEF:H11 1:JEF:H12
+                1:JEF:H13 1:JEF:H14
+            </beads>
+            <beads degree="2" active_site="JEF:N1:3">
+                1:JEF:N1 1:JEF:H2
+                1:JEF:C1 1:JEF:C2 1:JEF:C3
+                1:JEF:O1 1:JEF:H3 1:JEF:H4
+                1:JEF:H5 1:JEF:H6 1:JEF:H7
+                1:JEF:H8 1:JEF:C4 1:JEF:C5
+                1:JEF:C6 1:JEF:O2 1:JEF:H9
+                1:JEF:H10 1:JEF:H11 1:JEF:H12
+                1:JEF:H13 1:JEF:H14
+            </beads>
+            <beads degree="3" active_site="JEF:N1:3">
+                1:JEF:N1
+                1:JEF:C1 1:JEF:C2 1:JEF:C3
+                1:JEF:O1 1:JEF:H3 1:JEF:H4
+                1:JEF:H5 1:JEF:H6 1:JEF:H7
+                1:JEF:H8 1:JEF:C4 1:JEF:C5
+                1:JEF:C6 1:JEF:O2 1:JEF:H9
+                1:JEF:H10 1:JEF:H11 1:JEF:H12
+                1:JEF:H13 1:JEF:H14
+            </beads>
+        </cg_bead>
+        <cg_bead>
+            <name>I1</name>
+            <type>I</type>
+            <beads>
+                 1:JEF:C7 1:JEF:C8 1:JEF:C9
+                 1:JEF:O3 1:JEF:H15 1:JEF:H16
+                 1:JEF:H17 1:JEF:H18 1:JEF:H19
+                 1:JEF:H20  1:JEF:C10 1:JEF:C11
+                 1:JEF:C12 1:JEF:O4 1:JEF:H21
+                 1:JEF:H22 1:JEF:H23 1:JEF:H24
+                 1:JEF:H25 1:JEF:H26  1:JEF:C13
+                 1:JEF:C14 1:JEF:C15 1:JEF:H27
+                 1:JEF:H28 1:JEF:H29 1:JEF:H30
+                 1:JEF:H31 1:JEF:H32
+            </beads>
+        </cg_bead>
+        <cg_bead>
+            <name>H2</name>
+            <type>H</type>
+            <beads degree="1">
+                1:JEF:N2 1:JEF:H39 1:JEF:H40
+                1:JEF:C19 1:JEF:C20 1:JEF:C21
+                1:JEF:H41 1:JEF:H42 1:JEF:H43
+                1:JEF:H44 1:JEF:H45 1:JEF:H46
+                1:JEF:C16 1:JEF:C17 1:JEF:C18
+                1:JEF:O6 1:JEF:H33 1:JEF:H34
+                1:JEF:H35 1:JEF:H36 1:JEF:H37
+                1:JEF:H38 1:JEF:O5
+            </beads>
+            <beads degree="2" active_site="JEF:N2:3">
+                1:JEF:N2 1:JEF:H39 1:JEF:H40
+                1:JEF:C19 1:JEF:C20 1:JEF:C21
+                1:JEF:H41 1:JEF:H42 1:JEF:H43
+                1:JEF:H44 1:JEF:H46
+                1:JEF:C16 1:JEF:C17 1:JEF:C18
+                1:JEF:O6 1:JEF:H33 1:JEF:H34
+                1:JEF:H35 1:JEF:H36 1:JEF:H37
+                1:JEF:H38 1:JEF:O5
+            </beads>
+            <beads degree="3" active_site="JEF:N2:3">
+                1:JEF:N2 1:JEF:H39 1:JEF:H40
+                1:JEF:C19 1:JEF:C20 1:JEF:C21
+                1:JEF:H41 1:JEF:H42 1:JEF:H43
+                1:JEF:H44
+                1:JEF:C16 1:JEF:C17 1:JEF:C18
+                1:JEF:O6 1:JEF:H33 1:JEF:H34
+                1:JEF:H35 1:JEF:H36 1:JEF:H37
+                1:JEF:H38 1:JEF:O5
+            </beads>
+        </cg_bead>
+    </cg_molecule>
 
-<cg_molecule>
-  <name>IPD</name>
-	<ident>IPD</ident>
-  <topology>
-    <cg_beads>
-      <cg_bead>
-        <name>K1</name>
-        <type>K</type>
-        <symmetry>1</symmetry>
-        <mapping>K</mapping>
-        <delete>1:IPD:H8 1:IPD:H9 1:IPD:H12 1:IPD:H13</delete>
-        <beads> 1:IPD:C1 1:IPD:C2 1:IPD:C3 1:IPD:C4 1:IPD:C5 1:IPD:C6 1:IPD:C7 1:IPD:C8 1:IPD:C9 1:IPD:C10 1:IPD:H1 1:IPD:H2 1:IPD:H3 1:IPD:H4 1:IPD:H5 1:IPD:H6 1:IPD:H7 1:IPD:H10 1:IPD:H11 1:IPD:H14 1:IPD:H15 1:IPD:H16  1:IPD:H17 1:IPD:H18 1:IPD:H19  1:IPD:H20 1:IPD:H21 1:IPD:H22 1:IPD:N1 1:IPD:H8 1:IPD:H9 1:IPD:N2 1:IPD:H12 1:IPD:H13  </beads>
-      </cg_bead>
-      </cg_beads>
+    <cg_configuration>
+        <format>GROMACS</format>
+            <file>cg_conf.gro</file>
+        <topology>cg_topol.top</topology>
+    </cg_configuration>
 
-    <cg_bonded>
-    </cg_bonded>
+    <hybrid_configuration>
+        <file>hyb_conf.gro</file>
+        <format>GROMACS</format>
+    </hybrid_configuration>
 
-  </topology>
-
-  <maps>
-    <map>
-      <name>K</name>
-      <weights> 12.011 12.011 12.011 12.011 12.011 12.011 12.011 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 1.008 14.0067 1.008 1.008 14.0067 1.008 1.008 </weights>
-    </map>
-  </maps>
-</cg_molecule>
-
-<cg_molecule>
-  <name>JEF</name>
-	<ident>JEF</ident>
-  <topology>
-    <cg_beads>
-      <cg_bead>
-        <name>H1</name>
-        <type>H</type>
-        <symmetry>1</symmetry>
-        <mapping>H</mapping>
-        <delete>1:JEF:H1 1:JEF:H2</delete>
-        <beads> 1:JEF:N1 1:JEF:H1 1:JEF:H2 1:JEF:C1 1:JEF:C2 1:JEF:C3 1:JEF:O1 1:JEF:H3 1:JEF:H4 1:JEF:H5 1:JEF:H6 1:JEF:H7 1:JEF:H8 1:JEF:C4 1:JEF:C5 1:JEF:C6 1:JEF:O2 1:JEF:H9 1:JEF:H10 1:JEF:H11 1:JEF:H12 1:JEF:H13 1:JEF:H14 </beads>
-      </cg_bead>
-      <cg_bead>
-        <name>I1</name>
-        <type>I</type>
-        <symmetry>1</symmetry>
-        <mapping>I</mapping>
-        <beads> 1:JEF:C7 1:JEF:C8 1:JEF:C9 1:JEF:O3 1:JEF:H15 1:JEF:H16 1:JEF:H17 1:JEF:H18 1:JEF:H19 1:JEF:H20  1:JEF:C10 1:JEF:C11 1:JEF:C12 1:JEF:O4 1:JEF:H21 1:JEF:H22 1:JEF:H23 1:JEF:H24 1:JEF:H25 1:JEF:H26  1:JEF:C13 1:JEF:C14 1:JEF:C15 1:JEF:H27 1:JEF:H28 1:JEF:H29 1:JEF:H30 1:JEF:H31 1:JEF:H32 </beads>
-      </cg_bead>
-      <cg_bead>
-        <name>H2</name>
-        <type>H</type>
-        <symmetry>1</symmetry>
-        <mapping>H</mapping>
-        <delete>1:JEF:H45 1:JEF:H46</delete>
-        <beads> 1:JEF:N1 1:JEF:H39 1:JEF:H40 1:JEF:C19 1:JEF:C20 1:JEF:C21  1:JEF:H41 1:JEF:H42 1:JEF:H43 1:JEF:H44 1:JEF:H45 1:JEF:H46  1:JEF:C16 1:JEF:C17 1:JEF:C18 1:JEF:O6 1:JEF:H33 1:JEF:H34 1:JEF:H35 1:JEF:H36 1:JEF:H37 1:JEF:H38 1:JEF:O5 </beads>
-      </cg_bead>
-      </cg_beads>
-
-    <cg_bonded>
-      <bond>
-        <name>bond3</name>
-        <params>8 3 1.0 ; table_b3.xvg</params>
-        <beads>
-        H1 I1 
-        I1 H2 
-        </beads>
-      </bond>
-      <angle>
-        <name>angle3</name>
-        <params>8 3 1.0 ; table_a3.xvg</params>
-        <beads>
-        H1 I1 H2 
-        </beads>
-      </angle>
-    </cg_bonded>
-
-  </topology>
-
-  <maps>
-    <map>
-      <name>H</name>
-      <weights> 14.0067 1.008 1.008 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 </weights>
-    </map>
-    <map>
-      <name>I</name>
-      <weights> 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008 </weights>
-    </map>
-  </maps>
-</cg_molecule>
-
-<hybrid_configuration>
-    <file>hyb_conf.gro</file>
-    <format>GRO</format>
-</hybrid_configuration>
-
-<hybrid_topology>
-    <file>hyb_topol.top</file>
-    <molecule_type>
-        <name>HYB</name>
-        <exclusion>3</exclusion>
-    </molecule_type>
-    <include>
-        #include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
-        ;#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
-    </include>
-    <system>HYB</system>
-</hybrid_topology>
-
-
+    <hybrid_topology>
+        <file>hyb_topol.top</file>
+        <bonded params="; EPO_C1/C2-IPD_N1/N2">
+            EPO:C1 IPD:N1
+            EPO:C1 IPD:N2
+            EPO:C2 IPD:N1
+            EPO:C2 IPD:N2
+        </bonded>
+        <bonded params="; EPO_C1/C2_JEF_N1/N2">
+            EPO:C1 JEF:N1
+            EPO:C1 JEF:N2
+            EPO:C2 JEF:N1
+            EPO:C2 JEF:N2
+        </bonded>
+        <bonded params="; HDD_C1/C2_IPD_N1/N2">
+            HDD:C1 IPD:N1
+            HDD:C1 IPD:N2
+            HDD:C2 IPD:N1
+            HDD:C2 IPD:N2
+        </bonded>
+        <bonded params="; HDD_C1/C2_JEF_N1/N2">
+            HDD:C1 JEF:N1
+            HDD:C1 JEF:N2
+            HDD:C2 JEF:N1
+            HDD:C2 JEF:N2
+        </bonded>
+        <!-- add angles, dihedrals, pairs?? -->
+        <molecule_type>
+            <name>HYB</name>
+            <exclusion>3</exclusion>
+        </molecule_type>
+        <include>
+            #include
+            "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
+            ;#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
+        </include>
+        <system>HYB</system>
+    </hybrid_topology>
 </settings>
