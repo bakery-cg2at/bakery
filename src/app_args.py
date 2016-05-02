@@ -72,10 +72,12 @@ def _args_md():
                         help='Cuoff of coarse-grained non-bonded interactions')
     parser.add_argument('--coulomb_epsilon1', default=1.0, type=float,
                         help='Epsilon_1 for coulomb interactions')
-    parser.add_argument('--coulomb_epsilon2', default=80.0, type=float,
+    parser.add_argument('--coulomb_epsilon2', default=78.0, type=float,
                         help='Epsilon_2 for coulomb interactions')
-    parser.add_argument('--coulomb_kappa', default=1.0, type=float,
+    parser.add_argument('--coulomb_kappa', default=0.0, type=float,
                         help='Kappa paramter for coulomb interactions')
+    parser.add_argument('--coulomb_cutoff', default=0.9, type=float,
+                        help='Cut-off for generalized reactive coulomb reactions')
     parser.add_argument('--table_groups', default='A,B',
                         help='Name of CG groups to read from tables')
     parser.add_argument('--initial_step', default=0,

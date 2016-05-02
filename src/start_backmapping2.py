@@ -292,7 +292,7 @@ def main():  #NOQA
         global_int_step += 1
     else:
         global_int_step += 1
-        system_analysis.dump()
+        system_analysis.info()
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
 
     # Now run backmapping.
@@ -320,6 +320,7 @@ def main():  #NOQA
 	dump_gro_phase_one.dump()
         print('Atomistic configuration write to: {}'.format(confout_aa))
 
+	########## SECOND PHASE ################
         # Change interactions.
         print('Switch on non-bonded interactions.')
         verletlistCG.disconnect()
@@ -354,10 +355,17 @@ def main():  #NOQA
         integrator.addExtension(ext_analysis2)
 
         # Simulation
-        for k in range(dynamic_res_time+5):
+        for k in range(dynamic_res_time+10):
             integrator.run(integrator_step)
             system_analysis2.info()
             global_int_step += 1
+        else:
+            system_analysis2.info()
+
+        if has_capforce:
+            print('Switch off cap-force')
+            cap_force.disconnect()
+        
 
         #ext_analysis2.disconnect()
         #ext_analysis.connect()
@@ -368,7 +376,6 @@ def main():  #NOQA
             global_int_step += 1
         else:
             global_int_step += 1
-            system_analysis.dump()
             system_analysis.info()
             traj_file.dump(global_int_step*integrator_step,
                            global_int_step*integrator_step*args.dt)
@@ -383,7 +390,8 @@ def main():  #NOQA
         append=False)
     dump_gro_phase_two.dump()
     print('Atomistic configuration write to: {}'.format(confout_aa))
-    # Now run AT simulation.
+
+    ############ Now run normal AT simulation.############
     print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
         args.energy_collect))
     print('Set back time-step to: {}'.format(args.dt))
@@ -392,8 +400,8 @@ def main():  #NOQA
         ext_analysis2.interval = args.energy_collect
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step*integrator_step))
-    for k in range(long_step):
         integrator.run(integrator_step)
+    for k in range(long_step):
         global_int_step += 1
         if args.two_phase:
             system_analysis2.info()
@@ -403,10 +411,8 @@ def main():  #NOQA
         global_int_step += 1
         if args.two_phase:
             system_analysis2.info()
-            system_analysis2.dump()
         else:
             system_analysis.info()
-            system_analysis.dump()
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
         traj_file.close()
 

@@ -195,7 +195,7 @@ def main():  #NOQA
     pairinteractions = gromacs_topology.setPairInteractions(
         system, input_conf.pairtypes, input_conf.pairtypeparams, lj_cutoff)
     coulomb_interaction = gromacs_topology.setCoulombInteractions(
-        system, verletlist, lj_cutoff, input_conf.atomtypeparams,
+        system, verletlist, args.coulomb_cutoff, input_conf.atomtypeparams,
         epsilon1=args.coulomb_epsilon1,
         epsilon2=args.coulomb_epsilon2,
         kappa=args.coulomb_kappa)
@@ -309,10 +309,6 @@ def main():  #NOQA
             traj_file.dump(int_step, int_step*dt)
         if k_trj_collect > 0 and k % 100 == 0:
             traj_file.flush()
-        if k == 5:
-            integrator.dt = 0.0001
-        if k == 10:
-            integrator.dt = 0.001
     else:
         traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*dt)
         traj_file.close()
