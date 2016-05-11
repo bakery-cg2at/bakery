@@ -998,9 +998,9 @@ class LammpsReader(object):
                 raise RuntimeError('Cannot update atom with id {}. Not found.'.format(at_id))
             update_dict = {
                 'position': (
-                    x*self.distance_scale_factor - self._box_translate['x'],
-                    y*self.distance_scale_factor - self._box_translate['y'],
-                    z*self.distance_scale_factor - self._box_translate['z']),
+                    x*self.distance_scale_factor, # - self._box_translate['x'],
+                    y*self.distance_scale_factor, # - self._box_translate['y'],
+                    z*self.distance_scale_factor), # - self._box_translate['z']),
                 'atom_type': at_type,
                 'res_id': at_tag,
                 'charge': q
@@ -1015,9 +1015,9 @@ class LammpsReader(object):
                 'atom_type': at_type,
                 'res_id': at_tag,
                 'position': (
-                    x*self.distance_scale_factor - self._box_translate['x'],
-                    y*self.distance_scale_factor - self._box_translate['y'],
-                    z*self.distance_scale_factor - self._box_translate['z']),
+                    x*self.distance_scale_factor, # - self._box_translate['x'],
+                    y*self.distance_scale_factor, # - self._box_translate['y'],
+                    z*self.distance_scale_factor), # - self._box_translate['z']),
                 'image': (nx, ny, nz),
                 'charge': q,
                 'vel': (0.0, 0.0, 0.0),
