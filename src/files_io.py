@@ -275,6 +275,21 @@ class GROFile(CoordinateFile):
             output_file.close()
             self.atoms_updated = False
 
+    def dump(self, system, filename, particle_ids, chain_name, chain_idx, atom_name):
+        """Dump data from storage."""
+        for at_id in particle_ids:
+            p = system.storage.getParticle(p)
+            self.atoms[at_id] = Atom(
+                atom_id=at_id,
+                name=atom_name[at_id],
+                chain_name=chain_name[at_id],
+                chain_idx=chain_idx[at_id],
+                position=p.pos
+            )
+        self.title = 'XXX'
+        self.box = system.bc.boxL
+        self.write(filename, force=True)
+
 
 class PDBFile(CoordinateFile):
     scale_factor = 0.1  # PDB is expressed in Angstrome and the program use nm
