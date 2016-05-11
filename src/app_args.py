@@ -146,10 +146,12 @@ def _args_backmapping():
                         type=float)
     parser.add_argument('--coulomb_epsilon1', default=1.0, type=float,
                         help='Epsilon 1 parameter for Coulomb reaction field potential')
-    parser.add_argument('--coulomb_epsilon2', default=80.0, type=float,
+    parser.add_argument('--coulomb_epsilon2', default=78.0, type=float,
                         help='Epsilon 2 parameter for Coulomb reaction field potential')
-    parser.add_argument('--coulomb_kappa', default=1.0, type=float,
+    parser.add_argument('--coulomb_kappa', default=0.0, type=float,
                         help='Kappa paramter for coulomb interactions')
+    parser.add_argument('--coulomb_cutoff', default=0.9, type=float,
+                        help='Cutoff for coulomb interaction')
     parser.add_argument('--energy_collect', default=1000, type=int,
                         help='Collect energy every (step)')
     parser.add_argument('--energy_collect_bck', default=1, type=int,
