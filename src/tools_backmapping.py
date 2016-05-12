@@ -100,7 +100,7 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
     for pid in at_particle_ids:
         system.storage.modifyParticle(pid, 'lambda_adr', 0.0)
     for pid in cg_particle_ids:
-        system.storage.modifyParticle(pid, 'lambda_adr', 1.0)
+        system.storage.modifyParticle(pid, 'lambda_adr', 0.0)
     system.storage.decompose()
 
     # Reset all interactions.
