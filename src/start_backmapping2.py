@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import espressopp  # NOQA
 import math  # NOQA
+
 try:
     import MPI
 except ImportError:
@@ -27,6 +28,7 @@ import random
 import os
 import time
 
+import files_io
 import tools_sim as tools
 import gromacs_topology
 
@@ -41,9 +43,10 @@ kb = 0.0083144621
 simulation_author = os.environ.get('USER', 'xxx')
 simulation_email = 'xxx@xxx.xxx'
 
+
 # Mostly you do not need to modify lines below.
 
-def main():  #NOQA
+def main():  # NOQA
     h5md_group = 'atoms'
     print h5md_group
     time0 = time.time()
@@ -58,15 +61,17 @@ def main():  #NOQA
 
     print('Reading hybrid topology and coordinate file')
     input_conf = gromacs_topology.read(args.conf, args.top)
+    input_gro_conf = files_io.GROFile(args.conf)
+    input_gro_conf.read()
 
     box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)
     print('\nSetting up simulation...')
 
     # Tune simulation parameter according to arguments
     integrator_step = args.int_step
-    k_eq_step = int(args.eq/integrator_step)
-    long_step = int(args.long/integrator_step)
-    dynamic_res_time = int(int(1.0/args.alpha)/integrator_step)+1 if args.alpha > 0.0 else 0
+    k_eq_step = int(args.eq / integrator_step)
+    long_step = int(args.long / integrator_step)
+    dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 1 if args.alpha > 0.0 else 0
 
     if args.skin:
         skin = args.skin
@@ -90,6 +95,9 @@ def main():  #NOQA
     part_prop, all_particles, adress_tuple = tools.genParticleList(
         input_conf, use_velocity=True, adress=True, use_charge=True)
     print('Reads {} particles with properties {}'.format(len(all_particles), part_prop))
+
+    # Make output from AT particles.
+    at_gro_conf = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p[1:]], renumber=True)
 
     # Generate initial velocities, only for CG particles.
     particle_list = []
@@ -194,7 +202,7 @@ def main():  #NOQA
     dynamic_res.active = False
     dynamic_res.resolution = args.initial_resolution
 
-# Define interactions.
+    # Define interactions.
     verletlistAT = None
     verletlistCG = None
     if args.two_phase:
@@ -204,9 +212,9 @@ def main():  #NOQA
         verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
 
-# Define the thermostat
+    # Define the thermostat
     if args.temperature:
-        temperature = args.temperature*kb
+        temperature = args.temperature * kb
     print('Temperature: {}, gamma: {}'.format(args.temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
     thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
@@ -268,11 +276,11 @@ def main():  #NOQA
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
 
     print('Dynamic resolution, rate={}'.format(args.alpha))
-    print('CG equilibration for {}'.format(k_eq_step*integrator_step))
-    print('Collect trajectory every {} step'.format(k_trj_collect*integrator_step))
-    print('Atomistic long run for {}'.format(long_step*integrator_step))
+    print('CG equilibration for {}'.format(k_eq_step * integrator_step))
+    print('Collect trajectory every {} step'.format(k_trj_collect * integrator_step))
+    print('Atomistic long run for {}'.format(long_step * integrator_step))
 
-    traj_file.dump(integrator.step, integrator.step*args.dt)
+    traj_file.dump(integrator.step, integrator.step * args.dt)
 
     has_capforce = False
     if args.cap_force > 0.0:
@@ -283,7 +291,7 @@ def main():  #NOQA
     system.storage.decompose()
     system_analysis.info()
 
-############# SIMULATION #####################
+    ############# SIMULATION #####################
     global_int_step = 0
     # First run the eq phase.
     for k in range(k_eq_step):
@@ -293,7 +301,7 @@ def main():  #NOQA
     else:
         global_int_step += 1
         system_analysis.dump()
-        traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
+        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
 
     # Now run backmapping.
     dynamic_res.active = True
@@ -305,19 +313,14 @@ def main():  #NOQA
         args.dt_dyn))
     if args.two_phase:
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
-        for k in range(dynamic_res_time+5):
+        for k in range(dynamic_res_time + 5):
             integrator.run(integrator_step)
             system_analysis.info()
             global_int_step += 1
 
-	confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
-	dump_gro_phase_one = espressopp.io.DumpGRO(
-	    system,
-	    integrator,
-	    filename=confout_aa,
-	    unfolded=True,
-	    append=False)
-	dump_gro_phase_one.dump()
+        confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+        at_gro_conf.update_positions(system)
+        at_gro_conf.write(confout_aa, force=True)
         print('Atomistic configuration write to: {}'.format(confout_aa))
 
         # Change interactions.
@@ -354,13 +357,13 @@ def main():  #NOQA
         integrator.addExtension(ext_analysis2)
 
         # Simulation
-        for k in range(dynamic_res_time+5):
+        for k in range(dynamic_res_time + 5):
             integrator.run(integrator_step)
             system_analysis2.info()
             global_int_step += 1
 
-        #ext_analysis2.disconnect()
-        #ext_analysis.connect()
+            # ext_analysis2.disconnect()
+            # ext_analysis.connect()
     else:
         for k in range(dynamic_res_time):
             integrator.run(integrator_step)
@@ -370,18 +373,14 @@ def main():  #NOQA
             global_int_step += 1
             system_analysis.dump()
             system_analysis.info()
-            traj_file.dump(global_int_step*integrator_step,
-                           global_int_step*integrator_step*args.dt)
+            traj_file.dump(global_int_step * integrator_step,
+                           global_int_step * integrator_step * args.dt)
             traj_file.close()
 
     confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
-    dump_gro_phase_two = espressopp.io.DumpGRO(
-        system,
-        integrator,
-        filename=confout_aa,
-        unfolded=True,
-        append=False)
-    dump_gro_phase_two.dump()
+    at_gro_conf.update_positions(system)
+    at_gro_conf.write(confout_aa, force=True)
+
     print('Atomistic configuration write to: {}'.format(confout_aa))
     # Now run AT simulation.
     print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
@@ -391,7 +390,7 @@ def main():  #NOQA
     if args.two_phase:
         ext_analysis2.interval = args.energy_collect
     integrator.dt = args.dt
-    print('Running for {} steps'.format(long_step*integrator_step))
+    print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
         integrator.run(integrator_step)
         global_int_step += 1
@@ -407,20 +406,15 @@ def main():  #NOQA
         else:
             system_analysis.info()
             system_analysis.dump()
-        traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
+        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
         traj_file.close()
 
     confout_aa = '{}confout_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
-    dump_gro = espressopp.io.DumpGRO(
-        system,
-        integrator,
-        filename=confout_aa,
-        unfolded=True,
-        append=True)
-    dump_gro.dump()
+    at_gro_conf.update_positions(system)
+    at_gro_conf.write(confout_aa, force=True)
+    print('Atomistic configuration write to: {}'.format(confout_aa))
 
     print('Finished!')
-    print('Atomistic configuration write to: {}'.format(confout_aa))
     print('Total time: {}'.format(time.time() - time0))
     espressopp.tools.analyse.final_info(system, integrator, verletlistAT, time0, time.time())
 
