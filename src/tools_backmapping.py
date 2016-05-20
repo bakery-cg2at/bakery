@@ -67,7 +67,7 @@ def setupFirstPhase(system, args, input_conf, at_particle_ids, cg_particle_ids):
                        if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
     print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
 
-    verletlistCG = espressopp.VerletList(
+    verletlistCG = espressopp.VerletListHybridCG(
         system,
         cutoff=args.cg_cutoff,
         exclusionlist=exclusionlistCG)

@@ -449,14 +449,11 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     return interaction
 
 
-def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None, ftpl=None):
+def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None):
     """Sets tabulated potential for types that has particletype set to 'V'."""
     spline_type = 2
     if interaction is None:
-        if ftpl:
-            interaction = espressopp.interaction.VerletListAdressTabulated(vl, ftpl)
-        else:
-            interaction = espressopp.interaction.VerletListTabulated(vl)
+        interaction = espressopp.interaction.VerletListTabulated(vl)
     type_pairs = set()
     for type_1, v1 in atomtypeparams.iteritems():
         for type_2, v2 in atomtypeparams.iteritems():
@@ -472,22 +469,13 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
         orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
         if not os.path.exists(table_name):
             espressopp.tools.convert.gromacs.convertTable(orig_table_name, table_name)
-        if ftpl:
-            interaction.setPotentialCG(
-                type1=type_1,
-                type2=type_2,
-                potential=espressopp.interaction.Tabulated(
-                    itype=spline_type,
-                    filename=table_name,
-                    cutoff=cutoff))
-        else:
-            interaction.setPotential(
-                type1=type_1,
-                type2=type_2,
-                potential=espressopp.interaction.Tabulated(
-                    itype=spline_type,
-                    filename=table_name,
-                    cutoff=cutoff))
+        interaction.setPotential(
+            type1=type_1,
+            type2=type_2,
+            potential=espressopp.interaction.Tabulated(
+                itype=spline_type,
+                filename=table_name,
+                cutoff=cutoff))
     return interaction
 
 

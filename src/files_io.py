@@ -113,6 +113,7 @@ class CoordinateFile(object):
         self.scale_factor = 1.0
         self.file = None
         self.fragments = collections.defaultdict(dict)
+        self.id_map = {}
 
     def init(self):
         self.__init__(self.file_name)
@@ -187,9 +188,6 @@ class TopologyFile(object):
 
 
 class GROFile(CoordinateFile):
-    scale_factor = 1.0
-    chains = {}
-
     def read(self):
         """Reads the .gro file and return the atom list.
 
@@ -242,11 +240,13 @@ class GROFile(CoordinateFile):
         output_gro = GROFile(input_gro.file_name)
         output_gro.box = input_gro.box
         output_gro.title = input_gro.title
+        output_gro.id_map = {}
         if particle_ids:
             if renumber:
                 new_pid = 1
                 for pid in particle_ids:
                     at = input_gro.atoms[pid]
+                    output_gro.id_map[new_pid] = pid
                     output_gro.atoms[new_pid] = Atom(
                         atom_id=new_pid,
                         name=at.name,
@@ -258,6 +258,7 @@ class GROFile(CoordinateFile):
             else:
                 for pid in particle_ids:
                     output_gro.atoms[pid] = copy.copy(input_gro.atoms[pid])
+                    output_gro.id_map[pid] = pid
         else:
             output_gro.atoms = copy.copy(input_gro.atoms)
         return output_gro
@@ -300,18 +301,12 @@ class GROFile(CoordinateFile):
             output_file.close()
             self.atoms_updated = False
 
-    def update_positions(self, system):
+    def update_positions(self, system, use_id_map=False):
         """Update positions."""
         for at_id in self.atoms:
-            p = system.storage.getParticle(at_id)
+            p = system.storage.getParticle(self.id_map[at_id])
             old_atom = self.atoms[at_id]
-            self.atoms[at_id] = Atom(
-                atom_id=at_id,
-                name=old_atom.name,
-                chain_name=old_atom.chain_name,
-                chain_idx=old_atom.chain_idx,
-                position=p.pos
-            )
+            self.atoms[at_id] = old_atom._replace(position=p.pos)
 
     def dump(self, system, filename, particle_ids, chain_name, chain_idx, atom_name):
         """Dump data from storage."""

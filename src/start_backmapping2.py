@@ -181,13 +181,9 @@ def main():  # NOQA
     dynamic_res.active = False
     dynamic_res.resolution = args.initial_resolution
 
-    integrator.run(1)
-    confout_aa = 'after_run_phase_two.gro'
-    gro_whole.update_positions(system)
-    gro_whole.write(confout_aa, force=True)
-
     # Define interactions.
     verletlistAT = None
+    verletlistCG = None
     if args.two_phase:
         verletlistCG = tools_backmapping.setupFirstPhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
@@ -281,6 +277,7 @@ def main():  # NOQA
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
 
     system.storage.decompose()
+
     system_analysis.info()
 
     ############# SIMULATION #####################
