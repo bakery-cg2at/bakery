@@ -98,6 +98,7 @@ def main():  # NOQA
 
     # Make output from AT particles.
     at_gro_conf = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p[1:]], renumber=True)
+    gro_whole = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p], renumber=True)
 
     # Generate initial velocities, only for CG particles.
     particle_list = []
@@ -127,28 +128,6 @@ def main():  # NOQA
             particle_list.append(t)
 
     del part_prop[index_adrat]
-
-    if args.coord:
-        import h5py
-        print("Reading coordinates from {}".format(args.coord))
-        h5coord = h5py.File(args.coord)
-        h5md_group = args.coord_h5md_group
-        pos = h5coord['/particles/{}/position/value'.format(h5md_group)][-1]
-        try:
-            species = h5coord['/particles/{}/species/value'.format(h5md_group)][-1]
-        except:
-            species = h5coord['/particles/{}/species'.format(h5md_group)]
-        try:
-            box = list(h5coord['/particles/{}/box/edges/value'.format(h5md_group)][-1])
-        except:
-            box = list(h5coord['/particles/{}/box/edges'.format(h5md_group)])
-        valid_species = {x[1] for x in all_particles}
-        ppid = 0
-        for pid, p in enumerate(pos):
-            if species[pid] in valid_species:
-                particle_list[ppid][2] = espressopp.Real3D(p)
-                ppid += 1
-        h5coord.close()
 
     print('Running with box {}'.format(box))
     system.bc = espressopp.bc.OrthorhombicBC(system.rng, box)
@@ -202,9 +181,13 @@ def main():  # NOQA
     dynamic_res.active = False
     dynamic_res.resolution = args.initial_resolution
 
+    integrator.run(1)
+    confout_aa = 'after_run_phase_two.gro'
+    gro_whole.update_positions(system)
+    gro_whole.write(confout_aa, force=True)
+
     # Define interactions.
     verletlistAT = None
-    verletlistCG = None
     if args.two_phase:
         verletlistCG = tools_backmapping.setupFirstPhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
@@ -328,7 +311,6 @@ def main():  # NOQA
         for k in range(dynamic_res_time + 5):
             integrator.run(integrator_step)
             system_analysis.info()
-            print system.storage.getParticle(52).pos
             global_int_step += 1
 
         confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
@@ -381,7 +363,6 @@ def main():  # NOQA
         for k in range(dynamic_res_time+10):
             integrator.run(integrator_step)
             system_analysis2.info()
-            print system.storage.getParticle(52).pos
             global_int_step += 1
         else:
             system_analysis2.info()
@@ -389,15 +370,10 @@ def main():  # NOQA
         if has_capforce:
             print('Switch off cap-force')
             cap_force.disconnect()
-        
-
-            # ext_analysis2.disconnect()
-            # ext_analysis.connect()
     else:
         for k in range(dynamic_res_time):
             integrator.run(integrator_step)
             system_analysis.info()
-            print system.storage.getParticle(52).pos
             traj_file.dump(global_int_step * integrator_step,
                            global_int_step * integrator_step * args.dt)
             global_int_step += 1

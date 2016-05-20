@@ -101,20 +101,17 @@ def prepare_path(file_path):
 
 class CoordinateFile(object):
     """Coordinate file object."""
-
-    content = None
-    box = None
-    data = None
-    scale_factor = 1.0
-    file = None
-    atoms = {}
-    fragments = collections.defaultdict(dict)
-
     def __init__(self, file_name):
         self.file_name = file_name
         self.title = None
         self.atoms_updated = False
         self.atoms = {}
+        self.chains = {}
+        self.content = None
+        self.box = None
+        self.data = None
+        self.scale_factor = 1.0
+        self.file = None
         self.fragments = collections.defaultdict(dict)
 
     def init(self):

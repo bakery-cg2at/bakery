@@ -334,7 +334,7 @@ class BackmapperSettings2:
         def generate_cg_b_list(old_list):
             if not old_list:
                 return {}
-            return {tuple((map(self.cg_old_new_id.get, k))): v for k, v in old_list.items()}
+            return {tuple((map(self.cg_old_new_id.get, k))): v + [' ; cg_bonded'] for k, v in old_list.items()}
 
         def generate_at_b_list(at):
             """Generates atomistic list of bonds"""
@@ -370,6 +370,18 @@ class BackmapperSettings2:
             self.cg_topology.dihedrals)
         self.hyb_topology.new_data['{}dihedrals'.format(self.cross_prefix)].update(
             generate_cg_b_list(self.cg_topology.improper_dihedrals))
+
+        # Store exclusion list based on the boned-terms from renumerated cg topology
+        ex_cg_list = open('exclusion_list_cg.dat', 'w')
+        for b in self.hyb_topology.new_data['{}bonds'.format(self.cross_prefix)]:
+            ex_cg_list.write('{} {}\n'.format(*b))
+        for a in self.hyb_topology.new_data['{}angles'.format(self.cross_prefix)]:
+            ex_cg_list.write('{} {}\n'.format(a[0], a[2]))
+        for d in self.hyb_topology.new_data['{}dihedrals'.format(self.cross_prefix)]:
+            ex_cg_list.write('{} {}\n'.format(d[0], d[2]))
+            ex_cg_list.write('{} {}\n'.format(d[1], d[3]))
+            ex_cg_list.write('{} {}\n'.format(d[0], d[3]))
+        ex_cg_list.close()
 
         # Create the atomistic topology.
         for atid in self.atom_ids:

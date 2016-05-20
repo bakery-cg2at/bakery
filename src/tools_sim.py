@@ -638,8 +638,7 @@ def setPairInteractions(system, input_conf, cutoff, ftpl=None):
     return ret_list
 
 
-def setAngleInteractions(system, input_conf, ftpl=None, force_static=False, only_at=False,
-                         only_cg=None):
+def setAngleInteractions(system, input_conf, force_static=False, only_at=False, only_cg=None):
     ret_list = {}
     angletypeparams = input_conf.angletypeparams
     angles = input_conf.angletypes
@@ -654,10 +653,8 @@ def setAngleInteractions(system, input_conf, ftpl=None, force_static=False, only
         if only_cg is not None and only_cg and not is_cg:
             continue
 
-        if is_cg or ftpl is None:
-            fpl = espressopp.FixedTripleList(system.storage)
-        else:
-            fpl = espressopp.FixedTripleListAdress(system.storage, ftpl)
+        fpl = espressopp.FixedTripleList(system.storage)
+
         fpl.addTriples(anglelist)
         if not cross_angles or force_static:
             is_cg = None
@@ -669,8 +666,7 @@ def setAngleInteractions(system, input_conf, ftpl=None, force_static=False, only
     return ret_list
 
 
-def setDihedralInteractions(system, input_conf, ftpl=None, force_static=False, only_at=False,
-                            only_cg=None):
+def setDihedralInteractions(system, input_conf, force_static=False, only_at=False,  only_cg=None):
     ret_list = {}
     dihedrals = input_conf.dihedraltypes
     dihedraltypeparams = input_conf.dihedraltypeparams
@@ -685,10 +681,7 @@ def setDihedralInteractions(system, input_conf, ftpl=None, force_static=False, o
         if only_cg is not None and only_cg and not is_cg:
             continue
 
-        if is_cg or ftpl is None:
-            fpl = espressopp.FixedQuadrupleList(system.storage)
-        else:
-            fpl = espressopp.FixedQuadrupleListAdress(system.storage, ftpl)
+        fpl = espressopp.FixedQuadrupleList(system.storage)
         fpl.addQuadruples(dihedrallist)
         if not cross_dih or force_static:
             is_cg = None
