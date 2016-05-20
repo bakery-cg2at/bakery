@@ -160,6 +160,7 @@ def _args_backmapping():
                         help='Kappa paramter for coulomb interactions')
     parser.add_argument('--coulomb_cutoff', default=0.9, type=float,
                         help='Cutoff for coulomb interaction')
+    parser.add_argument('--system_info_filter', default=None, type=str)
     parser.add_argument('--energy_collect', default=1000, type=int,
                         help='Collect energy every (step)')
     parser.add_argument('--energy_collect_bck', default=1, type=int,

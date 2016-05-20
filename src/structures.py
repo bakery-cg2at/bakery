@@ -27,6 +27,7 @@ import xml.etree.ElementTree as etree
 import numpy as np
 import random
 import networkx
+import logging
 
 __doc__ = "Data structures."""
 
@@ -47,6 +48,8 @@ CGMolecule = collections.namedtuple(
     'CGMolecule',
     ['name', 'source_file', 'source_topology']
 )
+
+logger = logging.getLogger()
 
 class CGFragment:
     def __init__(self, cg_molecule, fragment_list, active_sites=None):
@@ -149,6 +152,10 @@ class BackmapperSettings2:
             'name': hyb_topology.find('system').text.strip(),
             'mol': 1
         }
+        self.hyb_topology.bondtypes = self.cg_topology.bondtypes
+        self.hyb_topology.angletypes = self.cg_topology.angletypes
+        self.hyb_topology.dihedraltypes = self.cg_topology.dihedraltypes
+        
         # Reads parameters of bonded terms.
         self.bond_params = collections.defaultdict(dict)
         self.angle_params = collections.defaultdict(dict)
@@ -211,7 +218,7 @@ class BackmapperSettings2:
         # For testing purposes, write the cg_topol.top as a graph structure.
         networkx.write_gpickle(self.cg_graph, 'cg_topol.top.pck')
         self._parse_cg_molecules()
-        
+
     def _parse_cg_molecules(self):
         """Parse the cg_molecule section and prepares data structures."""
         for r in self.root.findall('cg_molecule'):
@@ -311,6 +318,7 @@ class BackmapperSettings2:
                 self.atom_ids.append(new_at_id)
                 self.atom2cg[new_at_id] = cg_bead_id
                 self.cg2atom[cg_bead_id].append(new_at_id)
+
                 new_at_id += 1
         # Write the hybrid coordinate file.
         outfile.box = self.cg_coordinate.box
@@ -318,7 +326,7 @@ class BackmapperSettings2:
 
         # Rebuild hybrid topology.
         self.rebuild_hybrid_topology()
-        self.hyb_topology.write("output.top")
+        self.hyb_topology.write()
 
     def rebuild_hybrid_topology(self):
         """Regenerate the hybrid topology based on the new particle ids."""
@@ -326,7 +334,7 @@ class BackmapperSettings2:
         def generate_cg_b_list(old_list):
             if not old_list:
                 return {}
-            return {tuple(sorted(map(self.cg_old_new_id.get, k))): v for k, v in old_list.items()}
+            return {tuple((map(self.cg_old_new_id.get, k))): v for k, v in old_list.items()}
 
         def generate_at_b_list(at):
             """Generates atomistic list of bonds"""
@@ -341,7 +349,8 @@ class BackmapperSettings2:
             for ternary, top_list, output_name in bonded_lists:
                 for p, params in top_list.items():
                     old2new_id = self.mol_atomid_map[at.chain_name][at.chain_idx]
-                    new_tuple = tuple(sorted(map(old2new_id.get, p)))
+                    new_tuple = tuple(map(old2new_id.get, p))
+
                     # Skip the terms that involves the missing atoms. The atoms can be missing because of
                     # the degree dependent atomistic fragments.
                     if None not in new_tuple and at.atom_id in new_tuple:  # correct pair
@@ -484,159 +493,3 @@ class BackmapperSettings2:
         fout.writelines('\n'.join([' '.join(x) for x in sorted(missing_definitions)]))
         print('Wrote missing definitions in {}'.format(fout_filename))
         fout.close()
-
-
-class BackmapperSettings(object):
-    def __init__(self, input_xml):
-        tree = etree.parse(input_xml)
-        self.root = tree.getroot()
-        self._parse()
-
-    def _parse(self):
-        cg_molecules = [self._parse_cg_molecule(r) for r in self.root.findall('cg_molecule')]
-        self.cg_molecules = {r.name: r for r in cg_molecules}
-        self.hybrid_topology = self._parse_hybrid_topology()
-
-        cg_configuration = self.root.find('cg_configuration')
-        self.cg_configuration = {
-            'format': cg_configuration.find('format').text.strip()
-            }
-        if self.cg_configuration['format'] == 'LAMMPS':
-            self.cg_configuration.update(
-                {'data_files': cg_configuration.find('data_files').text.strip().split(),
-                 'input_files': cg_configuration.find('input_files').text.strip().split()})
-            self.cg_configuration['LAMMPS'] = {
-                'name_seq': {},
-                'type2chain': {}
-                }
-            name_seqs = cg_configuration.findall('name_seq')
-            for ns in name_seqs:
-                cn = ns.attrib['chain_name']
-                self.cg_configuration['LAMMPS']['name_seq'][cn] = ns.text.strip().split()
-            for k in cg_configuration.find('type2chain').text.strip().split():
-                kt, kn = k.strip().split(':')
-                self.cg_configuration['LAMMPS']['type2chain'][int(kt)] = kn
-        elif self.cg_configuration['format'] == 'GROMACS':
-            self.cg_configuration['file'] = cg_configuration.find('file').text.strip()
-            try:
-                self.cg_configuration['topology'] = cg_configuration.find('topology').text.strip()
-            except AttributeError:
-                self.cg_configuration['topology'] = None
-        hybrid_configuration = self.root.find('hybrid_configuration')
-        self.hybrid_configuration = {
-            'file': hybrid_configuration.find('file').text.strip(),
-            'format': hybrid_configuration.find('format').text.strip()
-        }
-
-    def _parse_cg_molecule(self, root):
-        source_file = root.find('source_file').text.strip()
-        source_topology = root.find('source_topology').text.strip()
-        chain_name = root.find('name').text.strip()
-        ident_name = root.find('ident').text.strip()
-
-        # For each of cg bead and different degree holds a list of weights in the same
-        # order as the <beads> section
-        mapping2mass = {
-            x.find('name').text: map(float, x.find('weights').text.strip().split())
-            for x in root.iter('map')
-        }
-        # Prepares cg_bead_mass and cg_beads structures.
-        cg_bead_mass = {}
-        cg_beads = {}
-        for x in root.iter('cg_bead'):
-            name = x.find('name').text.strip()
-            atom_type = x.find('type').text.strip()
-            try:
-                degree = int(x.find('degree').text.strip())
-            except:
-                degree = '*'
-            chain_name = chain_name
-            mapping = x.find('mapping').text.strip()
-            beads = x.find('beads').text.strip().split()
-            active_site = x.find('active_site')
-            if active_site is not None:
-                active_site = active_site.text.strip()
-            cg_bead_mass[BeadID(name, degree)] = {}
-            for i, b_name in enumerate(beads):
-                try:
-                    cg_bead_mass[BeadID(name, degree)][b_name] = mapping2mass[mapping][i]
-                except Exception as ex:
-                    print i, b_name
-                    raise ex
-            cg_beads[BeadID(name, degree)] = files_io.TopoAtom(
-                atom_type=atom_type,
-                name=name,
-                chain_name=chain_name,
-                active_site=active_site,
-                mass=sum(cg_bead_mass[(name, degree)].values()))
-
-        # Prepares topological information.
-        cg_bonded = {
-            'bond': {},
-            'angle': {},
-            'dihedral': {}
-        }
-        num = {'bond': 2, 'angle': 3, 'dihedral': 4}
-        for name in cg_bonded:
-            for x in root.iter(name):
-                term_name = x.find('name').text.strip()
-                bonds = x.find('beads').text.strip().split()
-                params = x.find('params')
-                if params is not None:
-                    params = params.text.strip()
-                tuple_size = num[name]
-                cg_bonded[name][term_name] = {
-                    'list': [bonds[i:i+tuple_size] for i in range(0, len(bonds), tuple_size)],
-                    'params': params
-                }
-        return XMLMap(
-            ident=ident_name,
-            name=chain_name,
-            mass_map=cg_bead_mass,
-            source_coordinates=source_file,
-            source_topology=source_topology,
-            molecule_beads=cg_beads,
-            molecule_topology=cg_bonded)
-
-    def _parse_hybrid_topology(self):
-        cg_bonded = {
-            'hybrid_bonds': {},
-            'output_type': 'single',
-            'file': None,
-            'include': ''
-        }
-        root = self.root.find('hybrid_topology')
-        cg_bonded['file'] = root.find('file').text.strip()
-        cg_bonded['moleculetype'] = {
-            'name': root.find('molecule_type').find('name').text,
-            'nrexcl': root.find('molecule_type').find('exclusion').text
-            }
-        cg_bonded['system'] = root.find('system').text
-        include_section = root.find('include')
-        if include_section is not None:
-            include_text = '\n'.join(map(str.strip, include_section.text.strip().split('\n')))
-            cg_bonded['include'] = include_text + '\n\n'
-
-        for x in root.findall('bond'):
-            beads = x.find('beads').text.strip().split()
-            bonds = [beads[i:i+2] for i in range(0, len(beads), 2)]
-            bond_params = x.find('bond_params')
-            if bond_params is not None:
-                bond_params = bond_params.text.strip().split()
-            angle_params = x.find('angle_params')
-            if angle_params is not None:
-                angle_params = angle_params.text.strip().split()
-            dih_params = x.find('dihedral_params')
-            if dih_params is not None:
-                dih_params = dih_params.text.strip().split()
-            pair_params = x.find('pair_params')
-            if pair_params is not None:
-                pair_params = pair_params.text.strip().split()
-            for b in bonds:
-                cg_bonded['hybrid_bonds'][tuple(b)] = {
-                    'bond_params': bond_params,
-                    'angle_params': angle_params,
-                    'dihedral_params': dih_params,
-                    'pair_params': pair_params
-                }
-        return cg_bonded

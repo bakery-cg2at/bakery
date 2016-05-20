@@ -441,7 +441,10 @@ class GROMACSTopologyFile(TopologyFile):
             'moleculetype': self._parse_moleculetype,
             'system': self._parse_system,
             'molecules': self._parse_molecules,
-            'atomtypes': self._parse_atomtypes
+            'atomtypes': self._parse_atomtypes,
+            'bondtypes': self._parse_bondtypes,
+            'angletypes': self._parse_angletypes,
+            'dihedraltypes': self._parse_dihedraltypes
             }
 
         self.writers = {
@@ -450,6 +453,9 @@ class GROMACSTopologyFile(TopologyFile):
             'system': self._write_system,
             'molecules': self._write_molecules,
             'atomtypes': self._write_atomtypes,
+            'bondtypes': self._write_bondtypes,
+            'angletypes': self._write_angletypes,
+            'dihedraltypes': self._write_dihedraltypes,
             'atoms': self._write_atoms,
             'bonds': self._write_bonds,
             'angles': self._write_angles,
@@ -466,6 +472,9 @@ class GROMACSTopologyFile(TopologyFile):
             }
         self.current_charges = {}
         self.atomtypes = {}
+        self.bondtypes = {}
+        self.angletypes = {}
+        self.dihedraltypes = {}
         self.header_section = []
         self.defaults = None
         self.moleculetype = {}
@@ -541,6 +550,8 @@ class GROMACSTopologyFile(TopologyFile):
             line = line.strip()
             if line.startswith(';') or line.startswith('#') or len(line) == 0:
                 continue
+            elif 'include' in line:
+                self.header_section.append(line.strip())
             elif line.startswith('['):  # Section
                 previous_section = section_name
                 section_name = line.replace('[', '').replace(']', '').strip()
@@ -581,6 +592,12 @@ class GROMACSTopologyFile(TopologyFile):
                 sections.append('defaults')
             if self.atomtypes:
                 sections.append('atomtypes')
+            if self.bondtypes:
+                sections.append('bondtypes')
+            if self.angletypes:
+                sections.append('angletypes')
+            if self.dihedraltypes:
+                sections.append('dihedraltypes')
             sections.extend([
                 'moleculetype',
                 'atoms',
@@ -647,6 +664,57 @@ class GROMACSTopologyFile(TopologyFile):
             'sigma': sigma,
             'epsilon': epsilon
         }
+
+    def _parse_bondtypes(self, raw_data):
+        i, j = raw_data[:2]
+        if i not in self.bondtypes:
+            self.bondtypes[i] = {}
+        if j not in self.bondtypes:
+            self.bondtypes[j] = {}
+
+        self.bondtypes[i][j] = {
+            'func': int(raw_data[2]),
+            'params': raw_data[3:]
+        }
+        self.bondtypes[j][i] = self.bondtypes[i][j]
+
+    def _parse_angletypes(self, raw_data):
+        i, j, k = raw_data[:3]
+        if i not in self.angletypes:
+            self.angletypes[i] = {}
+        if j not in self.angletypes[i]:
+            self.angletypes[i][j] = {}
+        if k not in self.angletypes:
+            self.angletypes[k] = {}
+        if j not in self.angletypes[k]:
+            self.angletypes[k][j] = {}
+
+        self.angletypes[i][j][k] = {
+            'func': int(raw_data[3]),
+            'params': raw_data[4:]
+        }
+        self.angletypes[k][j][i] = self.angletypes[i][j][k]
+
+    def _parse_dihedraltypes(self, raw_data):
+        i, j, k, l = raw_data[:4]
+        if i not in self.dihedraltypes:
+            self.dihedraltypes[i] = {}
+        if j not in self.dihedraltypes[i]:
+            self.dihedraltypes[i][j] = {}
+        if k not in self.dihedraltypes[i][j]:
+            self.dihedraltypes[i][j][k] = {}
+        if l not in self.dihedraltypes:
+            self.dihedraltypes[l] = {}
+        if k not in self.dihedraltypes[l]:
+            self.dihedraltypes[l][k] = {}
+        if j not in self.dihedraltypes[l][k]:
+            self.dihedraltypes[l][k][j] = {}
+
+        self.dihedraltypes[i][j][k][l] = {
+            'func': int(raw_data[4]),
+            'params': raw_data[5:]
+        }
+        self.dihedraltypes[l][k][j][i] = self.dihedraltypes[i][j][k][l]
 
     def _parse_atoms(self, raw_data):
         at = TopoAtom()
@@ -736,6 +804,32 @@ class GROMACSTopologyFile(TopologyFile):
         for atom_type, values in self.atomtypes.iteritems():
             return_data.append('{name} {mass} {charge} {type} {sigma} {epsilon}'.format(
                 **values))
+        return return_data
+
+    def _write_bondtypes(self):
+        return_data = []
+        for i in self.bondtypes:
+            for j, params in self.bondtypes[i].items():
+                return_data.append('{} {} {} {}'.format(i, j, params['func'], ' '.join(params['params'])))
+        return return_data
+
+    def _write_angletypes(self):
+        return_data = []
+        for i in self.angletypes:
+            for j in self.angletypes[i]:
+                for k, params in self.angletypes[i][j].items():
+                    return_data.append('{} {} {} {} {}'.format(
+                        i, j, k, params['func'], ' '.join(params['params'])))
+        return return_data
+
+    def _write_dihedraltypes(self):
+        return_data = []
+        for i in self.dihedraltypes:
+            for j in self.dihedraltypes[i]:
+                for k in self.dihedraltypes[i][j]:
+                    for l, params in self.dihedraltypes[i][j][k].items():
+                        return_data.append('{} {} {} {} {} {}'.format(
+                            i, j, k, l, params['func'], ' '.join(params['params'])))
         return return_data
 
     def _write_bonds(self):  # pylint:disable=R0201

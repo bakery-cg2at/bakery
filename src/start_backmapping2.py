@@ -263,10 +263,18 @@ def main():  # NOQA
     system_analysis.add_observable(
         'res', espressopp.analysis.Resolution(system, dynamic_res))
 
+    system_info_filter = args.system_info_filter.split(',') if args.system_info_filter else None
     for label, interaction in sorted(system.getAllInteractions().items()):
-        print('System analysis: adding {}'.format(label))
+        show_in_system_info = True
+        if system_info_filter is not None:
+            show_in_system_info = False
+            for v in system_info_filter:
+                if v in label:
+                    show_in_system_info = True
+                    break
         system_analysis.add_observable(
-            label, espressopp.analysis.PotentialEnergy(system, interaction))
+            label, espressopp.analysis.PotentialEnergy(system, interaction),
+            show_in_system_info)
 
     ext_analysis = espressopp.integrator.ExtAnalyze(system_analysis, args.energy_collect)
     integrator.addExtension(ext_analysis)
@@ -278,6 +286,7 @@ def main():  # NOQA
     print('Dynamic resolution, rate={}'.format(args.alpha))
     print('CG equilibration for {}'.format(k_eq_step * integrator_step))
     print('Collect trajectory every {} step'.format(k_trj_collect * integrator_step))
+    print('Collect energy every {} step'.format(args.energy_collect))
     print('Atomistic long run for {}'.format(long_step * integrator_step))
 
     traj_file.dump(integrator.step, integrator.step * args.dt)
@@ -297,12 +306,15 @@ def main():  # NOQA
     for k in range(k_eq_step):
         integrator.run(integrator_step)
         system_analysis.info()
+        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
         global_int_step += 1
     else:
         global_int_step += 1
         system_analysis.info()
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
 
+    traj_file.flush()
+    traj_file.close()
     # Now run backmapping.
     dynamic_res.active = True
     integrator.dt = args.dt_dyn
@@ -316,6 +328,7 @@ def main():  # NOQA
         for k in range(dynamic_res_time + 5):
             integrator.run(integrator_step)
             system_analysis.info()
+            print system.storage.getParticle(52).pos
             global_int_step += 1
 
         confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
@@ -349,9 +362,16 @@ def main():  # NOQA
             'res', espressopp.analysis.Resolution(system, dynamic_res))
 
         for label, interaction in sorted(system.getAllInteractions().items()):
+            show_in_system_info = True
+            if system_info_filter is not None:
+                show_in_system_info = False
+                for v in system_info_filter:
+                    if v in label:
+                        show_in_system_info = True
+                        break
             print('System analysis: adding {}'.format(label))
             system_analysis2.add_observable(
-                label, espressopp.analysis.PotentialEnergy(system, interaction))
+                label, espressopp.analysis.PotentialEnergy(system, interaction), show_in_system_info)
 
         ext_analysis2 = espressopp.integrator.ExtAnalyze(
             system_analysis2, args.energy_collect_bck)
@@ -361,6 +381,7 @@ def main():  # NOQA
         for k in range(dynamic_res_time+10):
             integrator.run(integrator_step)
             system_analysis2.info()
+            print system.storage.getParticle(52).pos
             global_int_step += 1
         else:
             system_analysis2.info()
@@ -376,6 +397,9 @@ def main():  # NOQA
         for k in range(dynamic_res_time):
             integrator.run(integrator_step)
             system_analysis.info()
+            print system.storage.getParticle(52).pos
+            traj_file.dump(global_int_step * integrator_step,
+                           global_int_step * integrator_step * args.dt)
             global_int_step += 1
         else:
             global_int_step += 1
