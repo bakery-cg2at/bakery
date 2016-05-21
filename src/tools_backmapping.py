@@ -63,6 +63,20 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
 
 def setupFirstPhase(system, args, input_conf, at_particle_ids, cg_particle_ids):
     """Two phase. First keep cg interactions static and scale only bonded."""
+    # First remove all interactions and define again.
+    print('Setup first phase in two-phase backmapping scheme')
+    number_of_interactions = system.getNumberOfInteractions()-1
+    for interaction_id in range(number_of_interactions, -1, -1):
+        system.removeInteraction(interaction_id)
+
+    # Reset lambda for all particles.
+    for pid in at_particle_ids:
+        system.storage.modifyParticle(pid, 'lambda_adr', 0.0)
+    for pid in cg_particle_ids:
+        system.storage.modifyParticle(pid, 'lambda_adr', 0.0)
+
+    system.storage.decompose()
+
     exclusionlistCG = [p for p in input_conf.exclusions
                        if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
     print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
@@ -91,6 +105,7 @@ def setupFirstPhase(system, args, input_conf, at_particle_ids, cg_particle_ids):
 
 def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids):
     """Two phase. First keep cg interactions static and scale only bonded."""
+    print('Setup second phase in two-phase backmapping scheme')
     # First remove all interactions and define again.
     number_of_interactions = system.getNumberOfInteractions()-1
     for interaction_id in range(number_of_interactions, -1, -1):

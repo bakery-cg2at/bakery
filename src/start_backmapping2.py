@@ -182,14 +182,9 @@ def main():  # NOQA
     dynamic_res.resolution = args.initial_resolution
 
     # Define interactions.
-    verletlistAT = None
-    verletlistCG = None
-    if args.two_phase:
-        verletlistCG = tools_backmapping.setupFirstPhase(
-            system, args, input_conf, at_particle_ids, cg_particle_ids)
-    else:
-        verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
-            system, args, input_conf, at_particle_ids, cg_particle_ids)
+
+    verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
+        system, args, input_conf, at_particle_ids, cg_particle_ids)
 
     # Define the thermostat
     if args.temperature:
@@ -270,19 +265,12 @@ def main():  # NOQA
 
     traj_file.dump(integrator.step, integrator.step * args.dt)
 
-    has_capforce = False
-    if args.cap_force > 0.0:
-        has_capforce = True
-        print('Define maximum cap-force during the backmapping')
-        cap_force = espressopp.integrator.CapForce(system, args.cap_force)
-
     system.storage.decompose()
 
     system_analysis.info()
 
-    ############# SIMULATION #####################
+    ############# SIMULATION: EQUILIBRATION PHASE #####################
     global_int_step = 0
-    # First run the eq phase.
     for k in range(k_eq_step):
         integrator.run(integrator_step)
         system_analysis.info()
@@ -293,7 +281,18 @@ def main():  # NOQA
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
 
     traj_file.flush()
-    # Now run backmapping.
+
+    ######### Now run backmapping.  #######################
+    if args.two_phase:
+        verletlistCG = tools_backmapping.setupFirstPhase(
+            system, args, input_conf, at_particle_ids, cg_particle_ids)
+
+    has_capforce = False
+    if args.cap_force > 0.0:
+        has_capforce = True
+        print('Define maximum cap-force during the backmapping')
+        cap_force = espressopp.integrator.CapForce(system, args.cap_force)
+
     dynamic_res.active = True
     print('Change time-step to {}'.format(args.dt_dyn))
     integrator.dt = args.dt_dyn

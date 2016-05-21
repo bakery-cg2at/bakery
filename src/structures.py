@@ -314,7 +314,6 @@ class BackmapperSettings2:
                     self.cg_active_sites[cg_bead_id].append((new_at_atom, cg_fragment.active_sites[at.name]))
 
                 self.atom_id2fragment[new_at_id] = cg_fragment
-                self.cg_new_id_old[new_at_id] = at.atom_id
                 self.atom_ids.append(new_at_id)
                 self.atom2cg[new_at_id] = cg_bead_id
                 self.cg2atom[cg_bead_id].append(new_at_id)
@@ -417,7 +416,7 @@ class BackmapperSettings2:
         for b1, b2 in cg_cross_bonds:
             n1 = self.global_graph.node[b1]
             n2 = self.global_graph.node[b2]
-            if n1['chain_name'] != n2['chain_name']:  # Cross bond between beads in different chains.
+            if n1['res_id'] != n2['res_id']:  # Cross bond between beads in different chains.
                 # Look for active sites on both CG molecules.
                 ats1, ats2 = None, None
                 for at, max_d in self.cg_active_sites[b1]:
