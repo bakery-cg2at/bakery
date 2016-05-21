@@ -273,7 +273,7 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
                     readnonbondtypes = False
                 else:
                     fields = l.split(';')[0].split()
-                    if len(fields) > 0:
+                    if len(fields) == 5:
                         a1, a2, fn, c6, c12 = fields[:5]
                         if int(fn) != 1:
                             continue
@@ -323,11 +323,14 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
                     if bdtypeid == None:
                         bdtypeid = len(bondtypeparams)
                         bondtypeparams.update({bdtypeid: p})
-
                     if i in bondtypes:
                         bondtypes[i].update({j: bdtypeid})
                     else:
                         bondtypes.update({i: {j: bdtypeid}})
+                    if j in bondtypes:
+                        bondtypes[j].update({i: bdtypeid})
+                    else:
+                        bondtypes.update({j: {i: bdtypeid}})
 
             if 'angletypes' in line:
                 print 'Reading [ angletypes ]'

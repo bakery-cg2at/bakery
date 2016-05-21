@@ -108,6 +108,8 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
                        if p[0] in at_particle_ids and p[1] in at_particle_ids]
     exclusionlistCG = [p for p in input_conf.exclusions
                        if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
+    print('Number of CG particles: {}'.format(len(cg_particle_ids)))
+    print('Number of AT particles: {}'.format(len(at_particle_ids)))
     print('Excluded pairs for LJ interaction (AT): {}'.format(len(exclusionlistAT)))
     print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
     verletlistAT = espressopp.VerletListHybridAT(
@@ -125,7 +127,7 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
     coulomb_interaction = gromacs_topology.setCoulombInteractions(
-        system, verletlistAT, 0.9, input_conf.atomtypeparams,
+        system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
         epsilon1=args.coulomb_epsilon1,
         epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
         interaction=coulomb_interaction)

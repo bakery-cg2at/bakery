@@ -297,6 +297,7 @@ def main():  # NOQA
     traj_file.close()
     # Now run backmapping.
     dynamic_res.active = True
+    print('Change time-step to {}'.format(args.dt_dyn))
     integrator.dt = args.dt_dyn
     ext_analysis.interval = args.energy_collect_bck
     if has_capforce:
@@ -305,7 +306,15 @@ def main():  # NOQA
         args.dt_dyn))
     if args.two_phase:
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
-        for k in range(dynamic_res_time + 5):
+        for k in range(dynamic_res_time):
+            integrator.run(integrator_step)
+            system_analysis.info()
+            global_int_step += 1
+
+        print('First phase finished, switch time-step to {}'.format(args.dt))
+        integrator.dt = args.dt
+        print('Simulate for {} steps'.format(10*integrator_step))
+        for k in range(10):
             integrator.run(integrator_step)
             system_analysis.info()
             global_int_step += 1
@@ -317,11 +326,14 @@ def main():  # NOQA
 
 	########## SECOND PHASE ################
         # Change interactions.
-        print('Switch on non-bonded interactions.')
+        print('Second phase, switch on non-bonded interactions, time-step: {}'.format(args.dt_dyn))
         verletlistCG.disconnect()
         verletlistAT, verletlistCG = tools_backmapping.setupSecondPhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
         # Reset dynamic res, start again.
+        if args.alpha2 is not None:
+            print('Change dynamic resolution alpha: '.format(args.alpha2))
+            dynamic_res.rate = args.alpha2
         dynamic_res.active = True
         dynamic_res.resolution = args.initial_resolution
 
@@ -348,7 +360,6 @@ def main():  # NOQA
                     if v in label:
                         show_in_system_info = True
                         break
-            print('System analysis: adding {}'.format(label))
             system_analysis2.add_observable(
                 label, espressopp.analysis.PotentialEnergy(system, interaction), show_in_system_info)
 

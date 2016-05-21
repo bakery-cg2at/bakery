@@ -126,6 +126,8 @@ def _args_backmapping():
                         default=0.0, type=float, help='Initial resolution')
     parser.add_argument('--alpha',
                         type=float, default=0.1, help='Alpha parameter')
+    parser.add_argument('--alpha2',
+                        type=float, default=None, help='Alpha parameter (second phase)')
     parser.add_argument('--eq', type=int, default=10000, help='CG run time')
     parser.add_argument('--thermostat_gamma',
                         type=float, default=0.5,
