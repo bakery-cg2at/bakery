@@ -380,7 +380,8 @@ def main():  # NOQA
             print('Switch off cap-force')
             cap_force.disconnect()
     else:
-        for k in range(dynamic_res_time):
+        print('Running a single-phase backmapping.')
+        for k in range(dynamic_res_time+10):
             integrator.run(integrator_step)
             system_analysis.info()
             global_int_step += 1
