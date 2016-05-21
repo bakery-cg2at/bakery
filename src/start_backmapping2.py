@@ -286,7 +286,6 @@ def main():  # NOQA
     for k in range(k_eq_step):
         integrator.run(integrator_step)
         system_analysis.info()
-        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
         global_int_step += 1
     else:
         global_int_step += 1
@@ -294,7 +293,6 @@ def main():  # NOQA
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
 
     traj_file.flush()
-    traj_file.close()
     # Now run backmapping.
     dynamic_res.active = True
     print('Change time-step to {}'.format(args.dt_dyn))
@@ -322,6 +320,9 @@ def main():  # NOQA
         confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
         at_gro_conf.update_positions(system)
         at_gro_conf.write(confout_aa, force=True)
+        gro_whole.update_positions(system)
+        gro_whole.write(
+            '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
         print('Atomistic configuration write to: {}'.format(confout_aa))
 
 	########## SECOND PHASE ################
@@ -382,8 +383,6 @@ def main():  # NOQA
         for k in range(dynamic_res_time):
             integrator.run(integrator_step)
             system_analysis.info()
-            traj_file.dump(global_int_step * integrator_step,
-                           global_int_step * integrator_step * args.dt)
             global_int_step += 1
         else:
             global_int_step += 1
