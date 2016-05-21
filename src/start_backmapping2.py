@@ -390,7 +390,6 @@ def main():  # NOQA
             system_analysis.info()
             traj_file.dump(global_int_step * integrator_step,
                            global_int_step * integrator_step * args.dt)
-            traj_file.close()
 
     confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
     at_gro_conf.update_positions(system)
@@ -422,9 +421,7 @@ def main():  # NOQA
         else:
             system_analysis.info()
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
-        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
-        traj_file.close()
-
+    traj_file.close()
     confout_aa = '{}confout_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
