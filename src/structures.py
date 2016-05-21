@@ -155,7 +155,7 @@ class BackmapperSettings2:
         self.hyb_topology.bondtypes = self.cg_topology.bondtypes
         self.hyb_topology.angletypes = self.cg_topology.angletypes
         self.hyb_topology.dihedraltypes = self.cg_topology.dihedraltypes
-        
+
         # Reads parameters of bonded terms.
         self.bond_params = collections.defaultdict(dict)
         self.angle_params = collections.defaultdict(dict)

@@ -96,6 +96,9 @@ def main():  # NOQA
         input_conf, use_velocity=True, adress=True, use_charge=True)
     print('Reads {} particles with properties {}'.format(len(all_particles), part_prop))
 
+    if input_conf.charges:
+        print('Total charge: {}'.format(sum(input_conf.charges)))
+
     # Make output from AT particles.
     at_gro_conf = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p[1:]], renumber=True)
     gro_whole = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p], renumber=True)
@@ -421,11 +424,14 @@ def main():  # NOQA
         else:
             system_analysis.info()
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
-    traj_file.close()
+
     confout_aa = '{}confout_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
     print('Atomistic configuration write to: {}'.format(confout_aa))
+
+    traj_file.flush()
+    traj_file.close()
 
     print('Finished!')
     print('Total time: {}'.format(time.time() - time0))

@@ -18,14 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import argparse
-import backmapping
-import files_io
-import gromacs
-import lammps
 import structures
-import tools
-
-import networkx as nx
 
 __doc__ = 'Prepare step of bakery'
 
@@ -36,9 +29,6 @@ def _args():
         add_help=True)
 
     parser.add_argument('--options', help='XML options file', required=True)
-    parser.add_argument('--plain', help='Prepare non-hybrid configuration files.',
-                        default=False, choices=('CG', 'AA'))
-    parser.add_argument('--prefix', default='', help='Prefix for output files')
 
     return parser
     
