@@ -347,7 +347,7 @@ def main():  # NOQA
             system,
             integrator,
             espressopp.analysis.SystemMonitorOutputCSV(energy_file))
-        #system_analysis2.copy_state(system_analysis)
+        system_analysis2.copy_state(system_analysis)
         system_analysis2.add_observable('T', temp_comp)
         system_analysis2.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
         system_analysis2.add_observable(
@@ -369,7 +369,7 @@ def main():  # NOQA
         integrator.addExtension(ext_analysis2)
 
         # Simulation
-        for k in range(dynamic_res_time+10):
+        for k in range(dynamic_res_time):
             integrator.run(integrator_step)
             system_analysis2.info()
             global_int_step += 1
@@ -381,7 +381,7 @@ def main():  # NOQA
             cap_force.disconnect()
     else:
         print('Running a single-phase backmapping.')
-        for k in range(dynamic_res_time+10):
+        for k in range(dynamic_res_time):
             integrator.run(integrator_step)
             system_analysis.info()
             global_int_step += 1
