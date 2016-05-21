@@ -332,8 +332,9 @@ def main():  # NOQA
             system, args, input_conf, at_particle_ids, cg_particle_ids)
         # Reset dynamic res, start again.
         if args.alpha2 is not None:
-            print('Change dynamic resolution alpha: '.format(args.alpha2))
+            print('Change dynamic resolution alpha: {}'.format(args.alpha2))
             dynamic_res.rate = args.alpha2
+            dynamic_res_time = int(int(1.0 / args.alpha2) / integrator_step) + 1 if args.alpha2 > 0.0 else 0
         dynamic_res.active = True
         dynamic_res.resolution = args.initial_resolution
 
@@ -346,7 +347,7 @@ def main():  # NOQA
             system,
             integrator,
             espressopp.analysis.SystemMonitorOutputCSV(energy_file))
-        system_analysis2.copy_state(system_analysis)
+        #system_analysis2.copy_state(system_analysis)
         system_analysis2.add_observable('T', temp_comp)
         system_analysis2.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
         system_analysis2.add_observable(
