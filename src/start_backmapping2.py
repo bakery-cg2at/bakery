@@ -192,7 +192,7 @@ def main():  # NOQA
     # Define the thermostat
     if args.temperature:
         temperature = args.temperature * kb
-    print('Temperature: {}, gamma: {}'.format(args.temperature, args.thermostat_gamma))
+    print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
     thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
     thermostat.temperature = temperature

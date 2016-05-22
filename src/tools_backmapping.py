@@ -52,11 +52,11 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
             verletlistCG, True
         ))
     if lj_interaction is not None:
-        system.addInteraction(lj_interaction, 'xyz-lj')
+        system.addInteraction(lj_interaction, 'lj')
     if coulomb_interaction is not None:
-        system.addInteraction(coulomb_interaction, 'xyz-coulomb')
+        system.addInteraction(coulomb_interaction, 'coulomb')
     if tab_cg is not None:
-        system.addInteraction(tab_cg, 'xyz-cg')
+        system.addInteraction(tab_cg, 'tab-cg')
 
     return verletlistAT, verletlistCG
 
