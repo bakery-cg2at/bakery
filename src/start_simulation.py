@@ -210,7 +210,7 @@ def main():  #NOQA
 
 # Define the thermostat
     temperature = args.temperature*kb
-    print('Temperature: {}, gamma: {}'.format(temperature, args.thermostat_gamma))
+    print('Temperature: {} ({}), gamma: {}'.format(temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
     if args.thermostat == 'lv':
         thermostat = espressopp.integrator.LangevinThermostat(system)
@@ -276,8 +276,7 @@ def main():  #NOQA
         store_state=args.store_state,
         store_lambda=args.store_lambda)
 
-    traj_file.set_parameters({
-        'temperature': args.temperature})
+    traj_file.set_parameters({'temperature': args.temperature})
 
     print('Reset total velocity')
     total_velocity = espressopp.analysis.TotalVelocity(system)

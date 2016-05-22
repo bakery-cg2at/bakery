@@ -46,22 +46,27 @@ XMLMap = collections.namedtuple(
 
 CGMolecule = collections.namedtuple(
     'CGMolecule',
-    ['name', 'source_file', 'source_topology']
+    ['name', 'ident', 'source_file', 'source_topology']
 )
 
 logger = logging.getLogger()
 
 class CGFragment:
-    def __init__(self, cg_molecule, fragment_list, active_sites=None):
+    def __init__(self, cg_molecule, fragment_list, active_sites=None, charge_map=None):
         self.topology = cg_molecule.source_topology
         self.coordinate = cg_molecule.source_file
         self.fragment_list = fragment_list
+
+        self.cg_molecule = cg_molecule
+
+        self.charge_map = charge_map
+
         # Select the set of atomistic coordinates.
-        chains = self.coordinate.chains[cg_molecule.name]
+        chains = self.coordinate.chains[cg_molecule.ident]
         # Select random chain from the ensemble of chains.
         atoms = chains[random.sample(chains.keys(), 1)[0]]
         self.atomparams = {
-            k: v[0] for k, v in self.topology.chain_atom_names[cg_molecule.name].items()
+            k: v[0] for k, v in self.topology.chain_atom_names[cg_molecule.ident].items()
             }
         self.active_sites = {}
 
@@ -70,7 +75,7 @@ class CGFragment:
         tmp_atom_list = []
         for bead in self.fragment_list:
             atom_name = bead.split(':')[2]
-            atom = atoms[atom_name]
+            atom = atoms[atom_name]._replace(chain_name=cg_molecule.ident)
             atom_mass = self.atomparams[atom_name].mass
             self.com += atom_mass * atom.position
             total_mass += atom_mass
@@ -88,6 +93,7 @@ class CGFragment:
                 t = at_as.split(':')
                 self.active_sites[t[1]] = int(t[2])
 
+
 class BackmapperSettings2:
     def __init__(self, input_xml):
         self.cg_active_sites = collections.defaultdict(list)
@@ -97,7 +103,7 @@ class BackmapperSettings2:
         self.cross_prefix = 'cross_'
         self.cg_new_id_old = {}
         self.atom2cg = {}
-        self.fragments = collections.defaultdict(dict)  # key-> molecule name, val-> dict
+        self.fragments = {}  # key-> molecule name, val-> dict
         self.mol_atomid_map = collections.defaultdict(dict)  # Map between old id and new id, divided into molecules.
         self.cg2atom = collections.defaultdict(list)
 
@@ -134,7 +140,7 @@ class BackmapperSettings2:
             for include_entry in hyb_topology.find('include').text.split():
                 ie = include_entry.strip()
                 if ie.startswith(';'):
-                    self.hyb_topology.header_section.append(';#include {}\n'.format(ie))
+                    self.hyb_topology.header_section.append(';#include {}\n'.format(ie.replace(';', '')))
                 else:
                     self.hyb_topology.header_section.append('#include {}\n'.format(ie))
             self.hyb_topology.header_section.append('\n')
@@ -224,6 +230,7 @@ class BackmapperSettings2:
         for r in self.root.findall('cg_molecule'):
             cg_molecule = CGMolecule(
                 r.find('name').text,
+                r.find('ident').text,
                 files_io.read_coordinates(r.find('source_file').text),
                 files_io.GROMACSTopologyFile(r.find('source_topology').text))
             cg_molecule.source_topology.read()
@@ -240,7 +247,16 @@ class BackmapperSettings2:
                     if active_sites:
                         active_sites = active_sites.split()
                     bead_list = beads.text.split()
-                    cg_fragment = CGFragment(cg_molecule, bead_list, active_sites)
+
+                    cm = beads.find('charge_map')
+                    charge_map = None
+                    if cm is not None:
+                        charge_map = cm.text.split()
+                        if len(charge_map) != len(bead_list):
+                            raise RuntimeError(
+                                'Number of entries in charge_map {} does not match number of beads {}'.format(
+                                    len(charge_map), len(bead_list)))
+                    cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map)
                     self.fragments[cg_molecule.name][name][degree] = cg_fragment
 
     def prepare_hybrid(self):
@@ -258,17 +274,6 @@ class BackmapperSettings2:
             if cg_bead['res_id'] != last_res_id:
                 last_res_id = cg_bead['res_id']
                 new_res_id += 1
-            outfile.atoms[cg_bead_id] = files_io.Atom(
-                atom_id=cg_bead_id,
-                name=cg_bead['name'],
-                chain_name=cg_bead['chain_name'],
-                chain_idx=new_res_id,
-                position=cg_atom.position
-            )
-            self.cg_new_id_old[cg_bead_id] = cg_id
-            self.cg_old_new_id[cg_id] = cg_bead_id
-
-            self.global_graph.add_node(cg_bead_id, **cg_bead)
 
             cg_degree = str(cg_bead['degree'])
             fragments = self.fragments[cg_bead['chain_name']][cg_bead['name']]
@@ -277,23 +282,36 @@ class BackmapperSettings2:
             if not cg_fragment:
                 raise RuntimeError('Problem with getting atomistic fragments')
 
+            outfile.atoms[cg_bead_id] = files_io.Atom(
+                atom_id=cg_bead_id,
+                name=cg_bead['name'],
+                chain_name=cg_fragment.cg_molecule.ident, # Change chain name to one from <ident> tag in the cg_molecule
+                chain_idx=new_res_id,
+                position=cg_atom.position
+            )
+            self.cg_new_id_old[cg_bead_id] = cg_id
+            self.cg_old_new_id[cg_id] = cg_bead_id
+
+            self.global_graph.add_node(cg_bead_id, **cg_bead)
+
             # Change the mass of CG bead
             topol_atom = copy.copy(self.cg_topology.atoms[cg_id])
             topol_atom.mass = cg_fragment.cg_mass
             topol_atom.atom_id = cg_bead_id
-            topol_atom.cgnr = cg_bead_id
             topol_atom.chain_idx = new_res_id
+            topol_atom.chain_name = cg_fragment.cg_molecule.ident # Change chain name to one from <ident> tag in the cg_molecule
+            topol_atom.cgnr = cg_bead_id
             self.hyb_topology.atoms[new_at_id] = topol_atom
 
             # Set the atomistic coordinates for this fragment, put it in the
             # output coordinate file.
             cg_com = cg_atom.position
             new_at_id += 1
-            for at in cg_fragment.atom_in_fragments:
+            for idx, at in enumerate(cg_fragment.atom_in_fragments):
                 new_at_atom = files_io.Atom(
                     new_at_id,
                     at.name,
-                    at.chain_name,
+                    cg_fragment.cg_molecule.ident,  # Change chain name to one from <ident> tag in the cg_molecule
                     new_res_id,
                     at.position + cg_com
                 )
@@ -301,14 +319,21 @@ class BackmapperSettings2:
                 self.global_graph.add_node(
                     new_at_id, name=at.name, res_id=new_res_id,
                     position=at.position + cg_com, chain_name=at.chain_name)
+
+                # Set topology atom
                 topol_atom = copy.copy(cg_fragment.topology.chain_atom_names[at.chain_name][at.name][0])
                 if new_res_id not in self.mol_atomid_map[at.chain_name]:
                     self.mol_atomid_map[at.chain_name][new_res_id] = {}
                 self.mol_atomid_map[at.chain_name][new_res_id][topol_atom.atom_id] = new_at_id
+
+                if cg_fragment.charge_map:
+                    topol_atom.charge = cg_fragment.charge_map[idx]
                 topol_atom.atom_id = new_at_id
                 topol_atom.chain_idx = new_res_id
+                topol_atom.chain_name = cg_fragment.cg_molecule.ident
                 topol_atom.cgnr = new_at_id
                 self.hyb_topology.atoms[new_at_id] = topol_atom
+
                 # Set active sites.
                 if at.name in cg_fragment.active_sites:
                     self.cg_active_sites[cg_bead_id].append((new_at_atom, cg_fragment.active_sites[at.name]))
