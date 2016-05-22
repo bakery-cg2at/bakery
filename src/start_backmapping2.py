@@ -271,6 +271,15 @@ def main():  # NOQA
     system.storage.decompose()
 
     system_analysis.info()
+    
+    if args.gro_collect > 0:
+        gro_collect_filename = '{}confout_dump_{}_{}.gro'.format(
+            args.output_prefix, args.alpha, args.rng_seed)
+        dump_conf_gro = espressopp.io.DumpGRO(system, integrator, filename=gro_collect_filename, append=True)
+        ext_dump_conf_gro = espressopp.integrator.ExtAnalyze(
+            dump_conf_gro, args.gro_collect)
+        integrator.addExtension(ext_dump_conf_gro)
+        print('Store .gro files {}'.format(gro_collect_filename))
 
     ############# SIMULATION: EQUILIBRATION PHASE #####################
     global_int_step = 0
@@ -394,6 +403,9 @@ def main():  # NOQA
             traj_file.dump(global_int_step * integrator_step,
                            global_int_step * integrator_step * args.dt)
 
+    gro_whole.update_positions(system)
+    gro_whole.write(
+        '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
     confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
@@ -410,8 +422,6 @@ def main():  # NOQA
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
-        integrator.run(integrator_step)
-    for k in range(long_step):
         global_int_step += 1
         if args.two_phase:
             system_analysis2.info()
@@ -425,6 +435,9 @@ def main():  # NOQA
             system_analysis.info()
         traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
 
+    gro_whole.update_positions(system)
+    gro_whole.write(
+        '{}confout_full_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
     confout_aa = '{}confout_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)

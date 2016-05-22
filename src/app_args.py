@@ -169,6 +169,7 @@ def _args_backmapping():
                         help='Collect energy every (step) during backmapping')
     parser.add_argument('--trj_collect', default=1000, type=int,
                         help='Collect trajectory every (step)')
+    parser.add_argument('--gro_collect', default=0, type=int, help='If set then collect trajcectory in .gro')
     parser.add_argument('--cap_force', default=1000.0, type=float,
         help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--two_phase', default=False, type=ast.literal_eval,
