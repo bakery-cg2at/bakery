@@ -225,7 +225,8 @@ def main():  # NOQA
         'dt': args.dt
     })
 
-    ext_analysis, system_analysis = tools.setSystemAnalysis(system, integrator, args, args.energy_collect, dynamic_res)
+    ext_analysis, system_analysis = tools.setSystemAnalysis(
+        system, integrator, args, args.energy_collect, '_first', dynamic_res)
     system_analysis.dump()
 
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
