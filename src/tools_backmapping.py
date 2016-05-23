@@ -31,11 +31,14 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
         interaction=lj_interaction)
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
-    coulomb_interaction = gromacs_topology.setCoulombInteractions(
-        system, verletlistAT, 0.9, input_conf.atomtypeparams,
-        epsilon1=args.coulomb_epsilon1,
-        epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
-        interaction=coulomb_interaction)
+    if args.coulomb_cutoff > 0.0:
+        coulomb_interaction = gromacs_topology.setCoulombInteractions(
+            system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
+            epsilon1=args.coulomb_epsilon1,
+            epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
+            interaction=coulomb_interaction)
+    else:
+        coulomb_interaction = None
     tools.setBondedInteractions(
         system, input_conf)
     tools.setAngleInteractions(
@@ -141,11 +144,14 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
         interaction=lj_interaction)
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
-    coulomb_interaction = gromacs_topology.setCoulombInteractions(
-        system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
-        epsilon1=args.coulomb_epsilon1,
-        epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
-        interaction=coulomb_interaction)
+    if args.coulomb_cutoff > 0.0:
+        coulomb_interaction = gromacs_topology.setCoulombInteractions(
+            system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
+            epsilon1=args.coulomb_epsilon1,
+            epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
+            interaction=coulomb_interaction)
+    else:
+        coulomb_interaction = None
     pair14_interactions = tools.setPairInteractions(
         system, input_conf, args.lj_cutoff)
     tab_cg = tools.setTabulatedInteractions(
