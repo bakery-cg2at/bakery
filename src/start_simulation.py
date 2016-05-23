@@ -26,11 +26,8 @@ except ImportError:
 import time
 import logging
 import random
-import shutil
 
 import numpy as np
-import tools_sim as tools
-import tools as general_tools
 import gromacs_topology
 
 from app_args import _args_md

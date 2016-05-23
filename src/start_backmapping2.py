@@ -175,7 +175,6 @@ def main():  # NOQA
     print('Pairs: {}'.format(sum(len(x) for x in input_conf.pairtypes.values())))
 
     print('Setting dynamic resolution')
-
     dynamic_res = espressopp.integrator.DynamicResolution(
         system,
         vs_list,
@@ -185,7 +184,6 @@ def main():  # NOQA
     dynamic_res.resolution = args.initial_resolution
 
     # Define interactions.
-
     verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
         system, args, input_conf, at_particle_ids, cg_particle_ids)
 
@@ -227,35 +225,7 @@ def main():  # NOQA
         'dt': args.dt
     })
 
-    # Sets energy storage.
-    energy_file = '{}energy_{}_{}.csv'.format(args.output_prefix, args.alpha, args.rng_seed)
-    print('Energy saved to: {}'.format(energy_file))
-    system_analysis = espressopp.analysis.SystemMonitor(
-        system,
-        integrator,
-        espressopp.analysis.SystemMonitorOutputCSV(energy_file))
-    temp_comp = espressopp.analysis.Temperature(system)
-    system_analysis.add_observable('T', temp_comp)
-    system_analysis.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
-    system_analysis.add_observable(
-        'res', espressopp.analysis.Resolution(system, dynamic_res))
-
-    system_info_filter = args.system_info_filter.split(',') if args.system_info_filter else None
-    for label, interaction in sorted(system.getAllInteractions().items()):
-        show_in_system_info = True
-        if system_info_filter is not None:
-            show_in_system_info = False
-            for v in system_info_filter:
-                if v in label:
-                    show_in_system_info = True
-                    break
-        system_analysis.add_observable(
-            label, espressopp.analysis.PotentialEnergy(system, interaction),
-            show_in_system_info)
-
-    ext_analysis = espressopp.integrator.ExtAnalyze(system_analysis, args.energy_collect)
-    integrator.addExtension(ext_analysis)
-
+    ext_analysis, system_analysis = tools.setSystemAnalysis(system, integrator, args, args.energy_collect, dynamic_res)
     system_analysis.dump()
 
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
@@ -270,8 +240,6 @@ def main():  # NOQA
 
     system.storage.decompose()
 
-    system_analysis.info()
-    
     if args.gro_collect > 0:
         gro_collect_filename = '{}confout_dump_{}_{}.gro'.format(
             args.output_prefix, args.alpha, args.rng_seed)
@@ -283,6 +251,7 @@ def main():  # NOQA
 
     ############# SIMULATION: EQUILIBRATION PHASE #####################
     global_int_step = 0
+    system_analysis.info()
     for k in range(k_eq_step):
         integrator.run(integrator_step)
         system_analysis.info()
@@ -290,9 +259,10 @@ def main():  # NOQA
     else:
         global_int_step += 1
         system_analysis.info()
-        traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
+        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
 
     traj_file.flush()
+    system_analysis.dump()
 
     ######### Now run backmapping.  #######################
     has_capforce = False
@@ -301,10 +271,11 @@ def main():  # NOQA
         print('Define maximum cap-force during the backmapping')
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
 
+    print('Activating dynamic resolution changer')
     dynamic_res.active = True
+
     print('Change time-step to {}'.format(args.dt_dyn))
     integrator.dt = args.dt_dyn
-    ext_analysis.interval = args.energy_collect_bck
     if has_capforce:
         integrator.addExtension(cap_force)
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
@@ -316,45 +287,13 @@ def main():  # NOQA
         verletlistCG = tools_backmapping.setupFirstPhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
 
-        energy_file = '{}energy_{}_{}_one.csv'.format(args.output_prefix, args.alpha, args.rng_seed)
-        print('Energy saved to: {}'.format(energy_file))
-        system_analysis2 = espressopp.analysis.SystemMonitor(
-            system,
-            integrator,
-            espressopp.analysis.SystemMonitorOutputCSV(energy_file))
-        system_analysis2.copy_state(system_analysis)
-        system_analysis2.add_observable('T', temp_comp)
-        system_analysis2.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
-        system_analysis2.add_observable(
-            'res', espressopp.analysis.Resolution(system, dynamic_res))
-
-        for label, interaction in sorted(system.getAllInteractions().items()):
-            show_in_system_info = True
-            if system_info_filter is not None:
-                show_in_system_info = False
-                for v in system_info_filter:
-                    if v in label:
-                        show_in_system_info = True
-                        break
-            system_analysis2.add_observable(
-                label, espressopp.analysis.PotentialEnergy(system, interaction), show_in_system_info)
-
-        ext_analysis2 = espressopp.integrator.ExtAnalyze(
-            system_analysis2, args.energy_collect_bck)
-        integrator.addExtension(ext_analysis2)
+        ext_analysis2, system_analysis2 = tools.setSystemAnalysis(
+            system, integrator, args, args.energy_collect_bck, '_one', dynamic_res)
 
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time):
             integrator.run(integrator_step)
             system_analysis2.info()
-            global_int_step += 1
-
-        print('First phase finished, switch time-step to {}'.format(args.dt))
-        integrator.dt = args.dt
-        print('Simulate for {} steps'.format(10*integrator_step))
-        for k in range(10):
-            integrator.run(integrator_step)
-            system_analysis.info()
             global_int_step += 1
 
         confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
@@ -365,7 +304,7 @@ def main():  # NOQA
             '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
         print('Atomistic configuration write to: {}'.format(confout_aa))
 
-	########## SECOND PHASE ################
+        ########## SECOND PHASE ################
         # Change interactions.
         print('Second phase, switch on non-bonded interactions, time-step: {}'.format(args.dt_dyn))
         verletlistCG.disconnect()
@@ -382,32 +321,8 @@ def main():  # NOQA
         # Reset system analysis.
         ext_analysis2.disconnect()
 
-        energy_file = '{}energy_{}_{}_two.csv'.format(args.output_prefix, args.alpha, args.rng_seed)
-        print('Energy saved to: {}'.format(energy_file))
-        system_analysis3 = espressopp.analysis.SystemMonitor(
-            system,
-            integrator,
-            espressopp.analysis.SystemMonitorOutputCSV(energy_file))
-        system_analysis3.copy_state(system_analysis2)
-        system_analysis3.add_observable('T', temp_comp)
-        system_analysis3.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
-        system_analysis3.add_observable(
-            'res', espressopp.analysis.Resolution(system, dynamic_res))
-
-        for label, interaction in sorted(system.getAllInteractions().items()):
-            show_in_system_info = True
-            if system_info_filter is not None:
-                show_in_system_info = False
-                for v in system_info_filter:
-                    if v in label:
-                        show_in_system_info = True
-                        break
-            system_analysis3.add_observable(
-                label, espressopp.analysis.PotentialEnergy(system, interaction), show_in_system_info)
-
-        ext_analysis3 = espressopp.integrator.ExtAnalyze(
-            system_analysis2, args.energy_collect_bck)
-        integrator.addExtension(ext_analysis3)
+        ext_analysis3, system_analysis3 = tools.setSystemAnalysis(
+            system, integrator, args, args.energy_collect_bck, '_two', dynamic_res)
 
         # Simulation
         for k in range(dynamic_res_time):
@@ -448,6 +363,8 @@ def main():  # NOQA
     ext_analysis.interval = args.energy_collect
     if args.two_phase:
         ext_analysis3.interval = args.energy_collect
+    else:
+        ext_analysis.interval = args.energy_collect
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
@@ -462,7 +379,7 @@ def main():  # NOQA
             system_analysis3.info()
         else:
             system_analysis.info()
-        traj_file.dump(global_int_step*integrator_step, global_int_step*integrator_step*args.dt)
+        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
 
     gro_whole.update_positions(system)
     gro_whole.write(
