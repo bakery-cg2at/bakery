@@ -144,7 +144,7 @@ def _args_backmapping():
                         default='lv', choices=('lv', 'vr'),
                         help='Thermostat to use, lv: Langevine, vr: Stochastic velocity rescale')
     parser.add_argument('--thermostat_whole',
-                        default=False, action='store_true',
+                        default=False, type=ast.literal_eval,
                         help='Thermalize all particles, not only AT')
     parser.add_argument('--temperature',
                         default=423.0, type=float,
