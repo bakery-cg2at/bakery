@@ -24,7 +24,8 @@ import espressopp  # noqa
 __doc__ = 'The tools for the simulation.'
 
 
-def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None, dynamic_res=None):
+def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
+                      dynamic_res=None, particle_groups=None):
     """Sets system analysis routine"""
     if filename_suffix is None:
         filename_suffix = ''
@@ -36,6 +37,13 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None, 
         espressopp.analysis.SystemMonitorOutputCSV(energy_file))
     temp_comp = espressopp.analysis.Temperature(system)
     system_analysis.add_observable('T', temp_comp)
+
+    if particle_groups is not None:
+        for label, pg in particle_groups.items():
+            system_analysis.add_observable(
+                'T-{}'.format(label),
+                espressopp.analysis.TemperatureOnGroup(system, pg))
+
     system_analysis.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
     if dynamic_res is not None:
         system_analysis.add_observable(

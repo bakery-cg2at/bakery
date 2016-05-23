@@ -155,10 +155,13 @@ def main():  # NOQA
     vs_list.addTuples(adress_tuple)
 
     at_particle_group = espressopp.ParticleGroup(system.storage)
+    cg_particle_group = espressopp.ParticleGroup(system.storage)
+    particle_groups = {'at': at_particle_group, 'cg': cg_particle_group}
     at_particle_ids = set()
     cg_particle_ids = set()
     for a in adress_tuple:
         cg_particle_ids.add(a[0])
+        cg_particle_group.add(a[0])
         for at in a[1:]:
             at_particle_group.add(at)
             at_particle_ids.add(at)
@@ -192,7 +195,11 @@ def main():  # NOQA
         temperature = args.temperature * kb
     print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
-    thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
+    if args.thermostat_whole:
+        print('Enable thermostat on all particles, not only atomistic')
+        thermostat = espressopp.integrator.LangevinThermostat(system)
+    else:
+        thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
     thermostat.temperature = temperature
     thermostat.gamma = args.thermostat_gamma
     integrator.addExtension(thermostat)
@@ -226,7 +233,7 @@ def main():  # NOQA
     })
 
     ext_analysis, system_analysis = tools.setSystemAnalysis(
-        system, integrator, args, args.energy_collect, '_first', dynamic_res)
+        system, integrator, args, args.energy_collect, '_first', dynamic_res, particle_groups)
     system_analysis.dump()
 
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
@@ -289,7 +296,13 @@ def main():  # NOQA
             system, args, input_conf, at_particle_ids, cg_particle_ids)
 
         ext_analysis2, system_analysis2 = tools.setSystemAnalysis(
-            system, integrator, args, args.energy_collect_bck, '_one', dynamic_res)
+            system,
+            integrator,
+            args,
+            args.energy_collect_bck,
+            '_one',
+            dynamic_res,
+            particle_groups)
 
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time):
@@ -323,7 +336,7 @@ def main():  # NOQA
         ext_analysis2.disconnect()
 
         ext_analysis3, system_analysis3 = tools.setSystemAnalysis(
-            system, integrator, args, args.energy_collect_bck, '_two', dynamic_res)
+            system, integrator, args, args.energy_collect_bck, '_two', dynamic_res, particle_groups)
 
         # Simulation
         for k in range(dynamic_res_time):

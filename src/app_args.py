@@ -25,7 +25,7 @@ def _args_analyze():
     parser = general_tools.MyArgParser(description='Analyze GROMACS topology',
                                        fromfile_prefix_chars='@')
     parser.add_argument('--top', '--topology', required=True, help='Topology file')
-    
+
     return parser
 
 
@@ -143,6 +143,9 @@ def _args_backmapping():
     parser.add_argument('--thermostat',
                         default='lv', choices=('lv', 'vr'),
                         help='Thermostat to use, lv: Langevine, vr: Stochastic velocity rescale')
+    parser.add_argument('--thermostat_whole',
+                        default=False, action='store_true',
+                        help='Thermalize all particles, not only AT')
     parser.add_argument('--temperature',
                         default=423.0, type=float,
                         help='Temperature')

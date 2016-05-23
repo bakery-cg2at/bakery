@@ -31,8 +31,8 @@ def _args():
     parser.add_argument('--options', help='XML options file', required=True)
 
     return parser
-    
-    
+
+
 def main():
     args = _args().parse_args()
     bck_settings = structures.BackmapperSettings2(args.options)
