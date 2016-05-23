@@ -147,8 +147,6 @@ class TopologyFile(object):
 
         # chain_name -> {chain_idx -> [at1, at2...]}
         self.chains = {}  # chain_name -> {chain_idx: [at]}
-        # chain_name -> {chain_idx -> {atom_name -> atom}}
-        self.chains_atoms = {}  # chain_name -> {chain_idx: {at.name: at}}
         # chain_name -> {atom_name -> [at1, at2, ...]}
         self.chain_atom_names = {}  # chain_name -> {name: [at]}
         # Chain neighbours.
@@ -209,7 +207,7 @@ class GROFile(CoordinateFile):
             chain_name = line[5:10].strip()
             at_name = line[10:15].strip()
             at_id = int(line[15:20].strip())
-            # Nedd to rescale.
+            # Need to rescale.
             pos_x = float(line[20:28].strip()) * self.scale_factor
             pos_y = float(line[28:36].strip()) * self.scale_factor
             pos_z = float(line[36:44].strip()) * self.scale_factor
@@ -233,6 +231,34 @@ class GROFile(CoordinateFile):
         self.box = numpy.array(
             map(float, filter(None, self.content[number_of_atoms + 2].split(' ')))
             ) * self.scale_factor
+
+    def remove_atom(self, atom_id, renumber=True):
+        """Remove atom and renumber the file."""
+        atom_to_remove = self.atoms[atom_id]
+        try:
+            del self.fragments[atom_to_remove.chain_name][atom_to_remove.name]
+            del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
+        except KeyError:
+            pass
+        del self.atoms[atom_id]
+
+        if renumber:
+            new_at_id = 1
+            new_atoms = {}
+            for at_id in self.atoms:
+                new_atoms[new_at_id] = self.atoms[at_id]._replace(atom_id=new_at_id)
+                new_at_id += 1
+            self.atoms = new_atoms
+
+    def renumber(self):
+        """Renumber atoms with new id"""
+        new_at_id = 1
+        new_atoms = {}
+        for at_id in self.atoms:
+            new_atoms[new_at_id] = self.atoms[at_id]._replace(atom_id=new_at_id)
+            new_at_id += 1
+        self.atoms = new_atoms
+
 
     @staticmethod
     def copy(input_gro, particle_ids=None, renumber=False):
@@ -524,6 +550,82 @@ class GROMACSTopologyFile(TopologyFile):
         for k, v in pdbfile.atoms.iteritems():
             self.atoms[k].position = v.position
 
+    def remove_atom(self, atom_id, renumber=True):
+        """Removes atom from topology and clean data structures."""
+
+        atom_to_remove = self.atoms[atom_id]
+        try:
+            self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx].remove(atom_to_remove)
+            self.chain_atom_names[atom_to_remove.chain_name][atom_to_remove.name].remove(atom_to_remove)
+        except KeyError:
+            pass
+        del self.atoms[atom_id]
+
+        # Renumber data.
+        old2new = {k: k for k in self.atoms}
+        if renumber:
+            new_at_id = 1
+            old2new = {}
+            new_atoms = {}
+            for at_id in sorted(self.atoms):
+                new_atoms[new_at_id] = self.atoms[at_id]
+                new_atoms[new_at_id].atom_id = new_at_id
+                old2new[at_id] = new_at_id
+                new_at_id += 1
+            self.atoms = new_atoms
+
+        # Clean bonded structures.
+        self.bonds = {k: v for k, v in self.bonds.items() if atom_id not in k}
+        self.angles = {k: v for k, v in self.angles.items() if atom_id not in k}
+        self.dihedrals = {k: v for k, v in self.dihedrals.items() if atom_id not in k}
+        self.pairs = {k: v for k, v in self.pairs.items() if atom_id not in k}
+        self.cross_bonds = {k: v for k, v in self.cross_bonds.items() if atom_id not in k}
+        self.cross_angles = {k: v for k, v in self.cross_angles.items() if atom_id not in k}
+        self.cross_dihedrals = {k: v for k, v in self.cross_dihedrals.items() if atom_id not in k}
+        self.cross_pairs = {k: v for k, v in self.cross_pairs.items() if atom_id not in k}
+        self.improper_dihedrals = {k: v for k, v in self.improper_dihedrals.items() if atom_id not in k}
+
+        # And new_data
+        for k in self.new_data:
+            self.new_data[k] = {p: v for p, v in self.new_data[k].items() if atom_id not in p}
+
+
+    def renumber(self):
+        """Renumber topology"""
+        # Clean bonded structures.
+        old2new = {}
+        new_at_id = 1
+        new_atoms = {}
+        for at_id in sorted(self.atoms):
+            new_atoms[new_at_id] = self.atoms[at_id]
+            new_atoms[new_at_id].atom_id = new_at_id
+            old2new[at_id] = new_at_id
+            new_at_id += 1
+        self.atoms = new_atoms
+
+        self.bonds = {tuple(map(old2new.get, k)): v
+                      for k, v in self.bonds.items()}
+        self.angles = {tuple(map(old2new.get, k)): v
+                       for k, v in self.angles.items()}
+        self.dihedrals = {tuple(map(old2new.get, k)): v
+                          for k, v in self.dihedrals.items()}
+        self.pairs = {tuple(map(old2new.get, k)): v
+                      for k, v in self.pairs.items()}
+        self.cross_bonds = {tuple(map(old2new.get, k)): v
+                            for k, v in self.cross_bonds.items()}
+        self.cross_angles = {tuple(map(old2new.get, k)): v
+                             for k, v in self.cross_angles.items()}
+        self.cross_dihedrals = {tuple(map(old2new.get, k)): v
+                                for k, v in self.cross_dihedrals.items()}
+        self.cross_pairs = {tuple(map(old2new.get, k)): v
+                            for k, v in self.cross_pairs.items()}
+        self.improper_dihedrals = {tuple(map(old2new.get, k)): v
+                                   for k, v in self.improper_dihedrals.items()}
+
+        # And new_data
+        for k in self.new_data:
+            self.new_data[k] = {tuple(map(old2new.get, p)): v for p, v in self.new_data[k].items()}
+
     def read(self):
         """Reads the topology file."""
 
@@ -724,7 +826,6 @@ class GROMACSTopologyFile(TopologyFile):
 
         if at.chain_name not in self.chains:
             self.chains[at.chain_name] = collections.defaultdict(list)
-            self.chains_atoms[at.chain_name] = collections.defaultdict(dict)
             self.chain_atom_names[at.chain_name] = collections.defaultdict(list)
 
         self.chains[at.chain_name][at.chain_idx].append(at)

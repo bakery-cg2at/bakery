@@ -286,10 +286,6 @@ def main():  # NOQA
     traj_file.flush()
 
     ######### Now run backmapping.  #######################
-    if args.two_phase:
-        verletlistCG = tools_backmapping.setupFirstPhase(
-            system, args, input_conf, at_particle_ids, cg_particle_ids)
-
     has_capforce = False
     if args.cap_force > 0.0:
         has_capforce = True
@@ -305,6 +301,8 @@ def main():  # NOQA
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
     if args.two_phase:
+        verletlistCG = tools_backmapping.setupFirstPhase(
+            system, args, input_conf, at_particle_ids, cg_particle_ids)
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time):
             integrator.run(integrator_step)

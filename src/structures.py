@@ -28,6 +28,7 @@ import numpy as np
 import random
 import networkx
 import logging
+import sys
 
 __doc__ = "Data structures."""
 
@@ -52,7 +53,7 @@ CGMolecule = collections.namedtuple(
 logger = logging.getLogger()
 
 class CGFragment:
-    def __init__(self, cg_molecule, fragment_list, active_sites=None, charge_map=None):
+    def __init__(self, cg_molecule, fragment_list, active_sites=None, charge_map=None, as_remove=None):
         self.topology = cg_molecule.source_topology
         self.coordinate = cg_molecule.source_file
         self.fragment_list = fragment_list
@@ -60,6 +61,7 @@ class CGFragment:
         self.cg_molecule = cg_molecule
 
         self.charge_map = charge_map
+        self.active_sites_remove_map = as_remove
 
         # Select the set of atomistic coordinates.
         chains = self.coordinate.chains[cg_molecule.ident]
@@ -96,6 +98,7 @@ class CGFragment:
 
 class BackmapperSettings2:
     def __init__(self, input_xml):
+        self.res2atom = collections.defaultdict(list)
         self.cg_active_sites = collections.defaultdict(list)
         self.atom_id2fragment = {}
         self.atom_ids = []
@@ -105,6 +108,7 @@ class BackmapperSettings2:
         self.atom2cg = {}
         self.fragments = {}  # key-> molecule name, val-> dict
         self.mol_atomid_map = collections.defaultdict(dict)  # Map between old id and new id, divided into molecules.
+        self.mol_atomname_map = collections.defaultdict(dict)  # Map between old id and new id, divided into molecules.
         self.cg2atom = collections.defaultdict(list)
 
         self.global_graph = networkx.Graph()
@@ -244,8 +248,22 @@ class BackmapperSettings2:
                 for beads in cg_bead.findall('beads'):
                     degree = beads.attrib.get('degree', '*')
                     active_sites = beads.attrib.get('active_site')
+                    as_remove = {}
                     if active_sites:
-                        active_sites = active_sites.split()
+                        active_sites = map(str.strip, active_sites.split())
+                        tmp_as = [':'.join(x.split(':')[:2]) for x in active_sites]
+                        # Remove with active sites.
+                        removes = beads.findall('remove')
+                        for asr in removes:
+                            as_name = asr.attrib['active_site']
+                            if as_name not in tmp_as:
+                                raise RuntimeError(
+                                    'Defined <remove> entry for active_site {} but it\'s not on the list'.format(
+                                        as_name))
+                            beads_to_remove = asr.text
+                            if not beads_to_remove:
+                                raise RuntimeError('No beads to remove in active_site {}'.format(as_name))
+                            as_remove[as_name] = map(str.strip, asr.text.split())
                     bead_list = beads.text.split()
 
                     cm = beads.find('charge_map')
@@ -256,7 +274,9 @@ class BackmapperSettings2:
                             raise RuntimeError(
                                 'Number of entries in charge_map {} does not match number of beads {}'.format(
                                     len(charge_map), len(bead_list)))
-                    cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map)
+
+
+                    cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove)
                     self.fragments[cg_molecule.name][name][degree] = cg_fragment
 
     def prepare_hybrid(self):
@@ -292,6 +312,8 @@ class BackmapperSettings2:
             self.cg_new_id_old[cg_bead_id] = cg_id
             self.cg_old_new_id[cg_id] = cg_bead_id
 
+            self.atom_id2fragment[new_at_id] = cg_fragment
+
             self.global_graph.add_node(cg_bead_id, **cg_bead)
 
             # Change the mass of CG bead
@@ -317,14 +339,19 @@ class BackmapperSettings2:
                 )
                 outfile.atoms[new_at_id] = new_at_atom
                 self.global_graph.add_node(
-                    new_at_id, name=at.name, res_id=new_res_id,
-                    position=at.position + cg_com, chain_name=at.chain_name)
+                    new_at_id,
+                    name=at.name,
+                    res_id=new_res_id,
+                    position=at.position + cg_com,
+                    chain_name=at.chain_name)
 
                 # Set topology atom
                 topol_atom = copy.copy(cg_fragment.topology.chain_atom_names[at.chain_name][at.name][0])
                 if new_res_id not in self.mol_atomid_map[at.chain_name]:
                     self.mol_atomid_map[at.chain_name][new_res_id] = {}
+                    self.mol_atomname_map[at.chain_name][new_res_id] = {}
                 self.mol_atomid_map[at.chain_name][new_res_id][topol_atom.atom_id] = new_at_id
+                self.mol_atomname_map[at.chain_name][new_res_id][topol_atom.name] = new_at_id
 
                 if cg_fragment.charge_map:
                     topol_atom.charge = cg_fragment.charge_map[idx]
@@ -342,15 +369,17 @@ class BackmapperSettings2:
                 self.atom_ids.append(new_at_id)
                 self.atom2cg[new_at_id] = cg_bead_id
                 self.cg2atom[cg_bead_id].append(new_at_id)
+                self.res2atom[new_res_id].append(new_at_id)
 
                 new_at_id += 1
-        # Write the hybrid coordinate file.
+
         outfile.box = self.cg_coordinate.box
-        outfile.write(force=True)
 
         # Rebuild hybrid topology.
         self.rebuild_hybrid_topology()
         self.hyb_topology.write()
+        # Write the hybrid coordinate file.
+        outfile.write(force=True)
 
     def rebuild_hybrid_topology(self):
         """Regenerate the hybrid topology based on the new particle ids."""
@@ -436,40 +465,73 @@ class BackmapperSettings2:
         # Create the atomistic bonds across the coarse-grained beads.
         # We iterate over bonds in cg_graph and then generate the bonds.
         # At the level of topology, CG bonds are already defined.
-        global_degrees = networkx.degree(self.global_graph)
         at_cross_bonds = []
+        atoms_to_remove = []
+        progress_indc = 0.0
+        progress_indc_total = len(cg_cross_bonds)
         for b1, b2 in cg_cross_bonds:
             n1 = self.global_graph.node[b1]
             n2 = self.global_graph.node[b2]
             if n1['res_id'] != n2['res_id']:  # Cross bond between beads in different chains.
                 # Look for active sites on both CG molecules.
                 ats1, ats2 = None, None
-                for at, max_d in self.cg_active_sites[b1]:
-                    if global_degrees[at.atom_id] < max_d:
-                        ats1 = at
+                for at1, max_d1 in self.cg_active_sites[b1]:
+                    for at2, max_d2 in self.cg_active_sites[b2]:
+                        b1_key = '{}:{}'.format(at1.chain_name, at1.name)
+                        b2_key = '{}:{}'.format(at2.chain_name, at2.name)
+                        test_bond = self.bond_params.get(b1_key, {}).get(b2_key, None)
+                        if (test_bond and self.global_graph.has_node(at1.atom_id)
+                            and self.global_graph.has_node(at2.atom_id)):
+                            at1_deg = self.global_graph.degree()[at1.atom_id]
+                            at2_deg = self.global_graph.degree()[at2.atom_id]
+                            at_remove1 = self.atom_id2fragment[b1].active_sites_remove_map.get(b1_key)
+                            at_remove2 = self.atom_id2fragment[b2].active_sites_remove_map.get(b2_key)
+                            tmp_atoms_to_remove = []
+                            valid = True
+                            if at_remove1:
+                                for atr1 in at_remove1:
+                                    atr_chain_name, atr_name = atr1.split(':')[1], atr1.split(':')[2]
+                                    atr1_id = self.mol_atomname_map[atr_chain_name][at1.chain_idx][atr_name]
+                                    if not self.global_graph.has_node(atr1_id):
+                                        valid = False
+                                        break
+                                    tmp_atoms_to_remove.append(atr1_id)
+                                    if self.global_graph.has_edge(atr1_id, at1.atom_id):
+                                        at1_deg -= 1
+                            if at_remove2 and valid:
+                                for atr2 in at_remove2:
+                                    atr_chain_name, atr_name = atr2.split(':')[1], atr2.split(':')[2]
+                                    atr2_id = self.mol_atomname_map[atr_chain_name][at2.chain_idx][atr_name]
+                                    if not self.global_graph.has_node(atr2_id):
+                                        valid = False
+                                        break
+                                    tmp_atoms_to_remove.append(atr2_id)
+                                    if self.global_graph.has_edge(atr2_id, at2.atom_id):
+                                        at2_deg -= 1
+
+                            # Check the degree after update with virtual removing of atoms.
+                            if at1_deg < max_d1 and at2_deg < max_d2 and valid:
+                                # Found correct pair of active sites.
+                                ats1, ats2 = at1, at2
+                                atoms_to_remove.extend(tmp_atoms_to_remove)
+                                for ai in tmp_atoms_to_remove:
+                                    self.global_graph.remove_node(ai)
+                                break
+                    if ats1 is not None and ats2 is not None:
                         break
-                for at, max_d in self.cg_active_sites[b2]:
-                    if global_degrees[at.atom_id] < max_d:
-                        ats2 = at
-                        break
+
                 if ats1 is not None and ats2 is not None:
-                    # print global_degrees[b1], global_degrees[ats1.atom_id], ats1.name, ats1.chain_name
-                    # print global_degrees[b2], global_degrees[ats2.atom_id], ats2.name, ats2.chain_name
                     at_cross_bonds.append((ats1.atom_id, ats2.atom_id))
                     self.global_graph.add_edge(ats1.atom_id, ats2.atom_id)
-                    global_degrees = networkx.degree(self.global_graph)
                 else:
-                    as1 = [(x.name, x.chain_name, global_degrees[x.atom_id], d) for x, d in
-                           self.cg_active_sites[b1]]
-                    as2 = [(x.name, x.chain_name, global_degrees[x.atom_id], d) for x, d in
-                           self.cg_active_sites[b2]]
-                    print 'Bond:', b1, b2, ' new: ', b1, b2, ' deg1', global_degrees[b1], 'deg2', global_degrees[b2]
-                    print as1
-                    print as2
                     raise RuntimeError('Something is really wrong!')
+            sys.stdout.write('{} %\r'.format(100.0*(progress_indc/progress_indc_total)))
+            progress_indc += 1.0
+
         # Generate entries for AT cross bonds.
         print('Found {} atomistic cross bonds'.format(len(at_cross_bonds)))
         self._generate_atomistic_bonds(at_cross_bonds)
+        self._remove_atomistic_particles(atoms_to_remove)
 
     def _generate_atomistic_bonds(self, at_cross_bonds):
         """Generates parameters for atomistic bonds."""
@@ -529,3 +591,15 @@ class BackmapperSettings2:
         fout.writelines('\n'.join([' '.join(x) for x in sorted(missing_definitions)]))
         print('Wrote missing definitions in {}'.format(fout_filename))
         fout.close()
+
+    def _remove_atomistic_particles(self, atoms_to_remove):
+        """Update coordinate and topology file by removing atoms and renumbering"""
+        if atoms_to_remove:
+            print('Clean up atomistic particles after creating bonds, atoms to remove: {}'.format(len(atoms_to_remove)))
+            for at_id in atoms_to_remove:
+                print('Removing atom {}'.format(at_id))
+                self.hyb_topology.remove_atom(at_id, renumber=False)
+                self.hybrid_configuration['file'].remove_atom(at_id, renumber=False)
+            # Renumber data files
+            self.hyb_topology.renumber()
+            self.hybrid_configuration['file'].renumber()
