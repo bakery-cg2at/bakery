@@ -319,7 +319,7 @@ class GROFile(CoordinateFile):
                     at.position[2]
                     ))
 
-            output.append('%f %f %f' % tuple(self.box))
+            output.append('%f %f %f\n' % tuple(self.box))
             write_file_path = prepare_path(file_name if file_name else self.file_name)
             logger.info('Writing GRO file %s', write_file_path)
             output_file = open(write_file_path, 'w')
@@ -431,6 +431,7 @@ class PDBFile(CoordinateFile):
 
             output.append('TER')
             output.append('ENDMDL')
+            output.append('\n')
 
             write_file_path = prepare_path(file_name if file_name else self.file_name)
             logger.info('Writing PDB file %s', write_file_path)
