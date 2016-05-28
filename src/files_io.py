@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 I/O library. Handles opening and writing different files."""
 
 import collections
+import copy
 import logging
 import os
 
@@ -58,7 +59,7 @@ class TopoAtom(object):
         self.chain_idx = chain_idx
         self.chain_name = chain_name
         self.name = name
-        self.chnr = cgnr
+        self.cgnr = cgnr
         self.charge = charge
         self.mass = mass
         self.active_site = active_site
@@ -99,21 +100,19 @@ def prepare_path(file_path):
 
 class CoordinateFile(object):
     """Coordinate file object."""
-
-    content = None
-    box = None
-    data = None
-    scale_factor = 1.0
-    file = None
-    atoms = {}
-    fragments = collections.defaultdict(dict)
-
     def __init__(self, file_name):
         self.file_name = file_name
         self.title = None
         self.atoms_updated = False
         self.atoms = {}
+        self.chains = {}
+        self.content = None
+        self.box = None
+        self.data = None
+        self.scale_factor = 1.0
+        self.file = None
         self.fragments = collections.defaultdict(dict)
+        self.id_map = {}
 
     def init(self):
         self.__init__(self.file_name)
@@ -188,9 +187,6 @@ class TopologyFile(object):
 
 
 class GROFile(CoordinateFile):
-    scale_factor = 1.0
-    chains = {}
-
     def read(self):
         """Reads the .gro file and return the atom list.
 
@@ -212,7 +208,7 @@ class GROFile(CoordinateFile):
             chain_name = line[5:10].strip()
             at_name = line[10:15].strip()
             at_id = int(line[15:20].strip())
-            # Nedd to rescale.
+            # Need to rescale.
             pos_x = float(line[20:28].strip()) * self.scale_factor
             pos_y = float(line[28:36].strip()) * self.scale_factor
             pos_z = float(line[36:44].strip()) * self.scale_factor
@@ -236,6 +232,63 @@ class GROFile(CoordinateFile):
         self.box = numpy.array(
             map(float, filter(None, self.content[number_of_atoms + 2].split(' ')))
             ) * self.scale_factor
+
+    def remove_atom(self, atom_id, renumber=True):
+        """Remove atom and renumber the file."""
+        atom_to_remove = self.atoms[atom_id]
+        try:
+            del self.fragments[atom_to_remove.chain_name][atom_to_remove.name]
+            del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
+        except KeyError:
+            pass
+        del self.atoms[atom_id]
+
+        if renumber:
+            new_at_id = 1
+            new_atoms = {}
+            for at_id in self.atoms:
+                new_atoms[new_at_id] = self.atoms[at_id]._replace(atom_id=new_at_id)
+                new_at_id += 1
+            self.atoms = new_atoms
+
+    def renumber(self):
+        """Renumber atoms with new id"""
+        new_at_id = 1
+        new_atoms = {}
+        for at_id in self.atoms:
+            new_atoms[new_at_id] = self.atoms[at_id]._replace(atom_id=new_at_id)
+            new_at_id += 1
+        self.atoms = new_atoms
+
+
+    @staticmethod
+    def copy(input_gro, particle_ids=None, renumber=False):
+        """Make copy of GROFile."""
+        output_gro = GROFile(input_gro.file_name)
+        output_gro.box = input_gro.box
+        output_gro.title = input_gro.title
+        output_gro.id_map = {}
+        if particle_ids:
+            if renumber:
+                new_pid = 1
+                for pid in particle_ids:
+                    at = input_gro.atoms[pid]
+                    output_gro.id_map[new_pid] = pid
+                    output_gro.atoms[new_pid] = Atom(
+                        atom_id=new_pid,
+                        name=at.name,
+                        chain_name=at.chain_name,
+                        chain_idx=at.chain_idx,
+                        position=at.position
+                    )
+                    new_pid += 1
+            else:
+                for pid in particle_ids:
+                    output_gro.atoms[pid] = copy.copy(input_gro.atoms[pid])
+                    output_gro.id_map[pid] = pid
+        else:
+            output_gro.atoms = copy.copy(input_gro.atoms)
+        return output_gro
 
     def write(self, file_name=None, force=False):
         """Writes the content to the output file.
@@ -274,6 +327,28 @@ class GROFile(CoordinateFile):
             output_file.writelines('\n'.join(output))
             output_file.close()
             self.atoms_updated = False
+
+    def update_positions(self, system, use_id_map=False):
+        """Update positions."""
+        for at_id in self.atoms:
+            p = system.storage.getParticle(self.id_map[at_id])
+            old_atom = self.atoms[at_id]
+            self.atoms[at_id] = old_atom._replace(position=p.pos)
+
+    def dump(self, system, filename, particle_ids, chain_name, chain_idx, atom_name):
+        """Dump data from storage."""
+        for at_id in particle_ids:
+            p = system.storage.getParticle(p)
+            self.atoms[at_id] = Atom(
+                atom_id=at_id,
+                name=atom_name[at_id],
+                chain_name=chain_name[at_id],
+                chain_idx=chain_idx[at_id],
+                position=p.pos
+            )
+        self.title = 'XXX'
+        self.box = system.bc.boxL
+        self.write(filename, force=True)
 
 
 class PDBFile(CoordinateFile):
@@ -384,7 +459,11 @@ class GROMACSTopologyFile(TopologyFile):
             'angles': self._parse_angles,
             'moleculetype': self._parse_moleculetype,
             'system': self._parse_system,
-            'molecules': self._parse_molecules
+            'molecules': self._parse_molecules,
+            'atomtypes': self._parse_atomtypes,
+            'bondtypes': self._parse_bondtypes,
+            'angletypes': self._parse_angletypes,
+            'dihedraltypes': self._parse_dihedraltypes
             }
 
         self.writers = {
@@ -393,6 +472,9 @@ class GROMACSTopologyFile(TopologyFile):
             'system': self._write_system,
             'molecules': self._write_molecules,
             'atomtypes': self._write_atomtypes,
+            'bondtypes': self._write_bondtypes,
+            'angletypes': self._write_angletypes,
+            'dihedraltypes': self._write_dihedraltypes,
             'atoms': self._write_atoms,
             'bonds': self._write_bonds,
             'angles': self._write_angles,
@@ -409,6 +491,9 @@ class GROMACSTopologyFile(TopologyFile):
             }
         self.current_charges = {}
         self.atomtypes = {}
+        self.bondtypes = {}
+        self.angletypes = {}
+        self.dihedraltypes = {}
         self.header_section = []
         self.defaults = None
         self.moleculetype = {}
@@ -438,7 +523,7 @@ class GROMACSTopologyFile(TopologyFile):
                 at_id,
                 name=g_at.name,
                 res_id=g_at.chain_idx,
-                position=None,
+                position=(-1, -1, -1),
                 chain_name=g_at.chain_name)
 
         for (b1, b2), params in self.bonds.iteritems():
@@ -466,6 +551,82 @@ class GROMACSTopologyFile(TopologyFile):
         for k, v in pdbfile.atoms.iteritems():
             self.atoms[k].position = v.position
 
+    def remove_atom(self, atom_id, renumber=True):
+        """Removes atom from topology and clean data structures."""
+
+        atom_to_remove = self.atoms[atom_id]
+        try:
+            self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx].remove(atom_to_remove)
+            self.chain_atom_names[atom_to_remove.chain_name][atom_to_remove.name].remove(atom_to_remove)
+        except KeyError:
+            pass
+        del self.atoms[atom_id]
+
+        # Renumber data.
+        old2new = {k: k for k in self.atoms}
+        if renumber:
+            new_at_id = 1
+            old2new = {}
+            new_atoms = {}
+            for at_id in sorted(self.atoms):
+                new_atoms[new_at_id] = self.atoms[at_id]
+                new_atoms[new_at_id].atom_id = new_at_id
+                old2new[at_id] = new_at_id
+                new_at_id += 1
+            self.atoms = new_atoms
+
+        # Clean bonded structures.
+        self.bonds = {k: v for k, v in self.bonds.items() if atom_id not in k}
+        self.angles = {k: v for k, v in self.angles.items() if atom_id not in k}
+        self.dihedrals = {k: v for k, v in self.dihedrals.items() if atom_id not in k}
+        self.pairs = {k: v for k, v in self.pairs.items() if atom_id not in k}
+        self.cross_bonds = {k: v for k, v in self.cross_bonds.items() if atom_id not in k}
+        self.cross_angles = {k: v for k, v in self.cross_angles.items() if atom_id not in k}
+        self.cross_dihedrals = {k: v for k, v in self.cross_dihedrals.items() if atom_id not in k}
+        self.cross_pairs = {k: v for k, v in self.cross_pairs.items() if atom_id not in k}
+        self.improper_dihedrals = {k: v for k, v in self.improper_dihedrals.items() if atom_id not in k}
+
+        # And new_data
+        for k in self.new_data:
+            self.new_data[k] = {p: v for p, v in self.new_data[k].items() if atom_id not in p}
+
+
+    def renumber(self):
+        """Renumber topology"""
+        # Clean bonded structures.
+        old2new = {}
+        new_at_id = 1
+        new_atoms = {}
+        for at_id in sorted(self.atoms):
+            new_atoms[new_at_id] = self.atoms[at_id]
+            new_atoms[new_at_id].atom_id = new_at_id
+            old2new[at_id] = new_at_id
+            new_at_id += 1
+        self.atoms = new_atoms
+
+        self.bonds = {tuple(map(old2new.get, k)): v
+                      for k, v in self.bonds.items()}
+        self.angles = {tuple(map(old2new.get, k)): v
+                       for k, v in self.angles.items()}
+        self.dihedrals = {tuple(map(old2new.get, k)): v
+                          for k, v in self.dihedrals.items()}
+        self.pairs = {tuple(map(old2new.get, k)): v
+                      for k, v in self.pairs.items()}
+        self.cross_bonds = {tuple(map(old2new.get, k)): v
+                            for k, v in self.cross_bonds.items()}
+        self.cross_angles = {tuple(map(old2new.get, k)): v
+                             for k, v in self.cross_angles.items()}
+        self.cross_dihedrals = {tuple(map(old2new.get, k)): v
+                                for k, v in self.cross_dihedrals.items()}
+        self.cross_pairs = {tuple(map(old2new.get, k)): v
+                            for k, v in self.cross_pairs.items()}
+        self.improper_dihedrals = {tuple(map(old2new.get, k)): v
+                                   for k, v in self.improper_dihedrals.items()}
+
+        # And new_data
+        for k in self.new_data:
+            self.new_data[k] = {tuple(map(old2new.get, p)): v for p, v in self.new_data[k].items()}
+
     def read(self):
         """Reads the topology file."""
 
@@ -484,6 +645,8 @@ class GROMACSTopologyFile(TopologyFile):
             line = line.strip()
             if line.startswith(';') or line.startswith('#') or len(line) == 0:
                 continue
+            elif 'include' in line:
+                self.header_section.append(line.strip())
             elif line.startswith('['):  # Section
                 previous_section = section_name
                 section_name = line.replace('[', '').replace(']', '').strip()
@@ -524,6 +687,12 @@ class GROMACSTopologyFile(TopologyFile):
                 sections.append('defaults')
             if self.atomtypes:
                 sections.append('atomtypes')
+            if self.bondtypes:
+                sections.append('bondtypes')
+            if self.angletypes:
+                sections.append('angletypes')
+            if self.dihedraltypes:
+                sections.append('dihedraltypes')
             sections.extend([
                 'moleculetype',
                 'atoms',
@@ -580,6 +749,68 @@ class GROMACSTopologyFile(TopologyFile):
         self.bonds_def[atom_tuple[0]].add(atom_tuple[1])
         self.bonds_def[atom_tuple[1]].add(atom_tuple[0])
 
+    def _parse_atomtypes(self, raw_data):
+        name, mass, charge, at_type, sigma, epsilon = raw_data
+        self.atomtypes[name] = {
+            'name': name,
+            'mass': mass,
+            'charge': charge,
+            'type': at_type,
+            'sigma': sigma,
+            'epsilon': epsilon
+        }
+
+    def _parse_bondtypes(self, raw_data):
+        i, j = raw_data[:2]
+        if i not in self.bondtypes:
+            self.bondtypes[i] = {}
+        if j not in self.bondtypes:
+            self.bondtypes[j] = {}
+
+        self.bondtypes[i][j] = {
+            'func': int(raw_data[2]),
+            'params': raw_data[3:]
+        }
+        self.bondtypes[j][i] = self.bondtypes[i][j]
+
+    def _parse_angletypes(self, raw_data):
+        i, j, k = raw_data[:3]
+        if i not in self.angletypes:
+            self.angletypes[i] = {}
+        if j not in self.angletypes[i]:
+            self.angletypes[i][j] = {}
+        if k not in self.angletypes:
+            self.angletypes[k] = {}
+        if j not in self.angletypes[k]:
+            self.angletypes[k][j] = {}
+
+        self.angletypes[i][j][k] = {
+            'func': int(raw_data[3]),
+            'params': raw_data[4:]
+        }
+        self.angletypes[k][j][i] = self.angletypes[i][j][k]
+
+    def _parse_dihedraltypes(self, raw_data):
+        i, j, k, l = raw_data[:4]
+        if i not in self.dihedraltypes:
+            self.dihedraltypes[i] = {}
+        if j not in self.dihedraltypes[i]:
+            self.dihedraltypes[i][j] = {}
+        if k not in self.dihedraltypes[i][j]:
+            self.dihedraltypes[i][j][k] = {}
+        if l not in self.dihedraltypes:
+            self.dihedraltypes[l] = {}
+        if k not in self.dihedraltypes[l]:
+            self.dihedraltypes[l][k] = {}
+        if j not in self.dihedraltypes[l][k]:
+            self.dihedraltypes[l][k][j] = {}
+
+        self.dihedraltypes[i][j][k][l] = {
+            'func': int(raw_data[4]),
+            'params': raw_data[5:]
+        }
+        self.dihedraltypes[l][k][j][i] = self.dihedraltypes[i][j][k][l]
+
     def _parse_atoms(self, raw_data):
         at = TopoAtom()
         at.atom_id = int(raw_data[0])
@@ -596,7 +827,6 @@ class GROMACSTopologyFile(TopologyFile):
 
         if at.chain_name not in self.chains:
             self.chains[at.chain_name] = collections.defaultdict(list)
-            self.chains_atoms[at.chain_name] = collections.defaultdict(dict)
             self.chain_atom_names[at.chain_name] = collections.defaultdict(list)
 
         self.chains[at.chain_name][at.chain_idx].append(at)
@@ -668,6 +898,32 @@ class GROMACSTopologyFile(TopologyFile):
         for atom_type, values in self.atomtypes.iteritems():
             return_data.append('{name} {mass} {charge} {type} {sigma} {epsilon}'.format(
                 **values))
+        return return_data
+
+    def _write_bondtypes(self):
+        return_data = []
+        for i in self.bondtypes:
+            for j, params in self.bondtypes[i].items():
+                return_data.append('{} {} {} {}'.format(i, j, params['func'], ' '.join(params['params'])))
+        return return_data
+
+    def _write_angletypes(self):
+        return_data = []
+        for i in self.angletypes:
+            for j in self.angletypes[i]:
+                for k, params in self.angletypes[i][j].items():
+                    return_data.append('{} {} {} {} {}'.format(
+                        i, j, k, params['func'], ' '.join(params['params'])))
+        return return_data
+
+    def _write_dihedraltypes(self):
+        return_data = []
+        for i in self.dihedraltypes:
+            for j in self.dihedraltypes[i]:
+                for k in self.dihedraltypes[i][j]:
+                    for l, params in self.dihedraltypes[i][j][k].items():
+                        return_data.append('{} {} {} {} {} {}'.format(
+                            i, j, k, l, params['func'], ' '.join(params['params'])))
         return return_data
 
     def _write_bonds(self):  # pylint:disable=R0201
@@ -750,6 +1006,7 @@ class GROMACSTopologyFile(TopologyFile):
 class LammpsReader(object):
     """Very simple LAMMPS data file and input parser."""
     def __init__(self):
+        self.atom_charges = {}
         self.data_parsers = {
             'Atoms': self._read_atom,
             'Velocities': self._read_velocity,
@@ -763,7 +1020,7 @@ class LammpsReader(object):
         }
         self.force_field = collections.defaultdict(dict)
         self.init()
-        # We shift box to the origin and we need to do the same with atom position.
+        # We shift box to the origin and we need to do the same with the atom position.
         self._box_translate = {}
 
     def init(self):
@@ -801,8 +1058,8 @@ class LammpsReader(object):
 
         with open(file_name, 'r') as f:
             for line in f:
-                line = line.strip()
-                if not line:
+                line = line.strip().split('#')[0]
+                if not line or line.startswith('#'):
                     continue
                 section_line = line.split('#')[0].strip()
                 if section_line in self.data_parsers:
@@ -828,11 +1085,12 @@ class LammpsReader(object):
         """
         with open(file_name, 'r') as f:
             for line in f:
-                line = line.strip()
-                if not line:  # skip empty lines
+                line = line.split('#')[0].strip()
+                if not line or line.startswith('#'):  # skip empty lines
                     continue
                 if '_style' in line:
                     sp_line = line.split()
+                    print('Reads  {}'.format(sp_line[0]))
                     self.force_field[sp_line[0]] = sp_line[1:]
                 elif 'bond_coeff' in line or 'angle_coeff' in line or 'dihedral_coeff' in line:
                     sp_line = line.split()
@@ -851,6 +1109,11 @@ class LammpsReader(object):
                     self.units = line.split()[1]
                     if self.units == 'real':
                         self.distance_scale_factor = 10**-1
+                elif 'read_data' in line:
+                    sp_line = line.split()
+                    data_file = sp_line[1].strip()
+                    print('Reads data file: {}'.format(data_file))
+                    self.read_data(data_file)
 
     def update_atoms(self, file_name):
         """Reads LAMMPS data file and updates only atom section.
@@ -868,7 +1131,7 @@ class LammpsReader(object):
                     self.previous_section = self.current_section
                     self.current_section = section_line
                     if section_line == 'Atoms':
-                        print('Found "Atoms" section, updating atoms')
+                        print('{}: Found "Atoms" section, updating atoms'.format(file_name))
                 elif self.current_section is not None and self.current_section == 'Atoms':
                     self._read_atom(line, update=True)
                 else:
