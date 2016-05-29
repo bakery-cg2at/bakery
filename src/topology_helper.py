@@ -114,6 +114,7 @@ class FileBuffer():
 
     def appendline(self, line):
         self.lines.append(line)
+        self.linecount = len(self.lines)
 
     def readline(self):
         try:
@@ -135,6 +136,9 @@ class FileBuffer():
 
     def tell(self):
         return self.pos
+
+    def eof(self):
+        return self.pos == len(self.lines)
 
 
 def FillFileBuffer(fname, filebuffer, cwd=None, defines=None):

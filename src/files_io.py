@@ -146,8 +146,6 @@ class TopologyFile(object):
 
         # chain_name -> {chain_idx -> [at1, at2...]}
         self.chains = {}  # chain_name -> {chain_idx: [at]}
-        # chain_name -> {chain_idx -> {atom_name -> atom}}
-        self.chains_atoms = {}  # chain_name -> {chain_idx: {at.name: at}}
         # chain_name -> {atom_name -> [at1, at2, ...]}
         self.chain_atom_names = {}  # chain_name -> {name: [at]}
         # Chain neighbours.
@@ -320,7 +318,7 @@ class GROFile(CoordinateFile):
                     at.position[2]
                     ))
 
-            output.append('%f %f %f' % tuple(self.box))
+            output.append('%f %f %f\n' % tuple(self.box))
             write_file_path = prepare_path(file_name if file_name else self.file_name)
             logger.info('Writing GRO file %s', write_file_path)
             output_file = open(write_file_path, 'w')
@@ -432,6 +430,7 @@ class PDBFile(CoordinateFile):
 
             output.append('TER')
             output.append('ENDMDL')
+            output.append('\n')
 
             write_file_path = prepare_path(file_name if file_name else self.file_name)
             logger.info('Writing PDB file %s', write_file_path)
@@ -1322,7 +1321,9 @@ def read_coordinates(file_name):
         'gro': GROFile
         }
     file_suffix = file_name.split('.')[-1]
-    return file_suffix_class[file_suffix](file_name)
+    f = file_suffix_class[file_suffix](file_name)
+    f.read()
+    return f
 
 
 def read_topology(file_name, settings):
