@@ -1,0 +1,39 @@
+<cg_configuration>
+    <type2chain>
+        0:MOL:MA
+        1:MOL:MB
+        2:MOL:ML
+        3:MOL:PA
+        4:MOL:PB
+        5:MOL:PL
+        6:MOL:RA
+        7:MOL:RB
+    </type2chain>
+    <name_seq seq="0 2 1 1" chain_name="MOL" res_name="N3T">
+        A0 LI B1 B2
+    </name_seq>
+    <name_seq seq="3 5 4 7" chain_name="MOL" res_name="N2T">
+        A1 PI PB1 RB2
+    </name_seq>
+    <name_seq seq="3 5 7 4" chain_name="MOL" res_name="N1T">
+        A1 PI RB1 PB2
+    </name_seq>
+    <name_seq seq="3 5 7 7" chain_name="MOL" res_name="N1L">
+        A1 PI RB1 RB2
+    </name_seq>
+    <name_seq seq="6 5 4 4" chain_name="MOL" res_name="N2L">
+        RA0 PI PB1 PB2
+    </name_seq>
+    <name_seq seq="6 5 7 4" chain_name="MOL" res_name="N3L">
+        RA0 PI RB1 PB2
+    </name_seq>
+    <name_seq seq="6 5 4 7" chain_name="MOL" res_name="N4L">
+        RA0 PI PB1 RB2
+    </name_seq>
+    <name_seq seq="6 5 7 7" chain_name="MOL" res_name="N2D">
+        RA0 PI RB1 RB2
+    </name_seq>
+    <molecule_type name="MOL" nrexcl="3" nrmols="1" size="4"/>
+
+    <h5md atom_groups="atoms" connection_groups="bonds, chem_bonds_0"/>
+</cg_configuration>
