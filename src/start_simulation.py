@@ -26,12 +26,11 @@ except ImportError:
 import time
 import logging
 import random
-import shutil
 
 import numpy as np
-import tools_sim as tools
-import tools as general_tools
 import gromacs_topology
+
+from app_args import _args_md
 
 # GROMACS units, kJ/mol K
 kb = 0.0083144621
@@ -53,9 +52,9 @@ def sort_trajectory(trj, ids):
 
 
 def main():  #NOQA
-    args = tools._args_md().parse_args()
+    args = _args_md().parse_args()
 
-    tools._args_md().save_to_file('{}params.out'.format(args.output_prefix), args)
+    _args_md().save_to_file('{}params.out'.format(args.output_prefix), args)
 
     if args.debug:
         for s in args.debug.split(','):
@@ -192,11 +191,14 @@ def main():  #NOQA
         system, input_conf.dihedraltypes, input_conf.dihedraltypeparams)
     pairinteractions = gromacs_topology.setPairInteractions(
         system, input_conf.pairtypes, input_conf.pairtypeparams, lj_cutoff)
-    gromacs_topology.setCoulombInteractions(
-        system, verletlist, lj_cutoff, input_conf.atomtypeparams,
+    coulomb_interaction = gromacs_topology.setCoulombInteractions(
+        system, verletlist, args.coulomb_cutoff, input_conf.atomtypeparams,
         epsilon1=args.coulomb_epsilon1,
         epsilon2=args.coulomb_epsilon2,
         kappa=args.coulomb_kappa)
+
+    if coulomb_interaction: 
+        system.addInteraction(coulomb_interaction, 'coulomb')
 
     print('Bonds: {}'.format(sum(len(x) for x in input_conf.bondtypes.values())))
     print('Angles: {}'.format(sum(len(x) for x in input_conf.angletypes.values())))
@@ -205,7 +207,7 @@ def main():  #NOQA
 
 # Define the thermostat
     temperature = args.temperature*kb
-    print('Temperature: {}, gamma: {}'.format(temperature, args.thermostat_gamma))
+    print('Temperature: {} ({}), gamma: {}'.format(temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
     if args.thermostat == 'lv':
         thermostat = espressopp.integrator.LangevinThermostat(system)
@@ -240,7 +242,6 @@ def main():  #NOQA
     system.storage.decompose()
 
     # Observe tuple lists
-    print('Setup DynamicExcludeList')
     energy_file = '{}_energy_{}.csv'.format(args.output_prefix, rng_seed)
     print('Energy saved to: {}'.format(energy_file))
     system_analysis = espressopp.analysis.SystemMonitor(
@@ -272,15 +273,13 @@ def main():  #NOQA
         store_state=args.store_state,
         store_lambda=args.store_lambda)
 
-    traj_file.set_parameters({
-        'temperature': args.temperature})
+    traj_file.set_parameters({'temperature': args.temperature})
 
     print('Reset total velocity')
     total_velocity = espressopp.analysis.TotalVelocity(system)
     total_velocity.reset()
 
     integrator.step = args.initial_step
-    traj_file.dump(integrator.step, integrator.step*dt)
 
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
     k_energy_collect = int(math.ceil(float(args.energy_collect) / integrator_step))
@@ -289,15 +288,11 @@ def main():  #NOQA
     print('Collect trajectory every {} step'.format(k_trj_collect*integrator_step))
     print('Collect energy every {} step'.format(k_energy_collect*integrator_step))
 
-    system_analysis.dump()
-    system_analysis.info()
-
     if args.interactive:
         import IPython
         IPython.embed()
 
     for k in range(sim_step):
-        integrator.run(integrator_step)
         if k_energy_collect > 0 and k % k_energy_collect == 0:
             system_analysis.info()
         if k_trj_collect > 0 and k % k_trj_collect == 0:
@@ -305,6 +300,7 @@ def main():  #NOQA
             traj_file.dump(int_step, int_step*dt)
         if k_trj_collect > 0 and k % 100 == 0:
             traj_file.flush()
+        integrator.run(integrator_step)
     else:
         traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*dt)
         traj_file.close()

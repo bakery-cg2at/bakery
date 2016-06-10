@@ -52,7 +52,8 @@ class TopoAtom(object):
     mass = None
     active_site = None
 
-    def __init__(self, atom_id=None, atom_type=None, chain_idx=None, chain_name=None, name=None,
+    def __init__(self, atom_id=None, atom_type=None, chain_idx=None,
+                 chain_name=None, name=None,
                  cgnr=None, charge=None, mass=None, active_site=None):
         self.atom_id = atom_id
         self.atom_type = atom_type
@@ -1153,8 +1154,8 @@ class LammpsReader(object):
             Each of edges has attribute `bond_type` with a number that corresponds to bond type
             in force field data.
         """
-        type2chain_name = settings.cg_configuration['LAMMPS']['type2chain']
-        name_seq = settings.cg_configuration['LAMMPS']['name_seq']
+        type2chain_name = settings.type2chain
+        name_seq = settings.name_seq
         output_graph = networkx.Graph(box=(self.box['x'], self.box['y'], self.box['z']))
         seq_idx = {k: 0 for k in name_seq}
         for at_id, lmp_at in self.atoms.iteritems():

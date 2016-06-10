@@ -1,5 +1,5 @@
 """
-Copyright (C) 2014-2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2016 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is part of Backmapper.
 
@@ -16,29 +16,3 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-import argparse
-import structures
-
-__doc__ = 'Prepare step of bakery'
-
-
-def _args():
-    parser = argparse.ArgumentParser(
-        description='Prepares hybrid coordinate and topology files.',
-        add_help=True)
-
-    parser.add_argument('--options', help='XML options file', required=True)
-
-    return parser
-
-
-def main():
-    args = _args().parse_args()
-    bck_settings = structures.BackmapperSettings2(args.options)
-
-    bck_settings.prepare_hybrid()
-
-
-if __name__ == '__main__':
-    main()
