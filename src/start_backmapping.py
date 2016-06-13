@@ -195,14 +195,18 @@ def main():  # NOQA
         temperature = args.temperature * kb
     print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
-    if args.thermostat_whole:
-        print('Enable thermostat on all particles, not only atomistic')
-        thermostat = espressopp.integrator.LangevinThermostat(system)
-    else:
-        thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
-    thermostat.temperature = temperature
-    thermostat.gamma = args.thermostat_gamma
-    integrator.addExtension(thermostat)
+    if args.thermostat == 'lv':
+        if args.thermostat_whole:
+            print('Enable thermostat on all particles, not only atomistic')
+            thermostat = espressopp.integrator.LangevinThermostat(system)
+        else:
+            thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
+        thermostat.temperature = temperature
+        thermostat.gamma = args.thermostat_gamma
+    elif args.thermostat == 'vr':
+        thermostat = espressopp.integrator.StochasticVelocityRescaling(system)
+        thermostat.temperature = temperature
+        thermostat.coupling = args.thermostat_gamma
 
     print("Added tuples, decomposing now ...")
 
