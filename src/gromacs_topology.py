@@ -437,9 +437,7 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
             # find and store bonds
             bonds = storeBonds(f, at_types, bondtypes, bondtypeparams, bonds,
                                num_atoms_molecule, num_molecule_copies,
-                               molstartindex, exclusions, nrexcl,
-                               attypeid_atnum,
-                               doRegularExcl)
+                               molstartindex, attypeid_atnum)
             # find and store angles
             angles = storeAngles(f, at_types, angletypes, angletypeparams, angles,
                                  num_atoms_molecule, num_molecule_copies, molstartindex,
@@ -453,8 +451,7 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
                                    atomtypeparams, pairs_1_4,
                                    num_atoms_molecule, num_molecule_copies,
                                    molstartindex)
-            if doRegularExcl:
-                storeExclusions(exclusions, nrexcl, bonds, angles, dihedrals)
+            storeExclusions(exclusions, nrexcl, bonds)
 
             molstartindex += num_molecule_copies * num_atoms_molecule
             res_idx += num_molecule_copies
@@ -466,10 +463,6 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
     angletypeparams = {k: v for k, v in angletypeparams.iteritems() if k in use_keys}
     use_keys = [s[0] for s in dihedrals]
     dihedraltypeparams = {k: v for k, v in dihedraltypeparams.iteritems() if k in use_keys}
-
-    params = []
-
-    unpackvars = []
 
     # The data is packed into a touple, unpackvars contains a string which
     # tells the user which kind of data was read.
@@ -693,8 +686,7 @@ def storePairs(f, defaults, types, pairtypeparams,
 
 
 def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
-               num_molecule_copies, molstartindex, exclusions, nregxcl, attypeid_atnum,
-               doRegularExcl=True):
+               num_molecule_copies, molstartindex, attypeid_atnum):
     line = ''
     bonds_tmp = []
     top = False
@@ -759,20 +751,14 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
     return bonds
 
 
-def storeExclusions(exclusions, nrexcl, bonds, angles, dihedrals):
+def storeExclusions(exclusions, nrexcl, bonds):
     print('Processing exclusion lists for nrexcl={}'.format(nrexcl))
     if nrexcl > 3:
         raise RuntimeError('Currently nrexcl > 3 is not supported')
-    excl2list = {
-        1: [bonds],
-        2: [bonds, angles],
-        3: [bonds, angles, dihedrals]
-    }
 
-    for l in excl2list[nrexcl]:
-        for a in l.values():
-            for t in a:
-                exclusions.add(tuple(sorted([t[0], t[-1]])))
+    exclusions = GenerateRegularExclusions(bonds, nrexcl, exclusions)
+
+    return exclusions
 
 
 def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecule, num_molecule_copies, molstartindex,

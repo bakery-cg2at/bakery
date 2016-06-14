@@ -103,7 +103,7 @@ def main():  # NOQA
     at_gro_conf = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p[1:]], renumber=True)
     gro_whole = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p], renumber=True)
 
-    # Generate initial velocities, only for CG particles.
+    # Generate initial velocities, only for CG particles, AT particles will get the CG particle velocity.
     particle_list = []
     index_adrat = part_prop.index('adrat')
     if 'v' not in part_prop:
@@ -112,7 +112,9 @@ def main():  # NOQA
         part_prop.append('v')
         cg_particles = [x for x in all_particles if x.adrat == 0]
         vx, vy, vz = espressopp.tools.velocities.gaussian(
-            args.temperature, len(cg_particles), [x.mass for x in cg_particles],
+            args.temperature,
+            len(cg_particles),
+            [x.mass for x in cg_particles],
             kb=kb)
         cg_id = 0
         last_vel = (0.0, 0.0, 0.0)
@@ -191,8 +193,7 @@ def main():  # NOQA
         system, args, input_conf, at_particle_ids, cg_particle_ids)
 
     # Define the thermostat
-    if args.temperature:
-        temperature = args.temperature * kb
+    temperature = args.temperature * kb
     print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
     if args.thermostat == 'lv':

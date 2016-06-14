@@ -241,8 +241,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
         return props, particle_list
 
 
-def setBondedInteractions(system, input_conf, force_static=False, only_at=False,
-                          only_cg=None):
+def setBondedInteractions(system, input_conf, force_static=False, only_at=False, only_cg=None):
     ret_list = {}
     bonds = input_conf.bondtypes
     bondtypeparams = input_conf.bondtypeparams
