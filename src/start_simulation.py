@@ -68,7 +68,16 @@ def main():  #NOQA
     dt = args.dt
 
     time0 = time.time()
-    input_conf = gromacs_topology.read(args.conf, args.top)
+
+    generate_exclusions = args.exclusion_list is None
+
+    input_conf = gromacs_topology.read(args.conf, args.top, doRegularExcl=generate_exclusions)
+
+    if not generate_exclusions:
+        exclusion_file = open(args.exclusion_list, 'r')
+        exclusions = [map(int, x.split()) for x in exclusion_file.readlines()]
+        print('Read exclusion list from {} (total: {})'.format(args.exclusion_list, len(exclusions)))
+        input_conf = input_conf._replace(exclusions=exclusions)
 
     box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)
     print('Setup simulation...')

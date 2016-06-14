@@ -462,6 +462,7 @@ class BackmapperSettings2:
                     cg_cross_bonds.add(tuple(sorted([b1, b2])))
 
         print('Found {} bonds between coarse-grained beads'.format(len(cg_cross_bonds)))
+        print('Generating atomistic cross-bonds between coarse-grained beads; It will take a while...')
         # Create the atomistic bonds across the coarse-grained beads.
         # We iterate over bonds in cg_graph and then generate the bonds.
         # At the level of topology, CG bonds are already defined.
