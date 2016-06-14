@@ -103,6 +103,8 @@ def _args_md():
                         help='Store chemical state')
     parser.add_argument('--store_lambda', default=False, type=ast.literal_eval,
                         help='Store lambda parameter')
+    parser.add_argument('--exclusion_list', default=None,
+                        help='The exclusion list')
 
     return parser
 
