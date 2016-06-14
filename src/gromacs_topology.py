@@ -103,7 +103,7 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
     angles = {}  # dict: key angletype value: tuple of triples
     dihedrals = {}  # same...
     pairs_1_4 = {}  # dict: key pairtype value: tuple of pairs
-    exclusions = set()  # list of atom pairs no considered in non-bonded interactions
+    exclusions = []  # list of atom pairs no considered in non-bonded interactions
 
     defaults = {}  # gromacs default values
     atomtypeparams = {}  # a dict: key atomtypeid , value : class storing actual parameters of each type e.g. c6, c12, etc..
