@@ -60,9 +60,18 @@ def main():  # NOQA
     print('Welcome in bakery!\n')
 
     print('Reading hybrid topology and coordinate file')
-    input_conf = gromacs_topology.read(args.conf, args.top)
+
+    generate_exclusions = args.exclusion_list is None
+
+    input_conf = gromacs_topology.read(args.conf, args.top, doRegularExcl=generate_exclusions)
     input_gro_conf = files_io.GROFile(args.conf)
     input_gro_conf.read()
+
+    if not generate_exclusions:
+        exclusion_file = open(args.exclusion_list, 'r')
+        exclusions = [map(int, x.split()) for x in exclusion_file.readlines()]
+        print('Read exclusion list from {} (total: {})'.format(args.exclusion_list, len(exclusions)))
+        input_conf = input_conf._replace(exclusions=exclusions)
 
     box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)
     print('\nSetting up simulation...')

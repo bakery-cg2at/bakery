@@ -177,5 +177,7 @@ def _args_backmapping():
         help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--two_phase', default=False, type=ast.literal_eval,
                         help='Two phase process, first bonded terms and then non-bonded')
+    parser.add_argument('--exclusion_list', default=None,
+                        help='The exclusion list')
 
     return parser

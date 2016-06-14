@@ -532,6 +532,8 @@ class BackmapperSettings2:
         print('Found {} atomistic cross bonds'.format(len(at_cross_bonds)))
         self._generate_atomistic_bonds(at_cross_bonds)
         self._remove_atomistic_particles(atoms_to_remove)
+        # Generate exclusion list.
+        self._generate_exclusion_lists()
 
     def _generate_atomistic_bonds(self, at_cross_bonds):
         """Generates parameters for atomistic bonds."""
@@ -603,3 +605,24 @@ class BackmapperSettings2:
             # Renumber data files
             self.hyb_topology.renumber()
             self.hybrid_configuration['file'].renumber()
+
+    def _generate_exclusion_lists(self):
+        # Collect all bonds and greate global_graph again...
+        print('Generating exclusion lists, nrexcl={}'.format(self.hyb_topology.moleculetype['nrexcl']))
+        g = networkx.Graph()
+        bonds = [b for b in self.hyb_topology.bonds.keys()]
+        for k in self.hyb_topology.new_data:
+            if 'bonds' in k:
+                bonds.extend([b for b in self.hyb_topology.new_data[k]])
+        g.add_edges_from(bonds)
+        paths = networkx.all_pairs_shortest_path(g, int(self.hyb_topology.moleculetype['nrexcl']))
+        exclusions = set()
+        for l in paths.values():
+            for p in l.values():
+                if len(p) > 1:
+                    exclusions.add(tuple(sorted([p[0], p[-1]])))
+        output_filename = 'exclusion_{}.list'.format(self.hyb_topology.file_name.split('.')[0])
+        out_file = open(output_filename, 'w')
+        out_file.writelines('\n'.join(['{} {}'.format(*d) for d in exclusions]))
+        out_file.close()
+        print('Generated {} exclusions, writen to {}'.format(len(exclusions, output_filename)))

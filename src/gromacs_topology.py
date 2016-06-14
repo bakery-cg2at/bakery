@@ -451,7 +451,8 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
                                    atomtypeparams, pairs_1_4,
                                    num_atoms_molecule, num_molecule_copies,
                                    molstartindex)
-            storeExclusions(exclusions, nrexcl, bonds)
+            if doRegularExcl:
+                storeExclusions(exclusions, nrexcl, bonds)
 
             molstartindex += num_molecule_copies * num_atoms_molecule
             res_idx += num_molecule_copies
@@ -756,7 +757,9 @@ def storeExclusions(exclusions, nrexcl, bonds):
     if nrexcl > 3:
         raise RuntimeError('Currently nrexcl > 3 is not supported')
 
-    exclusions = GenerateRegularExclusions(bonds, nrexcl, exclusions)
+    bond_list = [x for p in bonds.values() for x in p]
+
+    exclusions = GenerateRegularExclusions(bond_list, nrexcl, exclusions)
 
     return exclusions
 
