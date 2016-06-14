@@ -387,6 +387,7 @@ def main():  # NOQA
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
+        integrator.run(integrator_step)
         global_int_step += 1
         if args.two_phase:
             system_analysis3.info()
