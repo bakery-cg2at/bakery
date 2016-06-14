@@ -531,7 +531,7 @@ class BackmapperSettings2:
         # Generate entries for AT cross bonds.
         print('Found {} atomistic cross bonds'.format(len(at_cross_bonds)))
         self._generate_atomistic_bonds(at_cross_bonds)
-        self._remove_atomistic_particles(atoms_to_remove)
+        self._remove_atomistic_particles(set(atoms_to_remove))
         # Generate exclusion list.
         self._generate_exclusion_lists()
 
@@ -598,10 +598,8 @@ class BackmapperSettings2:
         """Update coordinate and topology file by removing atoms and renumbering"""
         if atoms_to_remove:
             print('Clean up atomistic particles after creating bonds, atoms to remove: {}'.format(len(atoms_to_remove)))
-            for at_id in atoms_to_remove:
-                print('Removing atom {}'.format(at_id))
-                self.hyb_topology.remove_atom(at_id, renumber=False)
-                self.hybrid_configuration['file'].remove_atom(at_id, renumber=False)
+            self.hyb_topology.remove_atoms(atoms_to_remove, renumber=False)
+            self.hybrid_configuration['file'].remove_atoms(atoms_to_remove, renumber=False)
             # Renumber data files
             self.hyb_topology.renumber()
             self.hybrid_configuration['file'].renumber()
@@ -623,6 +621,6 @@ class BackmapperSettings2:
                     exclusions.add(tuple(sorted([p[0], p[-1]])))
         output_filename = 'exclusion_{}.list'.format(self.hyb_topology.file_name.split('.')[0])
         out_file = open(output_filename, 'w')
-        out_file.writelines('\n'.join(['{} {}'.format(*d) for d in exclusions]))
+        out_file.writelines('\n'.join(['{} {}'.format(*d) for d in sorted(exclusions)]))
         out_file.close()
-        print('Generated {} exclusions, writen to {}'.format(len(exclusions, output_filename)))
+        print('Generated {} exclusions, writen to {}'.format(len(exclusions), output_filename))

@@ -232,15 +232,16 @@ class GROFile(CoordinateFile):
             map(float, filter(None, self.content[number_of_atoms + 2].split(' ')))
             ) * self.scale_factor
 
-    def remove_atom(self, atom_id, renumber=True):
+    def remove_atoms(self, atom_ids, renumber=True):
         """Remove atom and renumber the file."""
-        atom_to_remove = self.atoms[atom_id]
-        try:
-            del self.fragments[atom_to_remove.chain_name][atom_to_remove.name]
-            del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
-        except KeyError:
-            pass
-        del self.atoms[atom_id]
+        for atom_id in atom_ids:
+            atom_to_remove = self.atoms[atom_id]
+            try:
+                del self.fragments[atom_to_remove.chain_name][atom_to_remove.name]
+                del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
+            except KeyError:
+                pass
+            del self.atoms[atom_id]
 
         if renumber:
             new_at_id = 1
@@ -551,19 +552,18 @@ class GROMACSTopologyFile(TopologyFile):
         for k, v in pdbfile.atoms.iteritems():
             self.atoms[k].position = v.position
 
-    def remove_atom(self, atom_id, renumber=True):
+    def remove_atoms(self, atom_ids, renumber=True):
         """Removes atom from topology and clean data structures."""
-
-        atom_to_remove = self.atoms[atom_id]
-        try:
-            self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx].remove(atom_to_remove)
-            self.chain_atom_names[atom_to_remove.chain_name][atom_to_remove.name].remove(atom_to_remove)
-        except KeyError:
-            pass
-        del self.atoms[atom_id]
+        for atom_id in atom_ids:
+            atom_to_remove = self.atoms[atom_id]
+            try:
+                self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx].remove(atom_to_remove)
+                self.chain_atom_names[atom_to_remove.chain_name][atom_to_remove.name].remove(atom_to_remove)
+            except KeyError:
+                pass
+            del self.atoms[atom_id]
 
         # Renumber data.
-        old2new = {k: k for k in self.atoms}
         if renumber:
             new_at_id = 1
             old2new = {}
@@ -576,19 +576,19 @@ class GROMACSTopologyFile(TopologyFile):
             self.atoms = new_atoms
 
         # Clean bonded structures.
-        self.bonds = {k: v for k, v in self.bonds.items() if atom_id not in k}
-        self.angles = {k: v for k, v in self.angles.items() if atom_id not in k}
-        self.dihedrals = {k: v for k, v in self.dihedrals.items() if atom_id not in k}
-        self.pairs = {k: v for k, v in self.pairs.items() if atom_id not in k}
-        self.cross_bonds = {k: v for k, v in self.cross_bonds.items() if atom_id not in k}
-        self.cross_angles = {k: v for k, v in self.cross_angles.items() if atom_id not in k}
-        self.cross_dihedrals = {k: v for k, v in self.cross_dihedrals.items() if atom_id not in k}
-        self.cross_pairs = {k: v for k, v in self.cross_pairs.items() if atom_id not in k}
-        self.improper_dihedrals = {k: v for k, v in self.improper_dihedrals.items() if atom_id not in k}
+        self.bonds = {k: v for k, v in self.bonds.items() if not atom_ids.intersection(k)}
+        self.angles = {k: v for k, v in self.angles.items() if not atom_ids.intersection(k)}
+        self.dihedrals = {k: v for k, v in self.dihedrals.items() if not atom_ids.intersection(k)}
+        self.pairs = {k: v for k, v in self.pairs.items() if not atom_ids.intersection(k)}
+        self.cross_bonds = {k: v for k, v in self.cross_bonds.items() if not atom_ids.intersection(k)}
+        self.cross_angles = {k: v for k, v in self.cross_angles.items() if not atom_ids.intersection(k)}
+        self.cross_dihedrals = {k: v for k, v in self.cross_dihedrals.items() if not atom_ids.intersection(k)}
+        self.cross_pairs = {k: v for k, v in self.cross_pairs.items() if not atom_ids.intersection(k)}
+        self.improper_dihedrals = {k: v for k, v in self.improper_dihedrals.items() if not atom_ids.intersection(k)}
 
         # And new_data
         for k in self.new_data:
-            self.new_data[k] = {p: v for p, v in self.new_data[k].items() if atom_id not in p}
+            self.new_data[k] = {p: v for p, v in self.new_data[k].items() if not atom_ids.intersection(p)}
 
 
     def renumber(self):
