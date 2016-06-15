@@ -148,6 +148,9 @@ def _args_backmapping():
     parser.add_argument('--thermostat_whole',
                         default=False, type=ast.literal_eval,
                         help='Thermalize all particles, not only AT')
+    parser.add_argument('--thermostat_cg',
+                        default=False, type=ast.literal_eval,
+                        help='Thermalize all particles, only CG')
     parser.add_argument('--temperature',
                         default=423.0, type=float,
                         help='Temperature')

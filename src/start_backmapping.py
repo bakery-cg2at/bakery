@@ -211,6 +211,9 @@ def main():  # NOQA
         if args.thermostat_whole:
             print('Enable thermostat on all particles, not only atomistic')
             thermostat = espressopp.integrator.LangevinThermostat(system)
+        elif args.thermostat_cg:
+            print('Enable thermostat only on CG particles')
+            thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, cg_particle_group)
         else:
             thermostat = espressopp.integrator.LangevinThermostatOnGroup(system, at_particle_group)
         thermostat.temperature = temperature
@@ -219,6 +222,7 @@ def main():  # NOQA
         thermostat = espressopp.integrator.StochasticVelocityRescaling(system)
         thermostat.temperature = temperature
         thermostat.coupling = args.thermostat_gamma
+    integrator.addExtension(thermostat)
 
     print("Added tuples, decomposing now ...")
 
