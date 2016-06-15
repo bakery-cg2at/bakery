@@ -162,6 +162,8 @@ def main():  # NOQA
 
     system.storage.addParticles(map(tuple, particle_list), *part_prop)
 
+    system.storage.decompose()
+
     vs_list = espressopp.FixedVSList(system.storage)
     vs_list.addTuples(adress_tuple)
 
