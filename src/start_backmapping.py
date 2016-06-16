@@ -270,7 +270,7 @@ def main():  # NOQA
 
     if args.gro_collect > 0:
         gro_collect_filename = '{}confout_dump_{}_{}.gro'.format(
-            args.output_prefix, args.alpha, args.rng_seed)
+            args.output_prefix, args.alpha, rng_seed)
         dump_conf_gro = espressopp.io.DumpGRO(system, integrator, filename=gro_collect_filename, append=True)
         ext_dump_conf_gro = espressopp.integrator.ExtAnalyze(
             dump_conf_gro, args.gro_collect)
@@ -330,12 +330,12 @@ def main():  # NOQA
             system_analysis2.info()
             global_int_step += 1
 
-        confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+        confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, rng_seed)
         at_gro_conf.update_positions(system)
         at_gro_conf.write(confout_aa, force=True)
         gro_whole.update_positions(system)
         gro_whole.write(
-            '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
+            '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
         print('Atomistic configuration write to: {}'.format(confout_aa))
 
         ########## SECOND PHASE ################
@@ -383,8 +383,8 @@ def main():  # NOQA
 
     gro_whole.update_positions(system)
     gro_whole.write(
-        '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
-    confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+        '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
+    confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
 
@@ -418,13 +418,13 @@ def main():  # NOQA
 
     gro_whole.update_positions(system)
     gro_whole.write(
-        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
-    confout_aa = '{}confout_final_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
+    confout_aa = '{}confout_final_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
     print('Final atomistic configuration write to: {}'.format(confout_aa))
     print('Final hybrid configuration write to: {}'.format(
-        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)))
+        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)))
 
     traj_file.flush()
     traj_file.close()
