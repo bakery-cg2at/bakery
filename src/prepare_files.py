@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Copyright (C) 2014-2016 Jakub Krajniak <jkrajniak@gmail.com>
 
@@ -41,4 +42,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        import ipdb
+        with ipdb.launch_ipdb_on_exception():
+            main()
+    except ImportError:
+        main()

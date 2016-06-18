@@ -308,7 +308,9 @@ def main():  # NOQA
         integrator.addExtension(cap_force)
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
-    if args.two_phase:
+    two_phase = args.two_phase or args.second_phase_em
+
+    if two_phase:
         ext_analysis.disconnect()
         verletlistCG.disconnect()
         verletlistAT.disconnect()
@@ -358,13 +360,18 @@ def main():  # NOQA
         ext_analysis3, system_analysis3 = tools.setSystemAnalysis(
             system, integrator, args, args.energy_collect_bck, '_two', dynamic_res, particle_groups)
 
-        # Simulation
-        for k in range(dynamic_res_time):
-            integrator.run(integrator_step)
-            system_analysis3.info()
-            global_int_step += 1
+        if args.second_phase_em:
+            minimize_energy = espressopp.integrator.MinimizeEnergy(system, 0.0001, 10.0, 0.001 * input_conf.Lx)
+            while not minimize_energy.run(100, True):
+                pass
         else:
-            system_analysis3.info()
+            # Simulation
+            for k in range(dynamic_res_time):
+                integrator.run(integrator_step)
+                system_analysis3.info()
+                global_int_step += 1
+            else:
+                system_analysis3.info()
 
         if has_capforce:
             print('Switch off cap-force')
@@ -395,7 +402,7 @@ def main():  # NOQA
         args.energy_collect))
     print('Set back time-step to: {}'.format(args.dt))
     ext_analysis.interval = args.energy_collect
-    if args.two_phase:
+    if two_phase:
         ext_analysis3.interval = args.energy_collect
     else:
         ext_analysis.interval = args.energy_collect
@@ -404,13 +411,13 @@ def main():  # NOQA
     for k in range(long_step):
         integrator.run(integrator_step)
         global_int_step += 1
-        if args.two_phase:
+        if two_phase:
             system_analysis3.info()
         else:
             system_analysis.info()
     else:
         global_int_step += 1
-        if args.two_phase:
+        if two_phase:
             system_analysis3.info()
         else:
             system_analysis.info()
