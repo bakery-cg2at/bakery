@@ -30,8 +30,8 @@ import time
 import logging
 import random
 
-from src import files_io
-from src import gromacs_topology
+import files_io
+import gromacs_topology
 
 from src.app_args import _args_md
 
