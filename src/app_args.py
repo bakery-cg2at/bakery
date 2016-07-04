@@ -38,9 +38,6 @@ def _args_md():
     parser.add_argument('--node_grid')
     parser.add_argument('--skin', type=float, default=0.16,
                         help='Skin value for Verlet list')
-    parser.add_argument('--coord', help='Input coordinate h5md file')
-    parser.add_argument('--coord_frame', default=-1, type=int,
-                        help='Time frame of input coordinate h5md file')
     parser.add_argument('--run', type=int, default=10000,
                         help='Number of simulation steps')
     parser.add_argument('--int_step', default=1000, type=int, help='Steps in integrator')
@@ -116,11 +113,6 @@ def _args_backmapping():
     parser.add_argument('--conf', required=True, help='Coordinate file')
     parser.add_argument('--top', '--topology', required=True, help='Topology file',
                         dest='top')
-    parser.add_argument('--coord', help='Input h5md coordinate file')
-    parser.add_argument('--coord_frame', default=-1, type=int,
-                        help='Time frame of the input coordinate h5md file.')
-    parser.add_argument('--coord_h5md_group', help='H5MD atoms group',
-                        default='atoms')
     parser.add_argument('--node_grid', help='Node grid configuration')
     parser.add_argument('--cell_grid', help='Cell grid configuration')
     parser.add_argument('--skin', type=float, help='Skin value for VerletList')

@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import espressopp  # NOQA
 import math  # NOQA
+
+
+
 try:
     import MPI
 except ImportError:
@@ -27,10 +30,10 @@ import time
 import logging
 import random
 
-import numpy as np
-import gromacs_topology
+from src import files_io
+from src import gromacs_topology
 
-from app_args import _args_md
+from src.app_args import _args_md
 
 # GROMACS units, kJ/mol K
 kb = 0.0083144621
@@ -39,17 +42,7 @@ h5md_group = 'atoms'
 
 __doc__ = 'Run GROMACS-like simulation'
 
-# Do not to modify lines below.
-
-
-def sort_trajectory(trj, ids):
-    print('Sorting trajectory')
-    idd = [
-        x[1] for x in sorted([(p_id, col_id) for col_id, p_id in enumerate(ids)],
-                             key=lambda y: (True, y[0]) if y[0] == -1 else (False, y[0]))
-    ]
-    return trj[idd]
-
+# Basically, you do not need to modify lines below.
 
 def main():  #NOQA
     args = _args_md().parse_args()
@@ -72,6 +65,8 @@ def main():  #NOQA
     generate_exclusions = args.exclusion_list is None
 
     input_conf = gromacs_topology.read(args.conf, args.top, doRegularExcl=generate_exclusions)
+    input_conf_gro = files_io.GROFile(args.conf)
+    input_conf_gro.read()
 
     if not generate_exclusions:
         exclusion_file = open(args.exclusion_list, 'r')
@@ -115,39 +110,6 @@ def main():  #NOQA
             particle_list.append(t)
     else:
         particle_list = map(list, all_particles)
-
-    if args.coord:
-        import h5py
-        print("Reading coordinates from {}".format(args.coord))
-        h5coord = h5py.File(args.coord)
-        pos = h5coord['/particles/{}/position/value'.format(h5md_group)][args.coord_frame]
-        try:
-            ids = h5coord['/particles/{}/id/value'.format(h5md_group)][args.coord_frame]
-            has_ids = True
-        except:
-            has_ids = False
-        pos = h5coord['/particles/{}/position/value'.format(h5md_group)][args.coord_frame]
-        if has_ids:
-            pos = sort_trajectory(pos, ids)
-
-        try:
-            species = h5coord['/particles/{}/species/value'.format(h5md_group)][args.coord_frame]
-        except:
-            species = h5coord['/particles/{}/species'.format(h5md_group)]
-        if has_ids:
-            species = sort_trajectory(species, ids)
-        try:
-            box = np.array(
-                h5coord['/particles/{}/box/edges/value'.format(h5md_group)][args.coord_frame])
-        except:
-            box = np.array(h5coord['/particles/{}/box/edges'.format(h5md_group)])
-        valid_species = {x[1] for x in all_particles}
-        ppid = 0
-        for pid, p in enumerate(pos):
-            if species[pid] in valid_species:
-                particle_list[ppid][2] = espressopp.Real3D(p)
-                ppid += 1
-        h5coord.close()
 
     density = sum(input_conf.masses)*1.6605402 / (box[0] * box[1] * box[2])
     print('Density: {} kg/m^3'.format(density))
@@ -282,6 +244,12 @@ def main():  #NOQA
         store_state=args.store_state,
         store_lambda=args.store_lambda)
 
+    gro_whole = files_io.GROFile.copy(input_conf_gro)
+    file_name = '{}_{}_confout_time_0.gro'.format(args.output_prefix, rng_seed)
+    print('Write coordinates before to: {}'.format(file_name))
+    gro_whole.update_positions(system)
+    gro_whole.write(file_name, force=True)
+
     traj_file.set_parameters({'temperature': args.temperature})
 
     print('Reset total velocity')
@@ -316,10 +284,8 @@ def main():  #NOQA
 
     # Saves output file.
     output_gro_file = '{}_{}_confout.gro'.format(args.output_prefix, rng_seed)
-    dump_gro = espressopp.io.DumpGRO(
-        system, integrator, filename=output_gro_file,
-        unfolded=True, append=False)
-    dump_gro.dump()
+    gro_whole.update_positions(system)
+    gro_whole.write(output_gro_file, force=True)
     print('Wrote end configuration to: {}'.format(output_gro_file))
 
     print('finished!')
