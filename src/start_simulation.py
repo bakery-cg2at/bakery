@@ -33,7 +33,7 @@ import random
 import files_io
 import gromacs_topology
 
-from src.app_args import _args_md
+from app_args import _args_md
 
 # GROMACS units, kJ/mol K
 kb = 0.0083144621
