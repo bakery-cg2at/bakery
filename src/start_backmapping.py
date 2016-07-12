@@ -238,8 +238,10 @@ def main():  # NOQA
         static_box=False,
         author=simulation_author,
         email=simulation_email,
-        store_lambda=True,
-        store_species=True)
+        store_lambda=args.store_lambda,
+        store_force=args.store_force,
+        store_state=args.store_state,
+        store_species=args.store_species)
     traj_file.set_parameters({
         'temperature': temperature,
         'thermostat': args.thermostat,
@@ -287,13 +289,10 @@ def main():  # NOQA
     global_int_step = 0
     system_analysis.info()
     for k in range(k_eq_step):
-        integrator.run(integrator_step)
-        system_analysis.info()
-        global_int_step += 1
-    else:
-        global_int_step += 1
         system_analysis.info()
         traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        integrator.run(integrator_step)
+        global_int_step += 1
 
     traj_file.flush()
     system_analysis.dump()
@@ -334,9 +333,11 @@ def main():  # NOQA
 
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time):
-            integrator.run(integrator_step)
+            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
             system_analysis2.info()
+            integrator.run(integrator_step)
             global_int_step += 1
+        traj_file.flush()
 
         confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, rng_seed)
         at_gro_conf.update_positions(system)
@@ -373,11 +374,11 @@ def main():  # NOQA
         else:
             # Simulation
             for k in range(dynamic_res_time):
+                traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+                system_analysis3.info()
                 integrator.run(integrator_step)
-                system_analysis3.info()
                 global_int_step += 1
-            else:
-                system_analysis3.info()
+            traj_file.flush()
 
         if has_capforce:
             print('Switch off cap-force')
@@ -385,14 +386,11 @@ def main():  # NOQA
     else:
         print('Running a single-phase backmapping.')
         for k in range(dynamic_res_time):
+            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+            system_analysis.info()
             integrator.run(integrator_step)
-            system_analysis.info()
             global_int_step += 1
-        else:
-            global_int_step += 1
-            system_analysis.info()
-            traj_file.dump(global_int_step * integrator_step,
-                           global_int_step * integrator_step * args.dt)
+        traj_file.flush()
 
     gro_whole.update_positions(system)
     gro_whole.write(
@@ -415,19 +413,15 @@ def main():  # NOQA
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
+        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        if two_phase:
+            system_analysis3.info()
+        else:
+            system_analysis.info()
         integrator.run(integrator_step)
         global_int_step += 1
-        if two_phase:
-            system_analysis3.info()
-        else:
-            system_analysis.info()
-    else:
-        global_int_step += 1
-        if two_phase:
-            system_analysis3.info()
-        else:
-            system_analysis.info()
-        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+
+    traj_file.flush()
 
     gro_whole.update_positions(system)
     gro_whole.write(

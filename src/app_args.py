@@ -96,6 +96,8 @@ def _args_md():
                         help='Run interactive mode')
     parser.add_argument('--store_species', default=False, type=ast.literal_eval,
                         help='Store particle types')
+    parser.add_argument('--store_force', default=False, type=ast.literal_eval,
+                        help='Store particle force')
     parser.add_argument('--store_state', default=True, type=ast.literal_eval,
                         help='Store chemical state')
     parser.add_argument('--store_lambda', default=False, type=ast.literal_eval,
@@ -180,5 +182,13 @@ def _args_backmapping():
                         help='The exclusion list')
     parser.add_argument('--remove_com', type=int, default=0,
                         help='Resets the total velocity of the system every n-th steps')
+    parser.add_argument('--store_species', default=False, type=ast.literal_eval,
+                        help='Store particle types')
+    parser.add_argument('--store_force', default=False, type=ast.literal_eval,
+                        help='Store particle force')
+    parser.add_argument('--store_state', default=False, type=ast.literal_eval,
+                        help='Store chemical state')
+    parser.add_argument('--store_lambda', default=True, type=ast.literal_eval,
+                        help='Store lambda parameter')
 
     return parser
