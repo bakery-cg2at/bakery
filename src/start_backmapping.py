@@ -287,7 +287,6 @@ def main():  # NOQA
 
     ############# SIMULATION: EQUILIBRATION PHASE #####################
     global_int_step = 0
-    system_analysis.info()
     for k in range(k_eq_step):
         system_analysis.info()
         traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
