@@ -142,14 +142,13 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
         system, input_conf, verletlistAT, args.lj_cutoff,
         input_conf.nonbond_params,
         interaction=lj_interaction)
-    coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
-        verletlistAT, False)
     if args.coulomb_cutoff > 0.0:
         coulomb_interaction = gromacs_topology.setCoulombInteractions(
             system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
             epsilon1=args.coulomb_epsilon1,
             epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
-            interaction=coulomb_interaction)
+            interaction=espressopp.interaction.VerletListHybridReactionFieldGeneralized(
+                verletlistAT, False))
     else:
         coulomb_interaction = None
     pair14_interactions = tools.setPairInteractions(

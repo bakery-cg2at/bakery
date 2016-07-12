@@ -276,32 +276,33 @@ def setPairInteractions(system, input_conf, cutoff, ftpl=None):
     pairtypeparams = input_conf.pairtypeparams
     for (pid, cross_bonds), pair_list in pairs.iteritems():
         params = pairtypeparams[pid]
-        is_cg = input_conf.atomtypeparams[
-            input_conf.types[pair_list[0][0]-1]]['particletype'] == 'V'
-        if is_cg or ftpl is None:
-            fpl = espressopp.FixedPairList(system.storage)
-        else:
-            fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
-        fpl.addBonds(pair_list)
-        print ('Pair interaction', params, ' num pairs:', len(pair_list),
-               'sig=', params['sig'], params['eps'])
+        if params['sig'] > 0.0 and params['eps'] > 0.0:
+            is_cg = input_conf.atomtypeparams[
+                        input_conf.types[pair_list[0][0] - 1]]['particletype'] == 'V'
+            if is_cg or ftpl is None:
+                fpl = espressopp.FixedPairList(system.storage)
+            else:
+                fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
+            fpl.addBonds(pair_list)
 
-        if not cross_bonds:
-            is_cg = None
+            if not cross_bonds:
+                is_cg = None
 
-        pot = espressopp.interaction.LennardJones(
-            sigma=params['sig'],
-            epsilon=params['eps'],
-            shift='auto',
-            cutoff=cutoff)
-        if is_cg is None:
-            interaction = espressopp.interaction.FixedPairListLennardJones(system, fpl, pot)
-        else:
-            interaction = espressopp.interaction.FixedPairListAdressLennardJones(
-                system, fpl, pot, is_cg)
-        system.addInteraction(interaction, 'lj-14_{}{}'.format(
-            pid, '_cross' if cross_bonds else ''))
-        ret_list[(pid, cross_bonds)] = interaction
+            print ('Pair interaction', params, ' num pairs:', len(pair_list),
+                   'sig=', params['sig'], params['eps'])
+            pot = espressopp.interaction.LennardJones(
+                sigma=params['sig'],
+                epsilon=params['eps'],
+                shift='auto',
+                cutoff=cutoff)
+            if is_cg is None:
+                interaction = espressopp.interaction.FixedPairListLennardJones(system, fpl, pot)
+            else:
+                interaction = espressopp.interaction.FixedPairListAdressLennardJones(
+                    system, fpl, pot, is_cg)
+            system.addInteraction(interaction, 'lj-14_{}{}'.format(
+                pid, '_cross' if cross_bonds else ''))
+            ret_list[(pid, cross_bonds)] = interaction
     return ret_list
 
 

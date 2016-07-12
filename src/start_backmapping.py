@@ -43,7 +43,6 @@ kb = 0.0083144621
 simulation_author = os.environ.get('USER', 'xxx')
 simulation_email = 'xxx@xxx.xxx'
 
-
 # Mostly you do not need to modify lines below.
 
 def main():  # NOQA
@@ -90,6 +89,7 @@ def main():  # NOQA
     rng_seed = args.rng_seed
     if args.rng_seed == -1:
         rng_seed = random.randint(1, 10000)
+        args.rng_seed = rng_seed
 
     print('Skin: {}'.format(skin))
     print('RNG Seed: {}'.format(rng_seed))
@@ -275,7 +275,13 @@ def main():  # NOQA
         ext_dump_conf_gro = espressopp.integrator.ExtAnalyze(
             dump_conf_gro, args.gro_collect)
         integrator.addExtension(ext_dump_conf_gro)
-        print('Store .gro files {}'.format(gro_collect_filename))
+        print('Store .gro file {}'.format(gro_collect_filename))
+
+    if args.remove_com > 0:
+        print('Removes total velocity of the system every {} steps'.format(args.remove_com))
+        total_velocity = espressopp.analysis.TotalVelocity(system)
+        ext_remove_com = espressopp.integrator.ExtAnalyze(total_velocity, args.remove_com)
+        integrator.addExtension(ext_remove_com)
 
     ############# SIMULATION: EQUILIBRATION PHASE #####################
     global_int_step = 0

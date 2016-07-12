@@ -178,5 +178,7 @@ def _args_backmapping():
                         help='Second phase with minimize energy')
     parser.add_argument('--exclusion_list', default=None,
                         help='The exclusion list')
+    parser.add_argument('--remove_com', type=int, default=0,
+                        help='Resets the total velocity of the system every n-th steps')
 
     return parser
