@@ -190,5 +190,7 @@ def _args_backmapping():
                         help='Store chemical state')
     parser.add_argument('--store_lambda', default=True, type=ast.literal_eval,
                         help='Store lambda parameter')
+    parser.add_argument('--free_energy_step', default=None, type=int,
+                        help='Number of steps at every resolution step')
 
     return parser

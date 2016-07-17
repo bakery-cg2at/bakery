@@ -2,7 +2,7 @@
     <cg_molecule>
         <name>EPO</name>
         <ident>EPO</ident>
-        <source_file>single_conf.gro</source_file>
+        <source_file>epon-828.gro</source_file>
         <source_topology>epon-828.itp</source_topology>
         <!-- A1 beads -->
         <cg_bead>
@@ -13,9 +13,6 @@
             </beads>
             <beads degree="2" active_site="EPO:C1:4">
                 1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5
-            </beads>
-            <beads degree="3" active_site="EPO:C1:4">
-                1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5
             </beads>
         </cg_bead>
 
@@ -40,17 +37,13 @@
                 1:EPO:O3
                 1:EPO:H20 1:EPO:H21
             </beads>
-            <beads degree="3" active_site="EPO:C21:4">1:EPO:C20 1:EPO:O4 1:EPO:C21 1:EPO:H22 1:EPO:C19 1:EPO:O3
-                1:EPO:H20
-                1:EPO:H21
-            </beads>
         </cg_bead>
     </cg_molecule>
 
     <cg_molecule>
         <name>HDD</name>
         <ident>HDD</ident>
-        <source_file>single_conf.gro</source_file>
+        <source_file>hdde.gro</source_file>
         <source_topology>hdde.itp</source_topology>
         <!-- E1 bead -->
         <cg_bead>
@@ -88,7 +81,7 @@
     <cg_molecule>
         <name>IPD</name>
         <ident>IPD</ident>
-        <source_file>single_conf.gro</source_file>
+        <source_file>ipd.gro</source_file>
         <source_topology>ipd.itp</source_topology>
         <!-- monomer -->
         <cg_bead>
@@ -160,11 +153,11 @@
     <cg_molecule>
         <name>JEF</name>
         <ident>JEF</ident>
-        <source_file>single_conf.gro</source_file>
+        <source_file>jeff400.gro</source_file>
         <source_topology>jeff400.itp</source_topology>
         <cg_bead>
-            <name>H1</name>
-            <type>H</type>
+            <name>Q1</name>
+            <type>Q</type>
             <beads degree="1">
                 1:JEF:N1 1:JEF:H1 1:JEF:H2
                 1:JEF:C1 1:JEF:C2 1:JEF:C3
@@ -213,8 +206,8 @@
             </beads>
         </cg_bead>
         <cg_bead>
-            <name>H2</name>
-            <type>H</type>
+            <name>Q2</name>
+            <type>Q</type>
             <beads degree="1">
                 1:JEF:N2 1:JEF:H39 1:JEF:H40
                 1:JEF:C19 1:JEF:C20 1:JEF:C21
@@ -250,8 +243,8 @@
 
     <cg_configuration>
         <format>GROMACS</format>
-            <file>cg_conf.gro</file>
-        <topology>cg_topol.top</topology>
+            <file>cg_cl_conf.gro</file>
+        <topology>cg_cl_topol.top</topology>
     </cg_configuration>
 
     <hybrid_configuration>

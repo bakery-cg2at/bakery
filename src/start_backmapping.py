@@ -303,8 +303,9 @@ def main():  # NOQA
         print('Define maximum cap-force during the backmapping')
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
 
-    print('Activating dynamic resolution changer')
-    dynamic_res.active = True
+    if args.free_energy_step is None:
+        print('Activating dynamic resolution changer')
+        dynamic_res.active = True
 
     print('Change time-step to {}'.format(args.dt_dyn))
     integrator.dt = args.dt_dyn

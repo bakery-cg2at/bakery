@@ -1,10 +1,11 @@
+<!-- converterd H5MD to GROMACS input topology -->
 <cg_configuration>
     <type2chain>
         0:EPO:A
         1:EPO:B
         2:HDD:E
         3:HDD:F
-        4:JEF:H
+        4:JEF:Q
         5:JEF:I
         6:IPD:K
         <!--8:EPO:A
@@ -30,5 +31,5 @@
     <molecule_type name="IPD" nrexcl="3" nrmols="1" size="1"/>
     <molecule_type name="HDD" nrexcl="3" nrmols="1" size="3"/>
 
-    <h5md atom_groups="atoms" connection_groups="bonds, chem_bonds_0, chem_bonds_1"/>
+    <h5md atom_groups="atoms" connection_groups="bonds_0, bonds_1, bonds_2, chem_bonds_0, chem_bonds_1"/>
 </cg_configuration>
