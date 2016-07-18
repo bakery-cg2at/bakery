@@ -310,7 +310,10 @@ def main():  # NOQA
     print('Change time-step to {}'.format(args.dt_dyn))
     integrator.dt = args.dt_dyn
     if has_capforce:
+        # We have to make sure that the thermostat is at the end, after cap_force.
+        thermostat.disconnect()
         integrator.addExtension(cap_force)
+        thermostat.connect()
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
     two_phase = args.two_phase or args.second_phase_em
