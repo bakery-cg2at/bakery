@@ -254,39 +254,38 @@
 
     <hybrid_topology>
         <file>hyb_topol.top</file>
-        <bonded params="; EPO_C1/C2-IPD_N1/N2">
+        <bonds params="; EPO_C1/C2-IPD_N1/N2">
             EPO:C1 IPD:N1
             EPO:C1 IPD:N2
-            EPO:C2 IPD:N1
-            EPO:C2 IPD:N2
-        </bonded>
-        <bonded params="; EPO_C1/C2_JEF_N1/N2">
+            EPO:C21 IPD:N1
+            EPO:C21 IPD:N2
+        </bonds>
+        <bonds params="; EPO_C1/C2_JEF_N1/N2">
             EPO:C1 JEF:N1
             EPO:C1 JEF:N2
-            EPO:C2 JEF:N1
-            EPO:C2 JEF:N2
-        </bonded>
-        <bonded params="; HDD_C1/C2_IPD_N1/N2">
+            EPO:C21 JEF:N1
+            EPO:C21 JEF:N2
+        </bonds>
+        <bonds params="; HDD_C1/C2_IPD_N1/N2">
             HDD:C1 IPD:N1
             HDD:C1 IPD:N2
-            HDD:C2 IPD:N1
-            HDD:C2 IPD:N2
-        </bonded>
-        <bonded params="; HDD_C1/C2_JEF_N1/N2">
+            HDD:C12 IPD:N1
+            HDD:C12 IPD:N2
+        </bonds>
+        <bonds params="; HDD_C1/C2_JEF_N1/N2">
             HDD:C1 JEF:N1
             HDD:C1 JEF:N2
-            HDD:C2 JEF:N1
-            HDD:C2 JEF:N2
-        </bonded>
+            HDD:C12 JEF:N1
+            HDD:C12 JEF:N2
+        </bonds>
         <!-- add angles, dihedrals, pairs?? -->
         <molecule_type>
             <name>HYB</name>
             <exclusion>3</exclusion>
         </molecule_type>
         <include>
-            #include
             "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
-            ;#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
+            ;"/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
         </include>
         <system>HYB</system>
     </hybrid_topology>
