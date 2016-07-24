@@ -574,24 +574,19 @@ class BackmapperSettings2:
                     b_key1 = '{}:{}'.format(ats1.chain_name, ats1.name)
                     b_key2 = '{}:{}'.format(ats2.chain_name, ats2.name)
                     charge_transfer_cfg = None
-                    target_atom, host_atom = None, None
-                    target_atom_key, host_atom_key = None, None
+                    target_atom = None
+                    target_atom_key = None
                     if b_key1 in self.charge_transfer:
                         charge_transfer_cfg = self.charge_transfer[b_key1][deg1]
                         target_atom_key = b_key2
                         target_atom = ats2
-                        host_atom_key = b_key1
-                        host_atom = ats1
                     elif b_key2 in self.charge_transfer:
                         charge_transfer_cfg = self.charge_transfer[b_key2][deg2]
                         target_atom_key = b_key1
                         target_atom = ats1
-                        host_atom_key = b_key2
-                        host_atom = ats2
 
                     if charge_transfer_cfg is not None:
                         at_to_transfer = charge_transfer_cfg['to'][target_atom_key]
-                        to_transfer_chain_idx = target_atom.chain_idx
                         # Gets the charge from the source topology.
                         from_chain_name, from_atom_name = charge_transfer_cfg['from']
                         at_from_transfer = (
@@ -599,7 +594,6 @@ class BackmapperSettings2:
                                 .source_topology.chain_atom_names[from_chain_name][from_atom_name][0])
                         # Now update directly hybrid topology with new charge.
                         self.hyb_topology.chains[target_atom.chain_name][target_atom.chain_idx][at_to_transfer].charge = at_from_transfer.charge
-
                 else:
                     print b1, b2, n1, n2
                     print self.cg_active_sites[b1]
