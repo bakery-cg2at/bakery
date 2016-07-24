@@ -75,7 +75,7 @@ def main():  # NOQA
         exclusion_list_file = 'exclusion_{}.list'.format(args.top.split('.')[0])
         with open(exclusion_list_file, 'w') as fel:
             for p in input_conf.exclusions:
-                fel.write('{} {}'.format(*p))
+                fel.write('{} {}\n'.format(*p))
         print('Save exclusion list: {} ({})'.format(exclusion_list_file, len(input_conf.exclusions)))
 
     box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)

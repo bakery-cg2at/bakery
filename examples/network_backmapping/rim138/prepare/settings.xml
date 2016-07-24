@@ -3,7 +3,7 @@
         <name>EPO</name>
         <ident>EPO</ident>
         <source_file>epon-828.gro</source_file>
-        <source_topology>epon-828.itp</source_topology>
+        <source_topology>epon-828_remap2.itp</source_topology>
         <!-- A1 beads -->
         <cg_bead>
             <name>A1</name>
@@ -11,8 +11,9 @@
             <beads degree="1">
                 1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5
             </beads>
-            <beads degree="2" active_site="EPO:C1:4">
-                1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H4 1:EPO:H5
+            <beads degree="2" active_site="EPO:C23:4">
+                1:EPO:O21 1:EPO:C31 1:EPO:H51 1:EPO:H41 1:EPO:C22 1:EPO:O11
+                1:EPO:C23 1:EPO:H26 1:EPO:H25 1:EPO:H27 1:EPO:H31
             </beads>
         </cg_bead>
 
@@ -33,9 +34,9 @@
             <beads degree="1">1:EPO:C20 1:EPO:O4 1:EPO:C21 1:EPO:H22 1:EPO:H23 1:EPO:H24 1:EPO:C19 1:EPO:O3 1:EPO:H20
                 1:EPO:H21
             </beads>
-            <beads degree="2" active_site="EPO:C21:4">1:EPO:C20 1:EPO:O4 1:EPO:C21 1:EPO:H22 1:EPO:H24 1:EPO:C19
-                1:EPO:O3
-                1:EPO:H20 1:EPO:H21
+            <beads degree="2" active_site="EPO:C41:4">
+                1:EPO:H44 1:EPO:H40 1:EPO:C41 1:EPO:C39 1:EPO:H48 1:EPO:O44 1:EPO:H43 1:EPO:C40
+                1:EPO:H42 1:EPO:O50 1:EPO:H66
             </beads>
         </cg_bead>
     </cg_molecule>
@@ -44,7 +45,7 @@
         <name>HDD</name>
         <ident>HDD</ident>
         <source_file>hdde.gro</source_file>
-        <source_topology>hdde.itp</source_topology>
+        <source_topology>hdde_remap.itp</source_topology>
         <!-- E1 bead -->
         <cg_bead>
             <name>E1</name>
@@ -52,8 +53,9 @@
             <beads degree="1">1:HDD:C1 1:HDD:O1 1:HDD:C2 1:HDD:H1 1:HDD:H2 1:HDD:H3 1:HDD:O2 1:HDD:C3 1:HDD:H4
                 1:HDD:H5
             </beads>
-            <beads degree="2" active_site="HDD:C1:4">1:HDD:C1 1:HDD:O1 1:HDD:C2 1:HDD:H2 1:HDD:H3 1:HDD:O2 1:HDD:C3
-                1:HDD:H4 1:HDD:H5
+            <beads degree="2" active_site="HDD:C21:4">
+                1:HDD:C21 1:HDD:O21 1:HDD:C22 1:HDD:H27 1:HDD:H26 1:HDD:H23 1:HDD:O22
+                1:HDD:C23 1:HDD:H24 1:HDD:H25 1:HDD:H43
             </beads>
         </cg_bead>
         <!-- F1 bead -->
@@ -69,11 +71,13 @@
             <name>E2</name>
             <type>E</type>
             <degree>1</degree>
-            <beads degree="1">1:HDD:C11 1:HDD:O4 1:HDD:C12 1:HDD:H20 1:HDD:H21 1:HDD:H22 1:HDD:O3 1:HDD:C10
+            <beads degree="1">
+                1:HDD:C11 1:HDD:O4 1:HDD:C12 1:HDD:H20 1:HDD:H21 1:HDD:H22 1:HDD:O3 1:HDD:C10
                 1:HDD:H18 1:HDD:H19
             </beads>
-            <beads degree="2" active_site="HDD:C12:4">1:HDD:C11 1:HDD:O4 1:HDD:C12 1:HDD:H20 1:HDD:H22 1:HDD:O3
-                1:HDD:C10 1:HDD:H18 1:HDD:H19
+            <beads degree="2" active_site="HDD:C32:4">
+                1:HDD:O23 1:HDD:C30 1:HDD:C31 1:HDD:C32 1:HDD:H38 1:HDD:H39 1:HDD:H30
+                1:HDD:H32 1:HDD:H31 1:HDD:O24 1:HDD:H44
             </beads>
         </cg_bead>
     </cg_molecule>
@@ -140,14 +144,27 @@
                 1:IPD:H16 1:IPD:H17 1:IPD:H18
                 1:IPD:H19 1:IPD:H20 1:IPD:H21
                 1:IPD:H22 1:IPD:N1
-                1:IPD:N2
+                1:IPD:H9 1:IPD:N2
             </beads>
             <beads degree="4" active_site="IPD:N1:3 IPD:N2:3">
-                1:IPD:C1 1:IPD:C2 1:IPD:C3 1:IPD:C4 1:IPD:C5 1:IPD:C6 1:IPD:C7 1:IPD:C8 1:IPD:C9 1:IPD:C10 1:IPD:H1
-                1:IPD:H2 1:IPD:H3 1:IPD:H4 1:IPD:H5 1:IPD:H6 1:IPD:H7 1:IPD:H10 1:IPD:H11 1:IPD:H14 1:IPD:H15
-                1:IPD:H16 1:IPD:H17 1:IPD:H18 1:IPD:H19 1:IPD:H20 1:IPD:H21 1:IPD:H22 1:IPD:N1 1:IPD:N2
+                1:IPD:C1 1:IPD:C2 1:IPD:C3
+                1:IPD:C4 1:IPD:C5 1:IPD:C6
+                1:IPD:C7 1:IPD:C8 1:IPD:C9
+                1:IPD:C10 1:IPD:H1 1:IPD:H2
+                1:IPD:H3 1:IPD:H4 1:IPD:H5
+                1:IPD:H6 1:IPD:H7 1:IPD:H10
+                1:IPD:H11 1:IPD:H14 1:IPD:H15
+                1:IPD:H16 1:IPD:H17 1:IPD:H18
+                1:IPD:H19 1:IPD:H20 1:IPD:H21
+                1:IPD:H22 1:IPD:N1 1:IPD:N2
             </beads>
         </cg_bead>
+        <charge_transfers>
+            <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            <charge_transfer on="IPD:N1:3" from="IPD:H9" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            <charge_transfer on="IPD:N2:2" from="IPD:H12" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            <charge_transfer on="IPD:N2:3" from="IPD:H13" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+        </charge_transfers>
     </cg_molecule>
 
     <cg_molecule>
@@ -239,6 +256,12 @@
                 1:JEF:H38 1:JEF:O5
             </beads>
         </cg_bead>
+        <charge_transfers>
+            <charge_transfer on="JEF:N1:2" from="JEF:H1" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            <charge_transfer on="JEF:N1:3" from="JEF:H2" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            <charge_transfer on="JEF:N2:2" from="JEF:H45" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            <charge_transfer on="JEF:N2:3" from="JEF:H46" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+        </charge_transfers>
     </cg_molecule>
 
     <cg_configuration>
@@ -255,28 +278,28 @@
     <hybrid_topology>
         <file>hyb_topol.top</file>
         <bonds params="; EPO_C1/C2-IPD_N1/N2">
-            EPO:C1 IPD:N1
-            EPO:C1 IPD:N2
-            EPO:C21 IPD:N1
-            EPO:C21 IPD:N2
+            EPO:C23 IPD:N1
+            EPO:C23 IPD:N2
+            EPO:C41 IPD:N1
+            EPO:C41 IPD:N2
         </bonds>
         <bonds params="; EPO_C1/C2_JEF_N1/N2">
-            EPO:C1 JEF:N1
-            EPO:C1 JEF:N2
-            EPO:C21 JEF:N1
-            EPO:C21 JEF:N2
+            EPO:C23 JEF:N1
+            EPO:C23 JEF:N2
+            EPO:C41 JEF:N1
+            EPO:C41 JEF:N2
         </bonds>
         <bonds params="; HDD_C1/C2_IPD_N1/N2">
-            HDD:C1 IPD:N1
-            HDD:C1 IPD:N2
-            HDD:C12 IPD:N1
-            HDD:C12 IPD:N2
+            HDD:C21 IPD:N1
+            HDD:C21 IPD:N2
+            HDD:C32 IPD:N1
+            HDD:C32 IPD:N2
         </bonds>
         <bonds params="; HDD_C1/C2_JEF_N1/N2">
-            HDD:C1 JEF:N1
-            HDD:C1 JEF:N2
-            HDD:C12 JEF:N1
-            HDD:C12 JEF:N2
+            HDD:C21 JEF:N1
+            HDD:C21 JEF:N2
+            HDD:C32 JEF:N1
+            HDD:C32 JEF:N2
         </bonds>
         <!-- add angles, dihedrals, pairs?? -->
         <molecule_type>

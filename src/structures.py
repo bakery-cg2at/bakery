@@ -111,6 +111,8 @@ class BackmapperSettings2:
         self.mol_atomname_map = collections.defaultdict(dict)  # Map between old id and new id, divided into molecules.
         self.cg2atom = collections.defaultdict(list)
 
+        self.charge_transfer = {}   # Map with charge transfer.
+
         self.global_graph = networkx.Graph()
 
         tree = etree.parse(input_xml)
@@ -252,7 +254,8 @@ class BackmapperSettings2:
                     if active_sites:
                         active_sites = map(str.strip, active_sites.split())
                         tmp_as = [':'.join(x.split(':')[:2]) for x in active_sites]
-                        # Remove with active sites.
+                        # Remove with active sites. So whenever the active site will be used then this list
+                        # of atoms will be removed.
                         removes = beads.findall('remove')
                         for asr in removes:
                             as_name = asr.attrib['active_site']
@@ -274,10 +277,30 @@ class BackmapperSettings2:
                             raise RuntimeError(
                                 'Number of entries in charge_map {} does not match number of beads {}'.format(
                                     len(charge_map), len(bead_list)))
-
-
                     cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove)
                     self.fragments[cg_molecule.name][name][degree] = cg_fragment
+
+            # Read charge transfer.
+            # <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            charge_transfers = r.find('charge_transfers')
+            if charge_transfers is not None:
+                for ct in charge_transfers.findall('charge_transfer'):
+                    t = ct.attrib['on'].split(':')
+                    on_key = '{}:{}'.format(t[0], t[1])
+                    on_deg = int(t[2])
+                    if on_key not in self.charge_transfer:
+                        self.charge_transfer[on_key] = {}
+                    if on_deg in self.charge_transfer[on_key]:
+                        raise RuntimeError('Mistake in charge transfer, key {} already defined'.format(t))
+                    transfer_from = ct.attrib['from']
+                    transfer_to_map = {}
+                    self.charge_transfer[on_key][on_deg] = {'from': transfer_from.split(':'), 'to': transfer_to_map}
+                    transfer_to = ct.attrib['to'].split(',')
+                    print transfer_to
+                    for tt in transfer_to:
+                        tt_to_on, tt_to = tt.split('#')
+                        transfer_to_map[tt_to_on] = tt_to
+
 
     def prepare_hybrid(self):
         """Creates hybrid files."""
@@ -324,6 +347,14 @@ class BackmapperSettings2:
             topol_atom.chain_name = cg_fragment.cg_molecule.ident # Change chain name to one from <ident> tag in the cg_molecule
             topol_atom.cgnr = cg_bead_id
             self.hyb_topology.atoms[new_at_id] = topol_atom
+            if cg_fragment.cg_molecule.ident not in self.hyb_topology.chains:
+                self.hyb_topology.chains[cg_fragment.cg_molecule.ident] = {}
+            if new_res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
+                self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id] = {}
+            if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id]:
+                raise RuntimeError(
+                    '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
+            self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id][topol_atom.name] = topol_atom
 
             # Set the atomistic coordinates for this fragment, put it in the
             # output coordinate file.
@@ -360,6 +391,14 @@ class BackmapperSettings2:
                 topol_atom.chain_name = cg_fragment.cg_molecule.ident
                 topol_atom.cgnr = new_at_id
                 self.hyb_topology.atoms[new_at_id] = topol_atom
+                if cg_fragment.cg_molecule.ident not in self.hyb_topology.chains:
+                    self.hyb_topology.chains[cg_fragment.cg_molecule.ident] = {}
+                if new_res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
+                    self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id] = {}
+                if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id]:
+                    raise RuntimeError(
+                        '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
+                self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id][topol_atom.name] = topol_atom
 
                 # Set active sites.
                 if at.name in cg_fragment.active_sites:
@@ -468,6 +507,7 @@ class BackmapperSettings2:
         # At the level of topology, CG bonds are already defined.
         at_cross_bonds = []
         atoms_to_remove = []
+        charge_to_transfer = []
         progress_indc = 0.0
         progress_indc_total = len(cg_cross_bonds)
         for b1, b2 in cg_cross_bonds:
@@ -489,6 +529,8 @@ class BackmapperSettings2:
                             at_remove2 = self.atom_id2fragment[b2].active_sites_remove_map.get(b2_key)
                             tmp_atoms_to_remove = []
                             valid = True
+                            # Before we check the degree, let's first try to remove atoms (if they are defined to
+                            # remove and afterthat compare the degree.
                             if at_remove1:
                                 for atr1 in at_remove1:
                                     atr_chain_name, atr_name = atr1.split(':')[1], atr1.split(':')[2]
@@ -512,8 +554,9 @@ class BackmapperSettings2:
 
                             # Check the degree after update with virtual removing of atoms.
                             if at1_deg < max_d1 and at2_deg < max_d2 and valid:
-                                # Found correct pair of active sites.
-                                ats1, ats2 = at1, at2
+                                # Found correct pair of active sites. Remove the atoms that were
+                                # connected to this atom if in settings the set of atoms to remove were defined.
+                                ats1, ats2 = at1, at2   # Pair of selected atoms.
                                 atoms_to_remove.extend(tmp_atoms_to_remove)
                                 for ai in tmp_atoms_to_remove:
                                     self.global_graph.remove_node(ai)
@@ -522,9 +565,45 @@ class BackmapperSettings2:
                         break
 
                 if ats1 is not None and ats2 is not None:
+                    # Selected proper active sites.
                     at_cross_bonds.append((ats1.atom_id, ats2.atom_id))
                     self.global_graph.add_edge(ats1.atom_id, ats2.atom_id)
+                    # Look for charge to transfer.
+                    deg1 = self.global_graph.degree()[ats1.atom_id]
+                    deg2 = self.global_graph.degree()[ats2.atom_id]
+                    b_key1 = '{}:{}'.format(ats1.chain_name, ats1.name)
+                    b_key2 = '{}:{}'.format(ats2.chain_name, ats2.name)
+                    charge_transfer_cfg = None
+                    target_atom, host_atom = None, None
+                    target_atom_key, host_atom_key = None, None
+                    if b_key1 in self.charge_transfer:
+                        charge_transfer_cfg = self.charge_transfer[b_key1][deg1]
+                        target_atom_key = b_key2
+                        target_atom = ats2
+                        host_atom_key = b_key1
+                        host_atom = ats1
+                    elif b_key2 in self.charge_transfer:
+                        charge_transfer_cfg = self.charge_transfer[b_key2][deg2]
+                        target_atom_key = b_key1
+                        target_atom = ats1
+                        host_atom_key = b_key2
+                        host_atom = ats2
+
+                    if charge_transfer_cfg is not None:
+                        at_to_transfer = charge_transfer_cfg['to'][target_atom_key]
+                        to_transfer_chain_idx = target_atom.chain_idx
+                        # Gets the charge from the source topology.
+                        from_chain_name, from_atom_name = charge_transfer_cfg['from']
+                        at_from_transfer = (
+                            self.fragments[from_chain_name]['cg_molecule']
+                                .source_topology.chain_atom_names[from_chain_name][from_atom_name][0])
+                        # Now update directly hybrid topology with new charge.
+                        self.hyb_topology.chains[target_atom.chain_name][target_atom.chain_idx][at_to_transfer].charge = at_from_transfer.charge
+
                 else:
+                    print b1, b2, n1, n2
+                    print self.cg_active_sites[b1]
+                    print self.cg_active_sites[b2]
                     raise RuntimeError('Something is really wrong!')
             sys.stdout.write('{} %\r'.format(100.0*(progress_indc/progress_indc_total)))
             progress_indc += 1.0
