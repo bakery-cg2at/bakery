@@ -279,9 +279,7 @@ def main():  #NOQA
     if args.em > 0:
         print('Runninng basic energy minimization')
         minimize_energy = espressopp.integrator.MinimizeEnergy(system, args.em_gamma, args.em_ftol, args.em_max_d * input_conf.Lx)
-        while not minimize_energy.run(args.em, True):
-            system_analysis.info()
-            pass
+        minimize_energy.run(args.em, True)
     else:
         for k in range(sim_step):
             if k_energy_collect > 0 and k % k_energy_collect == 0:
