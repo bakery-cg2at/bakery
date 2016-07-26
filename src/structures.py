@@ -124,6 +124,9 @@ class BackmapperSettings2:
         self.cg_topology = files_io.GROMACSTopologyFile(
             cg_configuration.find('topology').text.strip())
         self.cg_topology.read()
+
+        self.cg_topology.replicate()
+
         self.cg_graph = self.cg_topology.get_graph()
         self.cg_coordinate = files_io.read_coordinates(
             cg_configuration.find('file').text.strip()

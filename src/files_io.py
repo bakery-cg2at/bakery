@@ -542,6 +542,33 @@ class GROMACSTopologyFile(TopologyFile):
             output_graph.node[n_id]['degree'] = output_graph.degree(n_id)
         return output_graph
 
+    def replicate(self):
+        """Based on the molecules section, replicate data of the topology."""
+        molecules = int(self.molecules['mol'])
+        if molecules > 1:
+            print('Replicate topology to {} molecules'.format(molecules))
+        atoms_per_molecule = len(self.atoms)
+        atom_ids_to_replicate = sorted(self.atoms)
+        for residx in range(2, molecules+1):
+            for at_id in atom_ids_to_replicate:
+                at_data = copy.copy(self.atoms[at_id])
+                at_data.chain_idx = residx
+                at_data.atom_id = (residx-1)*atoms_per_molecule + at_id
+                self.atoms[at_data.atom_id] = at_data
+
+        def replicate_list(N_molecules, N_single, input_dict, shift=0):
+            return {
+                tuple(map(lambda x: shift + x + (n * N_single), z)): v
+                for n in range(N_molecules) for z, v in input_dict.items()
+                }
+        # Replicate other lists.
+        self.bonds = replicate_list(molecules, atoms_per_molecule, self.bonds)
+        self.angles = replicate_list(molecules, atoms_per_molecule, self.angles)
+        self.dihedrals = replicate_list(molecules, atoms_per_molecule, self.dihedrals)
+        self.pairs = replicate_list(molecules, atoms_per_molecule, self.pairs)
+        self.improper_dihedrals = replicate_list(molecules, atoms_per_molecule, self.improper_dihedrals)
+
+
     def update_position(self, pdbfile):
         """Reads the position data from the coordinate file and update the atoms.
 
