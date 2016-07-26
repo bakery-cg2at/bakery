@@ -68,7 +68,14 @@ def main():  #NOQA
     input_conf_gro = files_io.GROFile(args.conf)
     input_conf_gro.read()
 
-    if not generate_exclusions:
+    if generate_exclusions:
+        # Save exclusions for future runs.
+        exclusion_file = open('exclusions_{}.list'.format(args.top.split('.')[0]), 'w')
+        for e in input_conf.exclusions:
+            exclusion_file.write('{} {}\n'.format(*e))
+        exclusion_file.close()
+        print('Exclusion list written down')
+    else:
         exclusion_file = open(args.exclusion_list, 'r')
         exclusions = [map(int, x.split()) for x in exclusion_file.readlines()]
         print('Read exclusion list from {} (total: {})'.format(args.exclusion_list, len(exclusions)))
