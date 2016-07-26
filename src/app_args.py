@@ -104,6 +104,11 @@ def _args_md():
                         help='Store lambda parameter')
     parser.add_argument('--exclusion_list', default=None,
                         help='The exclusion list')
+    em_group = parser.add_argument_group('Energy minimization')
+    em_group.add_argument('--em', help='Maximum number of steps to perform in EM', type=int, default=0)
+    em_group.add_argument('--em_gamma', help='Gamma parameter for force damping', type=float, default=0.0001)
+    em_group.add_argument('--em_ftol', help='Force tolerance', type=float, default=10.0)
+    em_group.add_argument('--em_max_d', help='Max displacement x box dimension', default=0.001)
 
     return parser
 

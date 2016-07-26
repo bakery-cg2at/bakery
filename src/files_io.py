@@ -331,7 +331,7 @@ class GROFile(CoordinateFile):
     def update_positions(self, system, use_id_map=False):
         """Update positions."""
         for at_id in self.atoms:
-            p = system.storage.getParticle(self.id_map[at_id])
+            p = system.storage.getParticle(self.id_map[at_id] if use_id_map else at_id)
             old_atom = self.atoms[at_id]
             self.atoms[at_id] = old_atom._replace(position=p.pos)
 

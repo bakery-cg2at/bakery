@@ -276,18 +276,25 @@ def main():  #NOQA
         import IPython
         IPython.embed()
 
-    for k in range(sim_step):
-        if k_energy_collect > 0 and k % k_energy_collect == 0:
+    if args.em > 0:
+        print('Runninng basic energy minimization')
+        minimize_energy = espressopp.integrator.MinimizeEnergy(system, args.em_gamma, args.em_ftol, args.em_max_d * input_conf.Lx)
+        while not minimize_energy.run(args.em, True):
             system_analysis.info()
-        if k_trj_collect > 0 and k % k_trj_collect == 0:
-            int_step = args.initial_step + k*integrator_step
-            traj_file.dump(int_step, int_step*dt)
-        if k_trj_collect > 0 and k % 100 == 0:
-            traj_file.flush()
-        integrator.run(integrator_step)
+            pass
     else:
-        traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*dt)
-        traj_file.close()
+        for k in range(sim_step):
+            if k_energy_collect > 0 and k % k_energy_collect == 0:
+                system_analysis.info()
+            if k_trj_collect > 0 and k % k_trj_collect == 0:
+                int_step = args.initial_step + k*integrator_step
+                traj_file.dump(int_step, int_step*dt)
+            if k_trj_collect > 0 and k % 100 == 0:
+                traj_file.flush()
+            integrator.run(integrator_step)
+        else:
+            traj_file.dump(sim_step*integrator_step, sim_step*integrator_step*dt)
+            traj_file.close()
 
     # Saves output file.
     output_gro_file = '{}_{}_confout.gro'.format(args.output_prefix, rng_seed)
