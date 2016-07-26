@@ -47,7 +47,6 @@ simulation_email = 'xxx@xxx.xxx'
 
 def main():  # NOQA
     h5md_group = 'atoms'
-    print h5md_group
     time0 = time.time()
     args = _args().parse_args()
     _args().save_to_file('{}params.out'.format(args.output_prefix), args)
@@ -75,7 +74,7 @@ def main():  # NOQA
         exclusion_list_file = 'exclusion_{}.list'.format(args.top.split('.')[0])
         with open(exclusion_list_file, 'w') as fel:
             for p in input_conf.exclusions:
-                fel.write('{} {}'.format(*p))
+                fel.write('{} {}\n'.format(*p))
         print('Save exclusion list: {} ({})'.format(exclusion_list_file, len(input_conf.exclusions)))
 
     box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)
@@ -393,6 +392,7 @@ def main():  # NOQA
             print('Switch off cap-force')
             cap_force.disconnect()
     else:
+        ext_analysis.interval = args.energy_collect_bck
         print('Running a single-phase backmapping.')
         for k in range(dynamic_res_time):
             traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
