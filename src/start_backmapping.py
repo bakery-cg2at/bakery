@@ -49,7 +49,6 @@ def main():  # NOQA
     h5md_group = 'atoms'
     time0 = time.time()
     args = _args().parse_args()
-    _args().save_to_file('{}params.out'.format(args.output_prefix), args)
 
     lj_cutoff = args.lj_cutoff
     cg_cutoff = args.cg_cutoff
@@ -84,7 +83,7 @@ def main():  # NOQA
     integrator_step = args.int_step
     k_eq_step = int(args.eq / integrator_step)
     long_step = int(args.long / integrator_step)
-    dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 1 if args.alpha > 0.0 else 0
+    dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 2 if args.alpha > 0.0 else 0
 
     if args.skin:
         skin = args.skin
@@ -95,6 +94,8 @@ def main():  # NOQA
     if args.rng_seed == -1:
         rng_seed = random.randint(1, 10000)
         args.rng_seed = rng_seed
+
+    _args().save_to_file('{}_{}_params.out'.format(args.output_prefix, rng_seed), args)
 
     print('Skin: {}'.format(skin))
     print('RNG Seed: {}'.format(rng_seed))

@@ -85,7 +85,7 @@ class CGFragment:
 
         self.com /= total_mass
         self.cg_mass = total_mass
-        # Move the atoms in fragments to the origin. List of atoms.
+        # Move the atoms in fragments to the origin, always by substracting the com of the fragment.
         self.atom_in_fragments = [
             files_io.Atom(x[0], x[1], x[2], x[3], x[4] - self.com)
             for x in tmp_atom_list
