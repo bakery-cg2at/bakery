@@ -288,6 +288,7 @@ class GROFile(CoordinateFile):
                     output_gro.id_map[pid] = pid
         else:
             output_gro.atoms = copy.copy(input_gro.atoms)
+            output_gro.id_map = {k: k for k in output_gro.atoms}
         return output_gro
 
     def write(self, file_name=None, force=False):
