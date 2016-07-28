@@ -35,6 +35,8 @@ import gromacs_topology
 
 from app_args import _args_md
 
+import tools_sim as tools
+
 # GROMACS units, kJ/mol K
 kb = 0.0083144621
 
@@ -46,8 +48,6 @@ __doc__ = 'Run GROMACS-like simulation'
 
 def main():  #NOQA
     args = _args_md().parse_args()
-
-    _args_md().save_to_file('{}params.out'.format(args.output_prefix), args)
 
     if args.debug:
         for s in args.debug.split(','):
@@ -92,11 +92,14 @@ def main():  #NOQA
         skin = args.skin
 
     rng_seed = args.rng_seed
-    if not args.rng_seed:
-        rng_seed = random.randint(10, 1000000)
+    if args.rng_seed == -1:
+        rng_seed = random.randint(1, 10000)
+        args.rng_seed = rng_seed
 
     print('Skin: {}'.format(skin))
     print('RNG Seed: {}'.format(rng_seed))
+
+    _args_md().save_to_file('{}_{}_params.out'.format(args.output_prefix, rng_seed), args)
 
     part_prop, all_particles = gromacs_topology.genParticleList(
         input_conf, use_velocity=True, use_charge=True)
@@ -155,28 +158,40 @@ def main():  #NOQA
         )
 
 # define the potential, interaction_id = 0
-    vl_interaction = gromacs_topology.setLennardJonesInteractions(
-        system, input_conf.defaults, input_conf.atomtypeparams,
-        verletlist, lj_cutoff, input_conf.nonbond_params, table_groups=table_groups)
-    gromacs_topology.setTabulatedInteractions(
-        system, input_conf.atomtypeparams, vl=verletlist,
-        cutoff=cg_cutoff, interaction=vl_interaction, table_groups=table_groups)
-    bondedinteractions = gromacs_topology.setBondedInteractions(
-        system, input_conf.bondtypes, input_conf.bondtypeparams)
-    angleinteractions = gromacs_topology.setAngleInteractions(
-        system, input_conf.angletypes, input_conf.angletypeparams)
-    dihedralinteractions = gromacs_topology.setDihedralInteractions(
-        system, input_conf.dihedraltypes, input_conf.dihedraltypeparams)
-    pairinteractions = gromacs_topology.setPairInteractions(
-        system, input_conf.pairtypes, input_conf.pairtypeparams, lj_cutoff)
-    coulomb_interaction = gromacs_topology.setCoulombInteractions(
-        system, verletlist, args.coulomb_cutoff, input_conf.atomtypeparams,
-        epsilon1=args.coulomb_epsilon1,
-        epsilon2=args.coulomb_epsilon2,
-        kappa=args.coulomb_kappa)
+    lj_interaction = tools.setLennardJonesInteractions(
+        system, input_conf, verletlist, lj_cutoff,
+        input_conf.nonbond_params,
+        interaction=espressopp.interaction.VerletListLennardJones(verletlist),
+        table_groups=table_groups)
+    if lj_interaction is not None:
+        system.addInteraction(lj_interaction, 'lj')
 
-    if coulomb_interaction: 
+    if args.coulomb_cutoff > 0.0:
+        coulomb_interaction = gromacs_topology.setCoulombInteractions(
+            system, verletlist, args.coulomb_cutoff, input_conf.atomtypeparams,
+            epsilon1=args.coulomb_epsilon1,
+            epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
+            interaction=espressopp.interaction.VerletListReactionFieldGeneralized(
+                verletlist))
         system.addInteraction(coulomb_interaction, 'coulomb')
+
+    tools.setBondedInteractions(
+        system, input_conf)
+    tools.setAngleInteractions(
+        system, input_conf)
+    tools.setDihedralInteractions(
+        system, input_conf)
+    tools.setPairInteractions(
+        system, input_conf, args.lj_cutoff)
+    tab_cg = tools.setTabulatedInteractions(
+        system, input_conf.atomtypeparams,
+        vl=verletlist,
+        cutoff=cg_cutoff,
+        interaction=espressopp.interaction.VerletListTabulated(
+            verletlist,
+        ), table_groups=table_groups)
+    if tab_cg is not None:
+        system.addInteraction(tab_cg, 'tab-cg')
 
     print('Bonds: {}'.format(sum(len(x) for x in input_conf.bondtypes.values())))
     print('Angles: {}'.format(sum(len(x) for x in input_conf.angletypes.values())))
@@ -220,23 +235,9 @@ def main():  #NOQA
     system.storage.decompose()
 
     # Observe tuple lists
-    energy_file = '{}_energy_{}.csv'.format(args.output_prefix, rng_seed)
-    print('Energy saved to: {}'.format(energy_file))
-    system_analysis = espressopp.analysis.SystemMonitor(
-        system,
-        integrator,
-        espressopp.analysis.SystemMonitorOutputCSV(energy_file))
-    temp_comp = espressopp.analysis.Temperature(system)
-    system_analysis.add_observable('T', temp_comp)
-    system_analysis.add_observable(
-        'Ekin', espressopp.analysis.KineticEnergy(
-            system, temp_comp))
-    for label, interaction in sorted(system.getAllInteractions().items()):
-        print('System analysis: adding {}'.format(label))
-        system_analysis.add_observable(
-            label, espressopp.analysis.PotentialEnergy(system, interaction))
-    ext_analysis = espressopp.integrator.ExtAnalyze(system_analysis, args.energy_collect)
-    integrator.addExtension(ext_analysis)
+    args.alpha = 0.0
+    ext_analysis, system_analysis = tools.setSystemAnalysis(
+        system, integrator, args, args.energy_collect, '')
     print('Configured system analysis')
 
     h5md_output_file = '{}_{}_{}'.format(args.output_prefix, rng_seed, args.output_file)
@@ -275,6 +276,9 @@ def main():  #NOQA
     if args.interactive:
         import IPython
         IPython.embed()
+
+    # Save interactions
+    tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, rng_seed))
 
     if args.em > 0:
         print('Runninng basic energy minimization')

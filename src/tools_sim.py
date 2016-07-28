@@ -29,7 +29,11 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
     """Sets system analysis routine"""
     if filename_suffix is None:
         filename_suffix = ''
-    energy_file = '{}energy_{}_{}{}.csv'.format(args.output_prefix, args.alpha, args.rng_seed, filename_suffix)
+    try:
+        alpha = args.alpha
+        energy_file = '{}_energy_{}_{}{}.csv'.format(args.output_prefix, alpha, args.rng_seed, filename_suffix)
+    except AttributeError:
+        energy_file = '{}_energy_{}{}.csv'.format(args.output_prefix, args.rng_seed, filename_suffix)
     print('Energy saved to: {}'.format(energy_file))
     system_analysis = espressopp.analysis.SystemMonitor(
         system,
@@ -49,10 +53,14 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
         system_analysis.add_observable(
             'res', espressopp.analysis.Resolution(system, dynamic_res))
 
-    system_info_filter = args.system_info_filter.split(',') if args.system_info_filter else None
+    try:
+        system_info_filter = args.system_info_filter.split(',')
+    except AttributeError:
+        system_info_filter = None
+
     for label, interaction in sorted(system.getAllInteractions().items()):
         show_in_system_info = True
-        if system_info_filter is not None:
+        if system_info_filter:
             show_in_system_info = False
             for v in system_info_filter:
                 if v in label:
@@ -68,7 +76,7 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
 
 
 def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonded_params=None,  # NOQA
-                                hadress=False, ftpl=None, interaction=None):
+                                hadress=False, ftpl=None, interaction=None, table_groups=[]):
     """ Set lennard jones interactions which were read from gromacs based on the atomypes"""
     defaults = input_conf.defaults
     atomtypeparams = input_conf.atomtypeparams
@@ -90,8 +98,13 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     type_pairs = set()
     for type_1, pi in atomtypeparams.iteritems():
         for type_2, pj in atomtypeparams.iteritems():
-            if pi['particletype'] != 'V' and pj['particletype'] != 'V':
+            if (pi.get('atnum') in table_groups and pj.get('atnum') in table_groups) or (
+                pi.get('atname') in table_groups and pj.get('atname') in table_groups):
                 type_pairs.add(tuple(sorted([type_1, type_2])))
+            elif pi['particletype'] != 'V' and pj['particletype'] != 'V':
+                type_pairs.add(tuple(sorted([type_1, type_2])))
+            else:
+                print('Skip {}-{} for LJ potential'.format(type_1, type_2))
     type_pairs = sorted(type_pairs)
 
     if not type_pairs:
@@ -118,8 +131,7 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
                 sig = (sig_1*sig_2)**(1.0/2.0)
                 eps = (eps_1*eps_2)**(1.0/2.0)
         if sig > 0.0 and eps > 0.0:
-            print ("Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps",
-                   eps, "cutoff", cutoff)
+            print "Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps", eps, "cutoff", cutoff
             ljpot = espressopp.interaction.LennardJones(epsilon=eps, sigma=sig, shift='auto',
                                                         cutoff=cutoff)
             if ftpl:
@@ -129,16 +141,22 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     return interaction
 
 
-def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None):
+def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None, table_groups=[]):
     """Sets tabulated potential for types that has particletype set to 'V'."""
     spline_type = 2
     if interaction is None:
         interaction = espressopp.interaction.VerletListTabulated(vl)
+
     type_pairs = set()
     for type_1, v1 in atomtypeparams.iteritems():
         for type_2, v2 in atomtypeparams.iteritems():
             if v1.get('particletype', 'A') == 'V' and v2.get('particletype', 'A') == 'V':
                 type_pairs.add(tuple(sorted([type_1, type_2])))
+            elif (v1.get('atnum') in table_groups and v2.get('atnum') in table_groups) or (
+                v1.get('atname') in table_groups and v2.get('atname') in table_groups):
+                type_pairs.add(tuple(sorted([type_1, type_2])))
+            else:
+                print('Skip {}-{} for tabulated potential'.format(type_1, type_2))
     if not type_pairs:
         return None
     for type_1, type_2 in type_pairs:
@@ -300,10 +318,7 @@ def setPairInteractions(system, input_conf, cutoff, ftpl=None):
             else:
                 interaction = espressopp.interaction.FixedPairListAdressLennardJones(
                     system, fpl, pot, is_cg)
-            system.addInteraction(interaction, 'lj-14_{}{}'.format(
-                pid, '_cross' if cross_bonds else ''))
-            ret_list[(pid, cross_bonds)] = interaction
-    return ret_list
+            system.addInteraction(interaction, 'lj-14_{}{}'.format(pid, '_cross' if cross_bonds else ''))
 
 
 def setAngleInteractions(system, input_conf, force_static=False, only_at=False, only_cg=None):
@@ -360,3 +375,23 @@ def setDihedralInteractions(system, input_conf, force_static=False, only_at=Fals
                 did, '_cross' if cross_dih else ''))
             ret_list.update({(did, cross_dih): dihedralinteraction})
     return ret_list
+
+
+def saveInteractions(system, output_filename):
+    number_of_interactions = system.getNumberOfInteractions()
+    print('Number of interactions: {}'.format(number_of_interactions))
+
+    data = {}
+    for interaction_name, interaction in system.getAllInteractions().items():
+        print('Interaction {}'.format(interaction_name))
+        tmp_data = {'class_str': str(interaction)}
+        tmp_data['params'] = interaction.getParams()
+        fixed_list = interaction.getFixedList()
+        if fixed_list is not None:
+            tmp_data['fixed_list'] = fixed_list.getList()
+        data[interaction_name] = tmp_data
+
+    with open(output_filename, 'wb') as output_file:
+        import cPickle
+        cPickle.dump(data, output_file)
+        print('Saved in {}'.format(output_filename))

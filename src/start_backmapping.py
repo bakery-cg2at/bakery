@@ -209,6 +209,8 @@ def main():  # NOQA
     verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
         system, args, input_conf, at_particle_ids, cg_particle_ids)
 
+    print('Number of interactions: {}'.format(system.getNumberOfInteractions()))
+
     # Define the thermostat
     temperature = args.temperature * kb
     print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
@@ -327,6 +329,8 @@ def main():  # NOQA
         verletlistCG = tools_backmapping.setupFirstPhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
 
+        tools.saveInteractions(system, '{}_{}_{}_phase_one_interactions.pck'.format(args.output_prefix, rng_seed, args.alpha))
+
         ext_analysis2, system_analysis2 = tools.setSystemAnalysis(
             system,
             integrator,
@@ -366,6 +370,9 @@ def main():  # NOQA
         dynamic_res.active = True
         dynamic_res.resolution = args.initial_resolution
 
+        tools.saveInteractions(system,
+                               '{}_{}_{}_phase_two_interactions.pck'.format(args.output_prefix, rng_seed, args.alpha))
+
         # Reset system analysis.
         ext_analysis2.disconnect()
 
@@ -384,11 +391,9 @@ def main():  # NOQA
                 integrator.run(integrator_step)
                 global_int_step += 1
             traj_file.flush()
-
-        if has_capforce:
-            print('Switch off cap-force')
-            cap_force.disconnect()
     else:
+        tools.saveInteractions(system, '{}_{}_phase_single_interactions.pck'.format(args.output_prefix, rng_seed))
+        # Single phase backmapping
         ext_analysis.interval = args.energy_collect_bck
         print('Running a single-phase backmapping.')
         for k in range(dynamic_res_time):

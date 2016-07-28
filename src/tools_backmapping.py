@@ -23,12 +23,11 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
     verletlistCG = espressopp.VerletListHybridCG(
         system, cutoff=args.cg_cutoff, exclusionlist=exclusionlistCG)
 
-    lj_interaction = espressopp.interaction.VerletListHybridLennardJones(
-        verletlistAT, False)
     lj_interaction = tools.setLennardJonesInteractions(
         system, input_conf, verletlistAT, args.lj_cutoff,
         input_conf.nonbond_params,
-        interaction=lj_interaction)
+        interaction=espressopp.interaction.VerletListHybridLennardJones(
+            verletlistAT, False))
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
     if args.coulomb_cutoff > 0.0:
@@ -45,7 +44,7 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
         system, input_conf)
     tools.setDihedralInteractions(
         system, input_conf)
-    pair14_interactions = tools.setPairInteractions(
+    tools.setPairInteractions(
         system, input_conf, args.lj_cutoff)
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
