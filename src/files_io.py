@@ -207,6 +207,7 @@ class GROFile(CoordinateFile):
             chain_name = line[5:10].strip()
             at_name = line[10:15].strip()
             at_id = int(line[15:20].strip())
+            self.id_map[at_id] = at_id
             # Need to rescale.
             pos_x = float(line[20:28].strip()) * self.scale_factor
             pos_y = float(line[28:36].strip()) * self.scale_factor
@@ -263,7 +264,14 @@ class GROFile(CoordinateFile):
 
     @staticmethod
     def copy(input_gro, particle_ids=None, renumber=False):
-        """Make copy of GROFile."""
+        """Make copy of GROFile.
+        Args:
+            particle_ids: The list of atom ids that will be copied here. There will be a map.
+            renumber: Renumber the atoms from 1.
+
+        Returns:
+            GROFile object.
+        """
         output_gro = GROFile(input_gro.file_name)
         output_gro.box = input_gro.box
         output_gro.title = input_gro.title
@@ -329,12 +337,20 @@ class GROFile(CoordinateFile):
             output_file.close()
             self.atoms_updated = False
 
-    def update_positions(self, system, use_id_map=False):
-        """Update positions."""
+    def update_positions(self, system, unfolded=True):
+        """Update positions. Warning! This is a very slow approach, use only to save end-state.
+
+        Args:
+            system: The espressopp.System object.
+            unfolded: Update position with unfolded coordinates.
+        """
         for at_id in self.atoms:
-            p = system.storage.getParticle(self.id_map[at_id] if use_id_map else at_id)
+            pt = system.storage.getParticle(self.id_map.get(at_id, at_id))
             old_atom = self.atoms[at_id]
-            self.atoms[at_id] = old_atom._replace(position=p.pos)
+            new_pos = pt.pos
+            if unfolded:
+                new_pos = numpy.array(list(pt.pos)) + numpy.array(self.box)*numpy.array(list(pt.imageBox))
+            self.atoms[at_id] = old_atom._replace(position=new_pos)
 
     def dump(self, system, filename, particle_ids, chain_name, chain_idx, atom_name):
         """Dump data from storage."""

@@ -384,12 +384,14 @@ def saveInteractions(system, output_filename):
     data = {}
     for interaction_name, interaction in system.getAllInteractions().items():
         print('Interaction {}'.format(interaction_name))
-        tmp_data = {'class_str': str(interaction)}
-        tmp_data['params'] = interaction.getParams()
+        data[interaction_name] = {
+            'class_str': str(interaction),
+            'params': interaction.getParams()
+        }
         fixed_list = interaction.getFixedList()
         if fixed_list is not None:
-            tmp_data['fixed_list'] = fixed_list.getList()
-        data[interaction_name] = tmp_data
+            l = fixed_list.getList()
+            data[interaction_name]['fixed_list'] = l
 
     with open(output_filename, 'wb') as output_file:
         import cPickle
