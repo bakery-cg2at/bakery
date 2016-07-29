@@ -317,7 +317,9 @@ def main():  # NOQA
     print('Change time-step to {}'.format(args.dt_dyn))
     integrator.dt = args.dt_dyn
     if has_capforce:
+        thermostat.disconnect()
         integrator.addExtension(cap_force)
+        thermostat.connect()
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
     two_phase = args.two_phase or args.second_phase_em
@@ -328,8 +330,6 @@ def main():  # NOQA
         verletlistAT.disconnect()
         verletlistCG = tools_backmapping.setupFirstPhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
-
-        tools.saveInteractions(system, '{}_{}_{}_phase_one_interactions.pck'.format(args.output_prefix, rng_seed, args.alpha))
 
         ext_analysis2, system_analysis2 = tools.setSystemAnalysis(
             system,
@@ -370,8 +370,8 @@ def main():  # NOQA
         dynamic_res.active = True
         dynamic_res.resolution = args.initial_resolution
 
-        tools.saveInteractions(system,
-                               '{}_{}_{}_phase_two_interactions.pck'.format(args.output_prefix, rng_seed, args.alpha))
+        #tools.saveInteractions(system,
+        #                       '{}_{}_{}_phase_two_interactions.pck'.format(args.output_prefix, rng_seed, args.alpha))
 
         # Reset system analysis.
         ext_analysis2.disconnect()
@@ -392,7 +392,7 @@ def main():  # NOQA
                 global_int_step += 1
             traj_file.flush()
     else:
-        tools.saveInteractions(system, '{}_{}_phase_single_interactions.pck'.format(args.output_prefix, rng_seed))
+        #tools.saveInteractions(system, '{}_{}_phase_single_interactions.pck'.format(args.output_prefix, rng_seed))
         # Single phase backmapping
         ext_analysis.interval = args.energy_collect_bck
         print('Running a single-phase backmapping.')

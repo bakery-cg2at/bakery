@@ -278,7 +278,6 @@ def main():  #NOQA
         IPython.embed()
 
     # Save interactions
-    tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, rng_seed))
 
     if args.em > 0:
         print('Runninng basic energy minimization')
@@ -303,6 +302,8 @@ def main():  #NOQA
     gro_whole.update_positions(system)
     gro_whole.write(output_gro_file, force=True)
     print('Wrote end configuration to: {}'.format(output_gro_file))
+    print('Save interaction database...')
+    tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, rng_seed))
 
     print('finished!')
     print('total time: {}'.format(time.time()-time0))
