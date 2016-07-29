@@ -155,14 +155,13 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
             elif (v1.get('atnum') in table_groups and v2.get('atnum') in table_groups) or (
                 v1.get('atname') in table_groups and v2.get('atname') in table_groups):
                 type_pairs.add(tuple(sorted([type_1, type_2])))
-            else:
-                print('Skip {}-{} for tabulated potential'.format(type_1, type_2))
     if not type_pairs:
         return None
+    print('Found {} pairs for tabulated interactions'.format(len(type_pairs)))
     for type_1, type_2 in type_pairs:
-        print('Set tabulated potential {}-{}'.format(type_1, type_2))
         name_1 = atomtypeparams[type_1]['atnum']
         name_2 = atomtypeparams[type_2]['atnum']
+        print('Set tabulated potential {}-{}'.format(name_1, name_2))
         table_name = '{}-{}.espp.pot'.format(name_1, name_2)
         orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
         if not os.path.exists(table_name):
