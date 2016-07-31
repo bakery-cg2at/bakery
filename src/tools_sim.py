@@ -156,6 +156,7 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
                 type_pairs.add(tuple(sorted([type_1, type_2])))
     if not type_pairs:
         return None
+    print('Found {} pairs for tabulated interactions'.format(len(type_pairs)))
     for type_ids in type_pairs:
         types_names = sorted([(x, atomtypeparams[x]['atnum']) for x in type_ids], key=lambda z: z[1])
         name_1 = types_names[0][1]
