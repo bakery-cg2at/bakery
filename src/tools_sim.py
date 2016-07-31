@@ -100,11 +100,10 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
         for type_2, pj in atomtypeparams.iteritems():
             if (pi.get('atnum') in table_groups and pj.get('atnum') in table_groups) or (
                 pi.get('atname') in table_groups and pj.get('atname') in table_groups):
-                type_pairs.add(tuple(sorted([type_1, type_2])))
+                continue
             elif pi['particletype'] != 'V' and pj['particletype'] != 'V':
                 type_pairs.add(tuple(sorted([type_1, type_2])))
-            else:
-                print('Skip {}-{} for LJ potential'.format(type_1, type_2))
+
     type_pairs = sorted(type_pairs)
 
     if not type_pairs:
@@ -155,14 +154,15 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
             elif (v1.get('atnum') in table_groups and v2.get('atnum') in table_groups) or (
                 v1.get('atname') in table_groups and v2.get('atname') in table_groups):
                 type_pairs.add(tuple(sorted([type_1, type_2])))
-            else:
-                print('Skip {}-{} for tabulated potential'.format(type_1, type_2))
     if not type_pairs:
         return None
-    for type_1, type_2 in type_pairs:
-        print('Set tabulated potential {}-{}'.format(type_1, type_2))
-        name_1 = atomtypeparams[type_1]['atnum']
-        name_2 = atomtypeparams[type_2]['atnum']
+    for type_ids in type_pairs:
+        types_names = sorted([(x, atomtypeparams[x]['atnum']) for x in type_ids], key=lambda z: z[1])
+        name_1 = types_names[0][1]
+        name_2 = types_names[1][1]
+        type_1 = types_names[0][0]
+        type_2 = types_names[1][0]
+        print('Set tabulated potential {}-{}'.format(name_1, name_2))
         table_name = '{}-{}.espp.pot'.format(name_1, name_2)
         orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
         if not os.path.exists(table_name):

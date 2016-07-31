@@ -294,6 +294,7 @@ def main():  # NOQA
         integrator.addExtension(ext_remove_com)
 
     ############# SIMULATION: EQUILIBRATION PHASE #####################
+    system_analysis.dump()
     global_int_step = 0
     for k in range(k_eq_step):
         system_analysis.info()
@@ -310,6 +311,7 @@ def main():  # NOQA
         has_capforce = True
         print('Define maximum cap-force during the backmapping')
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
+        cap_force2 = espressopp.integrator.CapForce(system, 10e8)
 
     print('Activating dynamic resolution changer')
     dynamic_res.active = True
@@ -319,6 +321,7 @@ def main():  # NOQA
     if has_capforce:
         thermostat.disconnect()
         integrator.addExtension(cap_force)
+        integrator.addExtension(cap_force2)
         thermostat.connect()
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
@@ -400,8 +403,17 @@ def main():  # NOQA
             traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
             system_analysis.info()
             integrator.run(integrator_step)
+            if has_capforce:
+                max_force = args.cap_force + (k*integrator_step*args.alpha*10000000.0)
+                print 'max_force', max_force
+                cap_force.setAbsCapForce(max_force)
             global_int_step += 1
         traj_file.flush()
+
+    if has_capforce:
+        print('Disconnect cap-force')
+        cap_force.disconnect()
+        cap_force2.disconnect()
 
     gro_whole.update_positions(system)
     gro_whole.write(

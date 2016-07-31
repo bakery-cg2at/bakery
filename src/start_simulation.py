@@ -54,7 +54,10 @@ def main():  #NOQA
             print('Activating logger {}'.format(s))
             logging.getLogger(s.strip()).setLevel(logging.DEBUG)
 
-    table_groups = map(str.strip, args.table_groups.split(','))
+    if args.table_groups:
+        table_groups = map(str.strip, args.table_groups.split(','))
+    else:
+        table_groups = []
     lj_cutoff = args.lj_cutoff
     cg_cutoff = args.cg_cutoff
     max_cutoff = max([lj_cutoff, cg_cutoff])
@@ -173,7 +176,8 @@ def main():  #NOQA
             epsilon2=args.coulomb_epsilon2, kappa=args.coulomb_kappa,
             interaction=espressopp.interaction.VerletListReactionFieldGeneralized(
                 verletlist))
-        system.addInteraction(coulomb_interaction, 'coulomb')
+        if coulomb_interaction is not None:
+            system.addInteraction(coulomb_interaction, 'coulomb')
 
     tools.setBondedInteractions(
         system, input_conf)
@@ -277,12 +281,17 @@ def main():  #NOQA
         import IPython
         IPython.embed()
 
+    system_analysis.dump()
     # Save interactions
 
     if args.em > 0:
         print('Runninng basic energy minimization')
+        system_analysis.info()
         minimize_energy = espressopp.integrator.MinimizeEnergy(system, args.em_gamma, args.em_ftol, args.em_max_d * input_conf.Lx)
         minimize_energy.run(args.em, True)
+        print('Energy information:')
+        system_analysis.dump()
+        system_analysis.info()
     else:
         for k in range(sim_step):
             if k_energy_collect > 0 and k % k_energy_collect == 0:
@@ -303,11 +312,11 @@ def main():  #NOQA
     gro_whole.write(output_gro_file, force=True)
     print('Wrote end configuration to: {}'.format(output_gro_file))
     print('Save interaction database...')
-    tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, rng_seed))
+    #tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, rng_seed))
 
     print('finished!')
     print('total time: {}'.format(time.time()-time0))
-    espressopp.tools.analyse.final_info(system, integrator, verletlist, time0, time.time())
+    #espressopp.tools.analyse.final_info(system, integrator, verletlist, time0, time.time())
 
 
 if __name__ == '__main__':
