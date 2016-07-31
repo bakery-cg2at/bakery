@@ -395,7 +395,7 @@ def main():  # NOQA
                 global_int_step += 1
             traj_file.flush()
     else:
-        #tools.saveInteractions(system, '{}_{}_phase_single_interactions.pck'.format(args.output_prefix, rng_seed))
+        tools.saveInteractions(system, '{}_{}_phase_single_interactions.pck'.format(args.output_prefix, rng_seed))
         # Single phase backmapping
         ext_analysis.interval = args.energy_collect_bck
         print('Running a single-phase backmapping.')

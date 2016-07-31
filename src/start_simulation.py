@@ -312,11 +312,12 @@ def main():  #NOQA
     gro_whole.write(output_gro_file, force=True)
     print('Wrote end configuration to: {}'.format(output_gro_file))
     print('Save interaction database...')
-    #tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, rng_seed))
+    tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, rng_seed))
 
     print('finished!')
     print('total time: {}'.format(time.time()-time0))
-    #espressopp.tools.analyse.final_info(system, integrator, verletlist, time0, time.time())
+    if not args.em:
+        espressopp.tools.analyse.final_info(system, integrator, verletlist, time0, time.time())
 
 
 if __name__ == '__main__':
