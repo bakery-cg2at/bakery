@@ -637,7 +637,6 @@ def storePairs(f, defaults, types, pairtypeparams,
                         else:
                             pairtypeid = 0
                             types_pairtypeid[(t1, t2)] = 0
-                        pair_params = pairtypeparams[(t1, t2)]
                         use_pairtypeparams[pairtypeid] = pairtypeparams[(t1, t2)]
                     else:
                         sig_1, eps_1 = at1['sig'], at1['eps']

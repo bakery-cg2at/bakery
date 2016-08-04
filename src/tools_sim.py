@@ -290,25 +290,39 @@ def setBondedInteractions(system, input_conf, force_static=False, only_at=False,
 
 
 def setPairInteractions(system, input_conf, cutoff, ftpl=None):
-    ret_list = {}
     pairs = input_conf.pairtypes
+    fudgeQQ = float(input_conf.defaults['fudgeQQ'])
+    pref = 138.935485 * fudgeQQ  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2, scaled by fudge factor
     pairtypeparams = input_conf.pairtypeparams
+
+    static_14_pairs = []
+    cross_14_pairs_cg = []
+    cross_14_pairs_at = []
+
     for (pid, cross_bonds), pair_list in pairs.iteritems():
         params = pairtypeparams[pid]
-        if params['sig'] > 0.0 and params['eps'] > 0.0:
-            is_cg = input_conf.atomtypeparams[
-                        input_conf.types[pair_list[0][0] - 1]]['particletype'] == 'V'
-            if is_cg or ftpl is None:
-                fpl = espressopp.FixedPairList(system.storage)
+        is_cg = input_conf.atomtypeparams[
+                    input_conf.types[pair_list[0][0] - 1]]['particletype'] == 'V'
+        if is_cg or ftpl is None:
+            fpl = espressopp.FixedPairList(system.storage)
+        else:
+            fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
+        fpl.addBonds(pair_list)
+
+        if cross_bonds or is_cg:
+            if is_cg:
+                cross_14_pairs_cg.extend(pair_list)
             else:
-                fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
-            fpl.addBonds(pair_list)
+                cross_14_pairs_at.extend(pair_list)
+        else:
+            static_14_pairs.extend(pair_list)
 
-            if not cross_bonds:
-                is_cg = None
+        if not cross_bonds:
+            is_cg = None
 
-            print ('Pair interaction', params, ' num pairs:', len(pair_list),
-                   'sig=', params['sig'], params['eps'])
+        if params['sig'] > 0.0 and params['eps'] > 0.0:
+            print('Pair interaction {} num pairs: {} sig={} eps={} cutoff={} is_cg={}'.format(
+                params, len(pair_list), params['sig'], params['eps'], cutoff, is_cg))
             pot = espressopp.interaction.LennardJones(
                 sigma=params['sig'],
                 epsilon=params['eps'],
@@ -320,6 +334,48 @@ def setPairInteractions(system, input_conf, cutoff, ftpl=None):
                 interaction = espressopp.interaction.FixedPairListAdressLennardJones(
                     system, fpl, pot, is_cg)
             system.addInteraction(interaction, 'lj-14_{}{}'.format(pid, '_cross' if cross_bonds else ''))
+
+    # Set Coulomb14
+    if static_14_pairs or cross_14_pairs_cg or cross_14_pairs_at:
+        type_pairs = set()
+        for type_1, pi in input_conf.atomtypeparams.iteritems():
+            for type_2, pj in input_conf.atomtypeparams.iteritems():
+                if pi['particletype'] != 'V' and pj['particletype'] != 'V':
+                    type_pairs.add(tuple(sorted([type_1, type_2])))
+
+        type_pairs = sorted(type_pairs)
+        print('Using fudgeQQ: {}'.format(fudgeQQ))
+        potQQ = espressopp.interaction.CoulombTruncated(prefactor=pref, cutoff=cutoff)
+
+        if static_14_pairs:
+            print('Defined {} of static coulomb 1-4 pairs'.format(len(static_14_pairs)))
+            fpl_static = espressopp.FixedPairList(system.storage)
+            fpl_static.addBonds(static_14_pairs)
+            interaction_static = espressopp.interaction.FixedPairListTypesCoulombTruncated(system, fpl_static)
+            for type_1, type_2 in type_pairs:
+                interaction_static.setPotential(type1=type_1, type2=type_2, potential=potQQ)
+            system.addInteraction(interaction_static, 'coulomb14')
+        if cross_14_pairs_cg:
+            print('Defined {} of cross coulomb CG 1-4 pairs'.format(len(cross_14_pairs_cg)))
+            fpl_cross = espressopp.FixedPairList(system.storage)
+            fpl_cross.addBonds(cross_14_pairs_cg)
+            # Now set cross potential.
+            interaction_dynamic = espressopp.interaction.FixedPairListAdressTypesCoulombTruncated(
+                system, fpl_cross, True)
+            for type_1, type_2 in type_pairs:
+                interaction_dynamic.setPotential(type1=type_1, type2=type_2, potential=potQQ)
+            system.addInteraction(interaction_dynamic, 'coulomb14_cg_cross')
+
+        if cross_14_pairs_at:
+            print('Defined {} of cross coulomb AT 1-4 pairs'.format(len(cross_14_pairs_at)))
+            fpl_cross = espressopp.FixedPairList(system.storage)
+            fpl_cross.addBonds(cross_14_pairs_at)
+            # Now set cross potential.
+            interaction_dynamic = espressopp.interaction.FixedPairListAdressTypesCoulombTruncated(
+                system, fpl_cross, False)
+            for type_1, type_2 in type_pairs:
+                interaction_dynamic.setPotential(type1=type_1, type2=type_2, potential=potQQ)
+            system.addInteraction(interaction_dynamic, 'coulomb14_at_cross')
 
 
 def setAngleInteractions(system, input_conf, force_static=False, only_at=False, only_cg=None):
