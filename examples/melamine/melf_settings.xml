@@ -5,7 +5,7 @@
   <ident>MF</ident>
   <!-- Source file with atomistic fragments, it can be even single molecule. -->
   <source_file>single_mf.gro</source_file>
-  <source_topology>topol.top</source_topology>
+  <source_topology>at_topol.top</source_topology>
   <topology>
     <!-- Definition of CG beads. -->
     <cg_beads>
@@ -55,7 +55,7 @@
 </cg_molecule>
 <cg_configuration>
     <format>GROMACS</format>
-    <file>cg_conf_5.gro</file>
+    <file>cg_conf_500.gro</file>
 </cg_configuration>
 <hybrid_configuration>
     <file>hyb_conf.gro</file>
@@ -64,8 +64,8 @@
 <hybrid_topology>
     <file>hyb_topol.top</file>
     <include>
-#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
-;#include "/apps/leuven/thinking/2014a/software/GROMACS/4.6.5-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
+;#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
+#include "/apps/leuven/thinking/2014a/software/GROMACS/4.6.5-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
     </include>
     <molecule_type>
         <name>MF</name>
