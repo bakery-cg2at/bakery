@@ -44,8 +44,8 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         system, input_conf)
     tools.setDihedralInteractions(
         system, input_conf)
-    tools.setPairInteractions(
-        system, input_conf, args.lj_cutoff)
+    # tools.setPairInteractions(
+    #     system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
         vl=verletlistCG,
@@ -150,8 +150,8 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
                 verletlistAT, False))
     else:
         coulomb_interaction = None
-    pair14_interactions = tools.setPairInteractions(
-        system, input_conf, args.lj_cutoff)
+    # tools.setPairInteractions(
+    #    system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
         vl=verletlistCG,

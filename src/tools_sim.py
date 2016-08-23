@@ -289,7 +289,7 @@ def setBondedInteractions(system, input_conf, force_static=False, only_at=False,
     return ret_list
 
 
-def setPairInteractions(system, input_conf, cutoff, ftpl=None):
+def setPairInteractions(system, input_conf, cutoff, coulomb_cutoff, ftpl=None):
     pairs = input_conf.pairtypes
     fudgeQQ = float(input_conf.defaults['fudgeQQ'])
     pref = 138.935485 * fudgeQQ  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2, scaled by fudge factor
@@ -344,8 +344,8 @@ def setPairInteractions(system, input_conf, cutoff, ftpl=None):
                     type_pairs.add(tuple(sorted([type_1, type_2])))
 
         type_pairs = sorted(type_pairs)
-        print('Using fudgeQQ: {}'.format(fudgeQQ))
-        potQQ = espressopp.interaction.CoulombTruncated(prefactor=pref, cutoff=cutoff)
+        print('Using fudgeQQ: {}, type_pairs: {}'.format(fudgeQQ, len(type_pairs)))
+        potQQ = espressopp.interaction.CoulombTruncated(prefactor=pref, cutoff=coulomb_cutoff)
 
         if static_14_pairs:
             print('Defined {} of static coulomb 1-4 pairs'.format(len(static_14_pairs)))

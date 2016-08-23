@@ -400,10 +400,6 @@ def main():  # NOQA
             global_int_step += 1
         traj_file.flush()
 
-    if has_capforce:
-        print('Disconnect cap-force')
-        cap_force.disconnect()
-
     gro_whole.update_positions(system)
     gro_whole.write(
         '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
