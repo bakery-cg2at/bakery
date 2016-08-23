@@ -870,7 +870,7 @@ class GROMACSTopologyFile(TopologyFile):
             at.mass = float(raw_data[7])
 
         if at.chain_name not in self.chains:
-            self.chains[at.chain_name] = collections.defaultdict(list)
+            self.chains[at.chain_name] = collections.defaultdict(dict)
             self.chain_atom_names[at.chain_name] = collections.defaultdict(list)
 
         self.chains[at.chain_name][at.chain_idx][at.name] = at
