@@ -513,6 +513,7 @@ class BackmapperSettings2:
         charge_to_transfer = []
         progress_indc = 0.0
         progress_indc_total = len(cg_cross_bonds)
+        global_degree = self.global_graph.degree()
         for b1, b2 in cg_cross_bonds:
             n1 = self.global_graph.node[b1]
             n2 = self.global_graph.node[b2]
@@ -526,8 +527,8 @@ class BackmapperSettings2:
                         test_bond = self.bond_params.get(b1_key, {}).get(b2_key, None)
                         if (test_bond and self.global_graph.has_node(at1.atom_id)
                             and self.global_graph.has_node(at2.atom_id)):
-                            at1_deg = self.global_graph.degree()[at1.atom_id]
-                            at2_deg = self.global_graph.degree()[at2.atom_id]
+                            at1_deg = global_degree[at1.atom_id]
+                            at2_deg = global_degree[at2.atom_id]
                             at_remove1 = self.atom_id2fragment[b1].active_sites_remove_map.get(b1_key)
                             at_remove2 = self.atom_id2fragment[b2].active_sites_remove_map.get(b2_key)
                             tmp_atoms_to_remove = []
@@ -563,6 +564,7 @@ class BackmapperSettings2:
                                 atoms_to_remove.extend(tmp_atoms_to_remove)
                                 for ai in tmp_atoms_to_remove:
                                     self.global_graph.remove_node(ai)
+                                global_degree = self.global_graph.degree()
                                 break
                     if ats1 is not None and ats2 is not None:
                         break
@@ -571,9 +573,11 @@ class BackmapperSettings2:
                     # Selected proper active sites.
                     at_cross_bonds.append((ats1.atom_id, ats2.atom_id))
                     self.global_graph.add_edge(ats1.atom_id, ats2.atom_id)
+                    global_degree[ats1.atom_id] += 1
+                    global_degree[ats2.atom_id] += 1
                     # Look for charge to transfer.
-                    deg1 = self.global_graph.degree()[ats1.atom_id]
-                    deg2 = self.global_graph.degree()[ats2.atom_id]
+                    deg1 = global_degree[ats1.atom_id]
+                    deg2 = global_degree[ats2.atom_id]
                     b_key1 = '{}:{}'.format(ats1.chain_name, ats1.name)
                     b_key2 = '{}:{}'.format(ats2.chain_name, ats2.name)
                     charge_transfer_cfg = None
