@@ -601,7 +601,7 @@ class GROMACSTopologyFile(TopologyFile):
         for atom_id in atom_ids:
             atom_to_remove = self.atoms[atom_id]
             try:
-                self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx].remove(atom_to_remove)
+                del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
                 self.chain_atom_names[atom_to_remove.chain_name][atom_to_remove.name].remove(atom_to_remove)
             except KeyError:
                 pass
@@ -873,7 +873,7 @@ class GROMACSTopologyFile(TopologyFile):
             self.chains[at.chain_name] = collections.defaultdict(list)
             self.chain_atom_names[at.chain_name] = collections.defaultdict(list)
 
-        self.chains[at.chain_name][at.chain_idx].append(at)
+        self.chains[at.chain_name][at.chain_idx][at.name] = at
         self.chain_atom_names[at.chain_name][at.name].append(at)
         self.atoms[at.atom_id] = at
 
