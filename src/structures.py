@@ -534,7 +534,7 @@ class BackmapperSettings2:
                             tmp_atoms_to_remove = []
                             valid = True
                             # Before we check the degree, let's first try to remove atoms (if they are defined to
-                            # remove and afterthat compare the degree.
+                            # remove and after that compare the degree.
                             if at_remove1:
                                 for atr1 in at_remove1:
                                     atr_chain_name, atr_name = atr1.split(':')[1], atr1.split(':')[2]
