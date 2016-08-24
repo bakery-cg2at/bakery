@@ -305,7 +305,7 @@ def main():  # NOQA
         thermostat.connect()
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
-    two_phase = args.two_phase or args.second_phase_em
+    two_phase = args.two_phase
 
     if two_phase:
         ext_analysis.disconnect()
