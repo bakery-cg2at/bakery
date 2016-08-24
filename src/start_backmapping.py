@@ -58,7 +58,7 @@ def main():  # NOQA
 
     print('Welcome in bakery!\n')
 
-    generate_exclusions = args.exclusion_list is None
+    generate_exclusions = args.exclusion_list is None or not os.path.exists(args.exclusion_list)
 
     print('Reading hybrid topology and coordinate file')
     input_conf = gromacs_topology.read(args.conf, args.top, doRegularExcl=generate_exclusions)
