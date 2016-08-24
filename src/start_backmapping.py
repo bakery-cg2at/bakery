@@ -119,7 +119,7 @@ def main():  # NOQA
     at_gro_conf = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p[1:]], renumber=True)
     gro_whole = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p], renumber=True)
 
-    # Generate initial velocities, only for CG particles.
+    # Generate initial velocities, only for CG particles, AT particles will get the CG particle velocity.
     particle_list = []
     index_adrat = part_prop.index('adrat')
     if 'v' not in part_prop:
@@ -208,6 +208,7 @@ def main():  # NOQA
     verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
         system, args, input_conf, at_particle_ids, cg_particle_ids)
 
+
     # Define the thermostat
     temperature = args.temperature * kb
     print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
@@ -275,16 +276,13 @@ def main():  # NOQA
         print('Store .gro files {}'.format(gro_collect_filename))
 
     ############# SIMULATION: EQUILIBRATION PHASE #####################
+    system_analysis.dump()
     global_int_step = 0
-    system_analysis.info()
     for k in range(k_eq_step):
-        integrator.run(integrator_step)
-        system_analysis.info()
-        global_int_step += 1
-    else:
-        global_int_step += 1
         system_analysis.info()
         traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        integrator.run(integrator_step)
+        global_int_step += 1
 
     traj_file.flush()
     system_analysis.dump()
@@ -302,10 +300,14 @@ def main():  # NOQA
     print('Change time-step to {}'.format(args.dt_dyn))
     integrator.dt = args.dt_dyn
     if has_capforce:
+        thermostat.disconnect()
         integrator.addExtension(cap_force)
+        thermostat.connect()
     print('End of CG simulation. Start dynamic resolution, dt={}'.format(
         args.dt_dyn))
-    if args.two_phase:
+    two_phase = args.two_phase or args.second_phase_em
+
+    if two_phase:
         ext_analysis.disconnect()
         verletlistCG.disconnect()
         verletlistAT.disconnect()
@@ -323,16 +325,18 @@ def main():  # NOQA
 
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time):
-            integrator.run(integrator_step)
+            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
             system_analysis2.info()
+            integrator.run(integrator_step)
             global_int_step += 1
+        traj_file.flush()
 
-        confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+        confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, rng_seed)
         at_gro_conf.update_positions(system)
         at_gro_conf.write(confout_aa, force=True)
         gro_whole.update_positions(system)
         gro_whole.write(
-            '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
+            '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
         print('Atomistic configuration write to: {}'.format(confout_aa))
 
         ########## SECOND PHASE ################
@@ -357,31 +361,30 @@ def main():  # NOQA
 
         # Simulation
         for k in range(dynamic_res_time):
+            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+            system_analysis3.info()
             integrator.run(integrator_step)
-            system_analysis3.info()
             global_int_step += 1
-        else:
-            system_analysis3.info()
+        traj_file.flush()
 
         if has_capforce:
             print('Switch off cap-force')
             cap_force.disconnect()
     else:
+        # Single phase backmapping
+        ext_analysis.interval = args.energy_collect_bck
         print('Running a single-phase backmapping.')
         for k in range(dynamic_res_time):
+            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+            system_analysis.info()
             integrator.run(integrator_step)
-            system_analysis.info()
             global_int_step += 1
-        else:
-            global_int_step += 1
-            system_analysis.info()
-            traj_file.dump(global_int_step * integrator_step,
-                           global_int_step * integrator_step * args.dt)
+        traj_file.flush()
 
     gro_whole.update_positions(system)
     gro_whole.write(
-        '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
-    confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+        '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
+    confout_aa = '{}confout_aa_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
 
@@ -392,35 +395,32 @@ def main():  # NOQA
         args.energy_collect))
     print('Set back time-step to: {}'.format(args.dt))
     ext_analysis.interval = args.energy_collect
-    if args.two_phase:
+    if two_phase:
         ext_analysis3.interval = args.energy_collect
     else:
         ext_analysis.interval = args.energy_collect
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
-        global_int_step += 1
-        if args.two_phase:
-            system_analysis3.info()
-        else:
-            system_analysis.info()
-    else:
-        global_int_step += 1
-        if args.two_phase:
-            system_analysis3.info()
-        else:
-            system_analysis.info()
         traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        if two_phase:
+            system_analysis3.info()
+        else:
+            system_analysis.info()
+        integrator.run(integrator_step)
+        global_int_step += 1
+
+    traj_file.flush()
 
     gro_whole.update_positions(system)
     gro_whole.write(
-        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
-    confout_aa = '{}confout_final_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)
+        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
+    confout_aa = '{}confout_final_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
     print('Final atomistic configuration write to: {}'.format(confout_aa))
     print('Final hybrid configuration write to: {}'.format(
-        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, args.rng_seed)))
+        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)))
 
     traj_file.flush()
     traj_file.close()
