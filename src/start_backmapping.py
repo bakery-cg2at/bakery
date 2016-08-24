@@ -48,7 +48,6 @@ simulation_email = 'xxx@xxx.xxx'
 
 def main():  # NOQA
     h5md_group = 'atoms'
-    print h5md_group
     time0 = time.time()
     args = _args().parse_args()
     _args().save_to_file('{}params.out'.format(args.output_prefix), args)
@@ -59,10 +58,24 @@ def main():  # NOQA
 
     print('Welcome in bakery!\n')
 
+    generate_exclusions = args.exclusion_list is None
+
     print('Reading hybrid topology and coordinate file')
-    input_conf = gromacs_topology.read(args.conf, args.top)
+    input_conf = gromacs_topology.read(args.conf, args.top, doRegularExcl=generate_exclusions)
     input_gro_conf = files_io.GROFile(args.conf)
     input_gro_conf.read()
+
+    if not generate_exclusions:
+        exclusion_file = open(args.exclusion_list, 'r')
+        exclusions = [map(int, x.split()) for x in exclusion_file.readlines()]
+        print('Read exclusion list from {} (total: {})'.format(args.exclusion_list, len(exclusions)))
+        input_conf = input_conf._replace(exclusions=exclusions)
+    else:
+        exclusion_list_file = 'exclusion_{}.list'.format(args.top.split('.')[0])
+        with open(exclusion_list_file, 'w') as fel:
+            for p in input_conf.exclusions:
+                fel.write('{} {}\n'.format(*p))
+        print('Save exclusion list: {} ({})'.format(exclusion_list_file, len(input_conf.exclusions)))
 
     box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)
     print('\nSetting up simulation...')
@@ -71,7 +84,7 @@ def main():  # NOQA
     integrator_step = args.int_step
     k_eq_step = int(args.eq / integrator_step)
     long_step = int(args.long / integrator_step)
-    dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 1 if args.alpha > 0.0 else 0
+    dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 2 if args.alpha > 0.0 else 0
 
     if args.skin:
         skin = args.skin
@@ -81,6 +94,9 @@ def main():  # NOQA
     rng_seed = args.rng_seed
     if args.rng_seed == -1:
         rng_seed = random.randint(1, 10000)
+        args.rng_seed = rng_seed
+
+    _args().save_to_file('{}_{}_params.out'.format(args.output_prefix, rng_seed), args)
 
     print('Skin: {}'.format(skin))
     print('RNG Seed: {}'.format(rng_seed))
@@ -151,6 +167,8 @@ def main():  # NOQA
 
     system.storage.addParticles(map(tuple, particle_list), *part_prop)
 
+    system.storage.decompose()
+
     vs_list = espressopp.FixedVSList(system.storage)
     vs_list.addTuples(adress_tuple)
 
@@ -191,8 +209,7 @@ def main():  # NOQA
         system, args, input_conf, at_particle_ids, cg_particle_ids)
 
     # Define the thermostat
-    if args.temperature:
-        temperature = args.temperature * kb
+    temperature = args.temperature * kb
     print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
     if args.thermostat_whole:
@@ -250,7 +267,7 @@ def main():  # NOQA
 
     if args.gro_collect > 0:
         gro_collect_filename = '{}confout_dump_{}_{}.gro'.format(
-            args.output_prefix, args.alpha, args.rng_seed)
+            args.output_prefix, args.alpha, rng_seed)
         dump_conf_gro = espressopp.io.DumpGRO(system, integrator, filename=gro_collect_filename, append=True)
         ext_dump_conf_gro = espressopp.integrator.ExtAnalyze(
             dump_conf_gro, args.gro_collect)

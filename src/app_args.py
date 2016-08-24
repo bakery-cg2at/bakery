@@ -86,7 +86,7 @@ def _args_md():
                         help='Kappa paramter for coulomb interactions')
     parser.add_argument('--coulomb_cutoff', default=0.9, type=float,
                         help='Cut-off for generalized reactive coulomb reactions')
-    parser.add_argument('--table_groups', default='A,B',
+    parser.add_argument('--table_groups', default=None,
                         help='Name of CG groups to read from tables')
     parser.add_argument('--initial_step', default=0,
                         help='Initial integrator step (useful for continue simulation',
@@ -103,6 +103,8 @@ def _args_md():
                         help='Store chemical state')
     parser.add_argument('--store_lambda', default=False, type=ast.literal_eval,
                         help='Store lambda parameter')
+    parser.add_argument('--exclusion_list', default=None,
+                        help='The exclusion list')
 
     return parser
 
@@ -177,5 +179,7 @@ def _args_backmapping():
         help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--two_phase', default=False, type=ast.literal_eval,
                         help='Two phase process, first bonded terms and then non-bonded')
+    parser.add_argument('--exclusion_list', default=None,
+                        help='The exclusion list')
 
     return parser
