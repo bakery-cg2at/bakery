@@ -10,4 +10,3 @@ lj_cutoff=1.2
 cg_cutoff=1.5
 energy_collect_bck=100
 energy_collect=500
-exclusion_list=exclusion_hyb_topol.list

@@ -1,7 +1,7 @@
 ;#include "/apps/leuven/thinking/2014a/software/GROMACS/4.6.5-intel-2014a-hybrid/share/gromacs/top//oplsaa.ff/forcefield.itp"
-;#include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+#include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/gromos53a6.ff/forcefield.itp"
 ;#include "/home/programs/GROMACS/5.0.4/share/gromacs/top/gromos53a6.ff/forcefield.itp"
-#include "/usr/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+;#include "/usr/share/gromacs/top/gromos53a6.ff/forcefield.itp"
 
 [ atomtypes ]
 A 29.062 0.0 V 1.0 1.0
