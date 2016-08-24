@@ -1,0 +1,132 @@
+<settings>
+<cg_molecule>
+  <name>DOD</name> <!-- the name of the molecule after mapping -->
+  <ident>DOD</ident> <!-- the name of the molecule in atomistic topology -->
+  <source_file>dodecane_single.gro</source_file>
+  <source_topology>topol_aa.top</source_topology>
+  <topology>
+    <cg_beads>
+      <cg_bead>
+        <name>A1</name>
+        <type>A</type>
+        <mapping>A</mapping>
+        <beads>
+          1:DOD:C1 1:DOD:C2
+        </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>B1</name>
+        <type>B</type>
+        <mapping>B</mapping>
+        <beads>
+          1:DOD:C3 1:DOD:C4
+        </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>B2</name>
+        <type>B</type>
+        <mapping>B</mapping>
+        <beads>
+          1:DOD:C5 1:DOD:C6
+        </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>B3</name>
+        <type>B</type>
+        <mapping>B</mapping>
+        <beads>
+          1:DOD:C7 1:DOD:C8
+        </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>B4</name>
+        <type>B</type>
+        <mapping>B</mapping>
+        <beads>
+          1:DOD:C9 1:DOD:C10
+        </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>A2</name>
+        <type>A</type>
+        <mapping>A</mapping>
+        <beads>
+          1:DOD:C11 1:DOD:C12
+        </beads>
+      </cg_bead>
+    </cg_beads>
+    <cg_bonded>
+      <bond>
+        <name>bond</name>
+        <params>8 1.0 0.0 ; cg term</params>
+        <beads>
+          A1 B1
+          A2 B4
+          B1 B2
+          B2 B3
+          B3 B4
+        </beads>
+      </bond>
+      <angle>
+          <name>angle_ch3</name>
+          <params>8 1.0 0.0 ; cg term</params>
+        <beads>
+          A1 B1 B2
+          B3 B4 A2
+        </beads>
+      </angle>
+      <angle>
+          <name>angle_ch2</name>
+          <params>8 1.0 0.0 ; cg term</params>
+        <beads>
+          B1 B2 B3
+          B2 B3 B4
+        </beads>
+      </angle>
+      <dihedral>
+          <name>dihedral</name>
+          <params>8 1.0 0.0 ; cg term</params>
+        <beads>
+          A1 B1 B2 B3
+          B1 B2 B3 B4
+          B2 B3 B4 A2
+        </beads>
+      </dihedral>
+    </cg_bonded>
+  </topology>
+  <maps>
+    <map>
+      <name>A</name>
+      <weights>15.035 14.027</weights>
+    </map>
+    <map>
+      <name>B</name>
+      <weights>14.027 14.027</weights>
+    </map>
+  </maps>
+</cg_molecule>
+<cg_configuration>
+    <format>GROMACS</format>
+    <file>cg_conf.gro</file>
+    <!--<topology>topol_cg.top</topology>-->
+</cg_configuration>
+<hybrid_configuration>
+    <file>hyb_conf.gro</file>
+    <format>GRO</format>
+</hybrid_configuration>
+<hybrid_topology>
+    <file>hyb_topol.top</file>
+    <include>
+        ;#include "/apps/leuven/thinking/2014a/software/GROMACS/4.6.5-intel-2014a-hybrid/share/gromacs/top//oplsaa.ff/forcefield.itp"
+        ;#include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+        ;#include "/home/programs/GROMACS/5.0.4/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+        #include "/usr/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+    </include>
+    <molecule_type>
+        <name>DOD</name>
+        <exclusion>3</exclusion>
+    </molecule_type>
+    <system>DOD</system>
+</hybrid_topology>
+
+</settings>
