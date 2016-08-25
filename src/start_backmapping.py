@@ -56,7 +56,7 @@ def main():  # NOQA
 
     generate_exclusions = args.exclusion_list is None or not os.path.exists(args.exclusion_list)      
 
-    input_conf = gromacs_topology.read('', args.top, doRegularExcl=generate_exclusions)
+    input_conf = gromacs_topology.read(args.top, doRegularExcl=generate_exclusions)
     input_gro_conf = files_io.GROFile(args.conf)
     input_gro_conf.read()
 
