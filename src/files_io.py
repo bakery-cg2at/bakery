@@ -202,11 +202,11 @@ class GROFile(CoordinateFile):
 
         logger.info('Reading GRO file %s', self.file_name)
 
+        at_id = 1
         for line in self.content[2:number_of_atoms + 2]:
             chain_idx = int(line[0:5].strip())
             chain_name = line[5:10].strip()
             at_name = line[10:15].strip()
-            at_id = int(line[15:20].strip())
             self.id_map[at_id] = at_id
             # Need to rescale.
             pos_x = float(line[20:28].strip()) * self.scale_factor
@@ -227,6 +227,7 @@ class GROFile(CoordinateFile):
             if chain_idx not in self.chains[chain_name]:
                 self.chains[chain_name][chain_idx] = {}
             self.chains[chain_name][chain_idx][at_name] = self.atoms[at_id]
+            at_id += 1
 
         # Reads the box size, the last line.
         self.box = numpy.array(
