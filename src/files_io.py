@@ -320,10 +320,10 @@ class GROFile(CoordinateFile):
             for at_id in sorted(self.atoms):
                 at = self.atoms[at_id]
                 output.append(fmt % (
-                    at.chain_idx,
+                    at.chain_idx % 99999,
                     at.chain_name,
                     at.name,
-                    at.atom_id,
+                    at.atom_id % 99999,
                     at.position[0],
                     at.position[1],
                     at.position[2]

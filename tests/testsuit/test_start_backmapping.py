@@ -44,7 +44,9 @@ class TestCaseParseSettings(unittest.TestCase):
         self.bck = structures.BackmapperSettings2(self.settings_file)
         self.bck.prepare_hybrid()
 
-        self.input_conf = gromacs_topology.read('hyb_conf.gro', 'hyb_topol.top')
+        self.input_conf = gromacs_topology.read('hyb_topol.top')
+        self.input_conf_gro = files_io.GROFile('hyb_conf.gro')
+        self.input_conf_gro.read()
         self.system = espressopp.System()
         self.system.rng = espressopp.esutil.RNG()
         self.hyb_topology = self.bck.hyb_topology
@@ -55,12 +57,13 @@ class TestCaseParseSettings(unittest.TestCase):
         remove_file('hyb_topol.top')
 
     def test_check_particle_lists(self):
+
         part_prop, all_particles, adress_tuple = tools.genParticleList(
-            self.input_conf, use_velocity=True, adress=True, use_charge=True)
+            self.input_conf, self.input_conf_gro, adress=True, use_charge=True)
         self.assertEqual(part_prop, ['id', 'type', 'pos', 'res_id', 'mass', 'q', 'adrat', 'lambda_adr', 'vp'])
         self.assertEqual(len(adress_tuple), 6)
         # 6 molecules x CG bead + 6 x 27 atoms - 2 bonds, every bond cause that three atoms are ignored
-        self.assertEqual(len(all_particles), 6*28-2*3)
+        self.assertEqual(len(all_particles), 6*28-4*3)
 
         # Check particle properties.
         self.assertEqual([x.id for x in all_particles if x.adrat == 0],
@@ -68,8 +71,13 @@ class TestCaseParseSettings(unittest.TestCase):
         self.assertEqual([x.lambda_adr for x in all_particles if x.adrat == 0],
                          [0.0 for x in self.hyb_topology.atoms.values() if x.name == 'A1'])
 
-    def test_potentials(self):
-        pass
+        # Check if the position is read correctly
+        positions = [p.pos for p in all_particles]
+        for idd in sorted(self.input_conf_gro.atoms):
+            self.assertListEqual(list(positions[idd-1]), list(self.input_conf_gro.atoms[idd].position))
+
+
+
 
 
 if __name__ == '__main__':

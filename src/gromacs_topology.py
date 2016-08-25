@@ -55,7 +55,7 @@ GromacsSystem = namedtuple(
     ])
 
 
-def read(gro_file, top_file="", doRegularExcl=True, defines=None):
+def read(top_file="", doRegularExcl=True, defines=None):
     """ Read GROMACS data files.
 
     Keyword arguments:
