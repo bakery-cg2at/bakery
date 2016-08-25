@@ -1,0 +1,27 @@
+#!/bin/bash -l
+#PBS -l mem=32gb
+#PBS -l walltime=24:00:00
+#PBS -o Output.job
+#PBS -j oe
+#PBS -l nodes=1:ppn=8
+#PBS -M jakub.krajniak@cs.kuleuven.be
+#PBS -A lp_polymer_goa_project
+#PBS -N paralllel_test
+
+module purge
+
+cd $PBS_O_WORKDIR
+
+source /ddn1/vol1/staging/leuven/stg_00009/jakub/validate_backmapping/espressopp/ESPRC
+module load Boost/1.55.0-intel-2014a-Python-2.7.6
+module load FFTW/3.3.4-intel-2014a
+module load pyh5md
+module load h5py/intel-gpfs
+
+# Set up OpenMPI environment
+n_proc=$(cat $PBS_NODEFILE | wc -l)
+n_node=$(cat $PBS_NODEFILE | uniq | wc -l)
+mpdboot -f $PBS_NODEFILE -n $n_node -r ssh -v
+
+rng="`shuf -i 12345-99999 -n1`"
+mpirun -n 8 python -u ../../src/start_backmapping.py @params --rng_seed ${rng} &> run_${rng}.log

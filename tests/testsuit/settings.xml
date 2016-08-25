@@ -95,8 +95,8 @@
             <exclusion>3</exclusion>
         </molecule_type>
         <include>
-            "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
-            ;"/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
+            ;"/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
+            "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
         </include>
         <system>HYB</system>
     </hybrid_topology>

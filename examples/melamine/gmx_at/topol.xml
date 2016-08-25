@@ -1,0 +1,199 @@
+<topology>
+    <h5md_particle_group name="atoms" />
+    <molecules>
+        <molecule name="MF" nmols="500" nbeads="27">
+            <bead name="N11" type="N" mass="14.0067" q="0.0" />
+            <bead name="C11" type="C" mass="12.011" q="0.0" />
+            <bead name="N21" type="N" mass="14.0067" q="0.0" />
+            <bead name="C1" type="C" mass="12.011" q="0.0" />
+            <bead name="H21" type="H" mass="1.008" q="0.0" />
+            <bead name="O1" type="O" mass="15.9994" q="0.0" />
+            <bead name="H011" type="H" mass="1.008" q="0.0" />
+            <bead name="H012" type="H" mass="1.008" q="0.0" />
+            <bead name="H01" type="H" mass="1.008" q="0.0" />
+            <bead name="N12" type="N" mass="14.0067" q="0.0" />
+            <bead name="C12" type="C" mass="12.011" q="0.0" />
+            <bead name="N22" type="N" mass="14.0067" q="0.0" />
+            <bead name="C2" type="C" mass="12.011" q="0.0" />
+            <bead name="H31" type="N" mass="14.0067" q="0.0" />
+            <bead name="O2" type="C" mass="12.011" q="0.0" />
+            <bead name="H021" type="N" mass="14.0067" q="0.0" />
+            <bead name="H022" type="C" mass="12.011" q="0.0" />
+            <bead name="H02" type="H" mass="1.008" q="0.0" />
+            <bead name="N13" type="O" mass="15.9994" q="0.0" />
+            <bead name="C13" type="H" mass="1.008" q="0.0" />
+            <bead name="N23" type="H" mass="1.008" q="0.0" />
+            <bead name="C3" type="H" mass="1.008" q="0.0" />
+            <bead name="H11" type="O" mass="15.9994" q="0.0" />
+            <bead name="O3" type="H" mass="1.008" q="0.0" />
+            <bead name="H031" type="H" mass="1.008" q="0.0" />
+            <bead name="H032"  type="H" mass="1.008" q="0.0" />
+            <bead name="H03"  type="H" mass="1.008" q="0.0" />
+        </molecule>     
+    </molecules>
+    <!--
+    <bonded>
+        <bond>
+            <name>bond_N_C</name>
+            <beads>
+                MF:N12 MF:C12
+                MF:C12 MF:N13
+                MF:N11 MF:C13
+                MF:N11 MF:C11
+                MF:N22 MF:C2
+                MF:N13 MF:C13
+                MF:C11 MF:N12
+                MF:C11 MF:N21
+                MF:C12 MF:N22
+                MF:N23 MF:C3
+                MF:C13 MF:N23
+                MF:N21 MF:C1
+            </beads>
+        </bond>
+        <bond>
+            <name>bond_N_H</name>
+            <beads>
+                MF:N21 MF:H21
+                MF:N22 MF:H31
+                MF:N23 MF:H11
+            </beads>
+        </bond>
+        <bond>
+            <name>bond_C_O</name>
+            <beads>
+                MF:C1 MF:O1
+                MF:C2 MF:O2
+                MF:C3 MF:O3
+            </beads>
+        </bond>
+        <bond>
+            <name>bond_C_H</name>
+            <beads>
+                MF:C1 MF:H011
+                MF:C3 MF:H031
+                MF:C1 MF:H012
+                MF:C3 MF:H032
+                MF:C2 MF:H022
+                MF:C2 MF:H021
+            </beads>
+        </bond>
+        <bond>
+            <name>bond_O_H</name>
+            <beads>
+                MF:O3 MF:H03
+                MF:O2 MF:H02
+                MF:O1 MF:H01
+            </beads>
+        </bond>
+        <angle>
+            <name>angle_N_C_O</name>
+            <beads>
+                MF:N21 MF:C1 MF:O1
+                MF:C11 MF:N21 MF:H21
+                MF:O2 MF:C2 MF:H021
+                MF:N21 MF:C1 MF:H011
+                MF:C1 MF:O1 MF:H01
+                MF:O3 MF:C3 MF:H032
+                MF:C13 MF:N23 MF:C3
+                MF:C12 MF:N13 MF:C13
+                MF:N11 MF:C13 MF:N23
+                MF:N11 MF:C11 MF:N12
+                MF:C13 MF:N23 MF:H11
+                MF:O1 MF:C1 MF:H011
+                MF:N11 MF:C13 MF:N13
+                MF:H031 MF:C3 MF:H032
+                MF:H021 MF:C2 MF:H022
+                MF:C2 MF:N22 MF:H31
+                MF:N13 MF:C13 MF:N23
+                MF:C1 MF:N21 MF:H21
+                MF:N23 MF:C3 MF:O3
+                MF:C11 MF:N11 MF:C13
+                MF:N22 MF:C2 MF:O2
+                MF:N22 MF:C12 MF:N13
+                MF:N21 MF:C1 MF:H012
+                MF:C3 MF:N23 MF:H11
+                MF:C3 MF:O3 MF:H03
+                MF:N12 MF:C12 MF:N13
+                MF:C2 MF:O2 MF:H02
+                MF:N11 MF:C11 MF:N21
+                MF:C12 MF:N22 MF:C2
+                MF:N12 MF:C12 MF:N22
+                MF:C12 MF:N22 MF:H31
+                MF:C11 MF:N12 MF:C12
+                MF:N23 MF:C3 MF:H031
+                MF:N22 MF:C2 MF:H021
+                MF:N23 MF:C3 MF:H032
+                MF:N22 MF:C2 MF:H022
+                MF:N21 MF:C11 MF:N12
+                MF:H011 MF:C1 MF:H012
+                MF:O1 MF:C1 MF:H012
+                MF:O3 MF:C3 MF:H031
+                MF:C11 MF:N21 MF:C1
+                MF:O2 MF:C2 MF:H022
+            </beads>
+        </angle>
+        <angle>
+            <name>angle_C_N_H</name>
+            <beads>
+
+            </beads>
+        </angle>
+        <dihedral>
+            <name>dihedral1</name>
+            <beads>
+                MF:H012 MF:C1 MF:O1 MF:H01
+                MF:H011 MF:C1 MF:O1 MF:H01
+                MF:C13 MF:N23 MF:C3 MF:H032
+                MF:H31 MF:N22 MF:C2 MF:H022
+                MF:C11 MF:N21 MF:C1 MF:H012
+                MF:N12 MF:C12 MF:N13 MF:C13
+                MF:C12 MF:N22 MF:C2 MF:O2
+                MF:N21 MF:C11 MF:N12 MF:C12
+                MF:C12 MF:N13 MF:C13 MF:N23
+                MF:C13 MF:N11 MF:C11 MF:N12
+                MF:H21 MF:N21 MF:C1 MF:O1
+                MF:N13 MF:C12 MF:N22 MF:H31
+                MF:H021 MF:C2 MF:O2 MF:H02
+                MF:H022 MF:C2 MF:O2 MF:H02
+                MF:C11 MF:N11 MF:C13 MF:N13
+                MF:C11 MF:N21 MF:C1 MF:O1
+                MF:N12 MF:C12 MF:N22 MF:C2
+                MF:N12 MF:C11 MF:N21 MF:C1
+                MF:N13 MF:C13 MF:N23 MF:H11
+                MF:N23 MF:C3 MF:O3 MF:H03
+                MF:C13 MF:N23 MF:C3 MF:O3
+                MF:C13 MF:N11 MF:C11 MF:N21
+                MF:N11 MF:C11 MF:N21 MF:H21
+                MF:N21 MF:C1 MF:O1 MF:H01
+                MF:N11 MF:C13 MF:N23 MF:H11
+                MF:N13 MF:C12 MF:N22 MF:C2
+                MF:H21 MF:N21 MF:C1 MF:H012
+                MF:N22 MF:C2 MF:O2 MF:H02
+                MF:C11 MF:N21 MF:C1 MF:H011
+                MF:C12 MF:N22 MF:C2 MF:H022
+                MF:N12 MF:C11 MF:N21 MF:H21
+                MF:H11 MF:N23 MF:C3 MF:H032
+                MF:H31 MF:N22 MF:C2 MF:O2
+                MF:H11 MF:N23 MF:C3 MF:H031
+                MF:N13 MF:C13 MF:N23 MF:C3
+                MF:C13 MF:N23 MF:C3 MF:H031
+                MF:C11 MF:N12 MF:C12 MF:N13
+                MF:H31 MF:N22 MF:C2 MF:H021
+                MF:N11 MF:C11 MF:N12 MF:C12
+                MF:N12 MF:C12 MF:N22 MF:H31
+                MF:C11 MF:N12 MF:C12 MF:N22
+                MF:N11 MF:C11 MF:N21 MF:C1
+                MF:N11 MF:C13 MF:N23 MF:C3
+                MF:H031 MF:C3 MF:O3 MF:H03
+                MF:H21 MF:N21 MF:C1 MF:H011
+                MF:H032 MF:C3 MF:O3 MF:H03
+                MF:C11 MF:N11 MF:C13 MF:N23
+                MF:C12 MF:N22 MF:C2 MF:H021
+                MF:N22 MF:C12 MF:N13 MF:C13
+                MF:C12 MF:N13 MF:C13 MF:N11
+                MF:H11 MF:N23 MF:C3 MF:O3
+            </beads>
+        </dihedral>
+    </bonded>
+    -->
+</topology>

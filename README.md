@@ -15,3 +15,4 @@ Structure:
  - ``examples/`` - the set of examples
 
 [![DOI](https://zenodo.org/badge/20122/MrTheodor/bakery.svg)](https://zenodo.org/badge/latestdoi/20122/MrTheodor/bakery)
+[![Build Status](https://travis-ci.org/MrTheodor/bakery.svg?branch=master)](https://travis-ci.org/MrTheodor/bakery)

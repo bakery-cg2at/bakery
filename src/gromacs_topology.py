@@ -51,10 +51,7 @@ GromacsSystem = namedtuple(
         'pairtypes',
         'pairtypeparams',
         'nonbond_params',
-        'exclusions',
-        'x', 'y', 'z',
-        'vx', 'vy', 'vz',
-        'Lx', 'Ly', 'Lz'
+        'exclusions'
     ])
 
 
@@ -69,32 +66,6 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
 
     if defines is None:
         defines = {}
-
-    # read gro file
-    if gro_file != "":
-        f = open(gro_file)
-        f.readline()  # skip comment line
-        total_num_particles = int(f.readline())
-
-        # store coordinates and velocities
-        x, y, z = [], [], []
-        vx, vy, vz = [], [], []
-        for i in range(total_num_particles):
-            s = f.readline().split()
-            # coordinates
-            x.append(float(s[2]))
-            y.append(float(s[3]))
-            z.append(float(s[4]))
-
-            if len(s) > 6:
-                # velocities
-                vx.append(float(s[5]))
-                vy.append(float(s[6]))
-                vz.append(float(s[7]))
-
-        # store box size
-        Lx, Ly, Lz = map(float, f.readline().split())  # read last line, convert to float
-        f.close()
 
     # read top and itp files
     masses, charges, res_ids = [], [], []  # mases and charges of the whole configuration
@@ -483,15 +454,12 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
     print 'Found {} 1-4 pair type parameters'.format(len(use_pairtypeparams))
     print 'Found {} 1-4 pairs'.format(len(pairs_1_4))
     print 'Found {} bond exclusions'.format(len(exclusions))
-    print 'Found box: {}'.format([Lx, Ly, Lz])
-    print 'Found {} particles'.format(len(x))
 
     gromacs_system = GromacsSystem(
         defaults, types, masses, charges, res_ids, use_atomtypeparams,
         bonds, bondtypeparams, angles, angletypeparams,
         dihedrals, dihedraltypeparams, pairs_1_4, use_pairtypeparams,
-        use_nonbond_params, exclusions,
-        x, y, z, vx, vy, vz, Lx, Ly, Lz)
+        use_nonbond_params, exclusions)
 
     return gromacs_system
 

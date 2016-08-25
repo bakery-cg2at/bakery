@@ -178,10 +178,11 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
     return interaction
 
 
-def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=False):  #NOQA
+def genParticleList(input_conf, gro_file, use_velocity=False, use_charge=False, adress=False):  #NOQA
     """Generates particle list
     Args:
         input_conf: The tuple generate by read method.
+        gro_file: The GRO file.
         use_velocity: If set to true then velocity will be read.
         use_charge: If set to true then charge will be read.
         adress: If set to true then adress_tuple will be generated.
@@ -214,7 +215,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
             particle_type = input_conf.atomtypeparams[atom_type]['particletype']
             tmp = [pid+1,
                    atom_type,
-                   espressopp.Real3D(input_conf.x[pid], input_conf.y[pid], input_conf.z[pid]),
+                   espressopp.Real3D(gro_file.atoms[pid+1].position),
                    input_conf.res_ids[pid]]
             if use_mass:
                 tmp.append(input_conf.masses[pid])
@@ -245,7 +246,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
         for pid in range(num_particles):
             tmp = [pid+1,
                    input_conf.types[pid],
-                   espressopp.Real3D(input_conf.x[pid], input_conf.y[pid], input_conf.z[pid]),
+                   espressopp.Real3D(gro_file.atoms[pid+1].position),
                    input_conf.res_ids[pid]]
             if use_mass:
                 tmp.append(input_conf.masses[pid])

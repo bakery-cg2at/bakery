@@ -19,11 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import espressopp  # NOQA
 import math  # NOQA
-
-try:
-    import MPI
-except ImportError:
-    from mpi4py import MPI
+from mpi4py import MPI
 import random
 import os
 import time
@@ -58,9 +54,9 @@ def main():  # NOQA
 
     print('Reading hybrid topology and coordinate file')
 
-    generate_exclusions = args.exclusion_list is None
+    generate_exclusions = args.exclusion_list is None or not os.path.exists(args.exclusion_list)      
 
-    input_conf = gromacs_topology.read(args.conf, args.top, doRegularExcl=generate_exclusions)
+    input_conf = gromacs_topology.read('', args.top, doRegularExcl=generate_exclusions)
     input_gro_conf = files_io.GROFile(args.conf)
     input_gro_conf.read()
 
@@ -76,7 +72,7 @@ def main():  # NOQA
                 fel.write('{} {}\n'.format(*p))
         print('Save exclusion list: {} ({})'.format(exclusion_list_file, len(input_conf.exclusions)))
 
-    box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)
+    box = input_gro_conf.box
     print('\nSetting up simulation...')
 
     # Tune simulation parameter according to arguments
@@ -108,7 +104,7 @@ def main():  # NOQA
     system.rng = espressopp.esutil.RNG(rng_seed)
 
     part_prop, all_particles, adress_tuple = tools.genParticleList(
-        input_conf, use_velocity=True, adress=True, use_charge=True)
+        input_conf, input_gro_conf, adress=True, use_charge=True)
     print('Reads {} particles with properties {}'.format(len(all_particles), part_prop))
 
     if input_conf.charges:
@@ -121,31 +117,25 @@ def main():  # NOQA
     # Generate initial velocities, only for CG particles, AT particles will get the CG particle velocity.
     particle_list = []
     index_adrat = part_prop.index('adrat')
-    if 'v' not in part_prop:
-        print('Generating velocities from Maxwell-Boltzmann distribution for T={}'.format(
-            args.temperature))
-        part_prop.append('v')
-        cg_particles = [x for x in all_particles if x.adrat == 0]
-        vx, vy, vz = espressopp.tools.velocities.gaussian(
-            args.temperature,
-            len(cg_particles),
-            [x.mass for x in cg_particles],
-            kb=kb)
-        cg_id = 0
-        last_vel = (0.0, 0.0, 0.0)
-        for p in all_particles:
-            t = list(p)
-            if p.adrat == 0:
-                last_vel = (vx[cg_id], vy[cg_id], vz[cg_id])
-                cg_id += 1
-            del t[index_adrat]
-            t.append(espressopp.Real3D(last_vel))
-            particle_list.append(t)
-    else:
-        for p in all_particles:
-            t = list(p)
-            del t[index_adrat]
-            particle_list.append(t)
+    print('Generating velocities from Maxwell-Boltzmann distribution for T={}'.format(
+        args.temperature))
+    part_prop.append('v')
+    cg_particles = [x for x in all_particles if x.adrat == 0]
+    vx, vy, vz = espressopp.tools.velocities.gaussian(
+        args.temperature,
+        len(cg_particles),
+        [x.mass for x in cg_particles],
+        kb=kb)
+    cg_id = 0
+    last_vel = (0.0, 0.0, 0.0)
+    for p in all_particles:
+        t = list(p)
+        if p.adrat == 0:
+            last_vel = (vx[cg_id], vy[cg_id], vz[cg_id])
+            cg_id += 1
+        del t[index_adrat]
+        t.append(espressopp.Real3D(last_vel))
+        particle_list.append(t)
 
     del part_prop[index_adrat]
 
@@ -293,6 +283,10 @@ def main():  # NOQA
         ext_remove_com = espressopp.integrator.ExtAnalyze(total_velocity, args.remove_com)
         integrator.addExtension(ext_remove_com)
 
+    gro_whole.update_positions(system)
+    gro_whole.write(
+        '{}confout_full_{}_{}_before.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
+
     ############# SIMULATION: EQUILIBRATION PHASE #####################
     system_analysis.dump()
     global_int_step = 0
@@ -354,7 +348,7 @@ def main():  # NOQA
         at_gro_conf.write(confout_aa, force=True)
         gro_whole.update_positions(system)
         gro_whole.write(
-            '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
+            '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
         print('Atomistic configuration write to: {}'.format(confout_aa))
 
         ########## SECOND PHASE ################

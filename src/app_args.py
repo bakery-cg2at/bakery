@@ -25,7 +25,7 @@ def _args_analyze():
     parser = general_tools.MyArgParser(description='Analyze GROMACS topology',
                                        fromfile_prefix_chars='@')
     parser.add_argument('--top', '--topology', required=True, help='Topology file')
-
+    
     return parser
 
 
