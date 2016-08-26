@@ -202,9 +202,14 @@ class GROFile(CoordinateFile):
 
         logger.info('Reading GRO file %s', self.file_name)
 
-        at_id = 1
+        at_id = 1  # Ignore atom id section
+        chain_idx = 0  # Ignore chain idx section
+        last_chain_idx = None
         for line in self.content[2:number_of_atoms + 2]:
-            chain_idx = int(line[0:5].strip())
+            gro_chain_idx = int(line[0:5].strip())
+            if last_chain_idx != gro_chain_idx:  # Increment chain_idx when the original one change
+                chain_idx += 1
+                last_chain_idx = chain_idx
             chain_name = line[5:10].strip()
             at_name = line[10:15].strip()
             self.id_map[at_id] = at_id

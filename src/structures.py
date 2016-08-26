@@ -92,7 +92,7 @@ class CGFragment:
             ]
         if active_sites:
             for at_as in active_sites:
-                t = at_as.split(':')
+                t = at_as.split(':')  # Format: atom name -> maximum degree
                 self.active_sites[t[1]] = int(t[2])
 
 
@@ -101,7 +101,7 @@ class BackmapperSettings2:
         self.res2atom = collections.defaultdict(list)
         self.cg_active_sites = collections.defaultdict(list)
         self.atom_id2fragment = {}
-        self.atom_ids = []
+        self.atom_ids = []  # List of ids of atomistic particles
         self.cg_old_new_id = {}
         self.cross_prefix = 'cross_'
         self.cg_new_id_old = {}
@@ -115,6 +115,7 @@ class BackmapperSettings2:
 
         self.global_graph = networkx.Graph()
 
+        # Parse XML file
         tree = etree.parse(input_xml)
         self.root = tree.getroot()
         self._parse()
@@ -152,7 +153,7 @@ class BackmapperSettings2:
                     self.hyb_topology.header_section.append(';#include {}\n'.format(ie.replace(';', '')))
                 else:
                     self.hyb_topology.header_section.append('#include {}\n'.format(ie))
-            self.hyb_topology.header_section.append('\n')
+            self.hyb_topology.header_section.append('\n\n')
 
         self.hyb_topology.atomtypes = {}
         # Change atomtypes to 'V' for CG.
@@ -230,8 +231,6 @@ class BackmapperSettings2:
                     ))
                 self.dihedral_params[p4][p3][p2][p1] = params
 
-        # For testing purposes, write the cg_topol.top as a graph structure.
-        networkx.write_gpickle(self.cg_graph, 'cg_topol.top.pck')
         self._parse_cg_molecules()
 
     def _parse_cg_molecules(self):
@@ -285,6 +284,7 @@ class BackmapperSettings2:
 
             # Read charge transfer.
             # <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
+            # <charge_transfer on="when" from="atom label" to="set of atom labels" />
             charge_transfers = r.find('charge_transfers')
             if charge_transfers is not None:
                 for ct in charge_transfers.findall('charge_transfer'):
