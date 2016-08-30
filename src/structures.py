@@ -34,20 +34,9 @@ __doc__ = "Data structures."""
 
 BeadID = collections.namedtuple('BeadID', ['name', 'degree'])
 
-XMLMap = collections.namedtuple(
-    'XMLMap',
-    ['ident',  # Identity name of molecules.
-     'name',   # Name of molecules.
-     'mass_map',  # Map with mass of CG beads.
-     'source_coordinates',  # File name of atomistic fragments.
-     'source_topology',  # File name of topology for atomistic fragments.
-     'molecule_beads',  # Returns molecule CG beads.
-     'molecule_topology'  # Topology at the level of CG bead.
-     ])
-
 CGMolecule = collections.namedtuple(
     'CGMolecule',
-    ['name', 'ident', 'source_file', 'source_topology']
+    ['name', 'ident', 'source_coordinate', 'source_topology']
 )
 
 logger = logging.getLogger()
@@ -55,7 +44,7 @@ logger = logging.getLogger()
 class CGFragment:
     def __init__(self, cg_molecule, fragment_list, active_sites=None, charge_map=None, as_remove=None):
         self.topology = cg_molecule.source_topology
-        self.coordinate = cg_molecule.source_file
+        self.coordinate = cg_molecule.source_coordinate
         self.fragment_list = fragment_list
 
         self.cg_molecule = cg_molecule
@@ -126,6 +115,15 @@ class BackmapperSettings2:
             cg_configuration.find('topology').text.strip())
         self.cg_topology.read()
 
+        # Fix the res_id;
+        last_chain_idx = 0
+        ch_idx = 0
+        for at_id in sorted(self.cg_topology.atoms):
+            if self.cg_topology.atoms[at_id].chain_idx != last_chain_idx:
+                last_chain_idx = self.cg_topology.atoms[at_id].chain_idx
+                ch_idx += 1
+            self.cg_topology.atoms[at_id].chain_idx = ch_idx
+        # Replicate if the topology is multimolecule.
         self.cg_topology.replicate()
 
         self.cg_graph = self.cg_topology.get_graph()
@@ -236,51 +234,94 @@ class BackmapperSettings2:
     def _parse_cg_molecules(self):
         """Parse the cg_molecule section and prepares data structures."""
         for r in self.root.findall('cg_molecule'):
-            cg_molecule = CGMolecule(
-                r.find('name').text,
-                r.find('ident').text,
-                files_io.read_coordinates(r.find('source_file').text),
-                files_io.GROMACSTopologyFile(r.find('source_topology').text))
-            cg_molecule.source_topology.read()
-            self.fragments[cg_molecule.name] = {
-                'cg_molecule': cg_molecule
-            }
-            # Generate the beads.
-            for cg_bead in r.findall('cg_bead'):
-                name = cg_bead.find('name').text
-                self.fragments[cg_molecule.name][name] = {}
-                for beads in cg_bead.findall('beads'):
-                    degree = beads.attrib.get('degree', '*')
-                    active_sites = beads.attrib.get('active_site')
-                    as_remove = {}
-                    if active_sites:
-                        active_sites = map(str.strip, active_sites.split())
-                        tmp_as = [':'.join(x.split(':')[:2]) for x in active_sites]
-                        # Remove with active sites. So whenever the active site will be used then this list
-                        # of atoms will be removed.
-                        removes = beads.findall('remove')
-                        for asr in removes:
-                            as_name = asr.attrib['active_site']
-                            if as_name not in tmp_as:
-                                raise RuntimeError(
-                                    'Defined <remove> entry for active_site {} but it\'s not on the list'.format(
-                                        as_name))
-                            beads_to_remove = asr.text
-                            if not beads_to_remove:
-                                raise RuntimeError('No beads to remove in active_site {}'.format(as_name))
-                            as_remove[as_name] = map(str.strip, asr.text.split())
-                    bead_list = beads.text.split()
+            cg_mol_name = r.find('name').text
+            cg_mol_ident = r.find('ident').text
+            # For every residue degree the molecule can have different topology/coordinate file
+            cg_mol_source_topologies = {}
+            for x in r.find('source_topology').findall('file'):
+                mol_degree = x.attrib.get('molecule_degree')
+                mol_when = x.attrib.get('when', '*')
+                file_name = x.text
+                cg_mol_source_topologies[(mol_degree, mol_when)] = file_name
 
-                    cm = beads.find('charge_map')
-                    charge_map = None
-                    if cm is not None:
-                        charge_map = cm.text.split()
-                        if len(charge_map) != len(bead_list):
-                            raise RuntimeError(
-                                'Number of entries in charge_map {} does not match number of beads {}'.format(
-                                    len(charge_map), len(bead_list)))
-                    cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove)
-                    self.fragments[cg_molecule.name][name][degree] = cg_fragment
+            if len(cg_mol_source_topologies) != len(r.find('source_topology').findall('file')):
+                raise RuntimeError('The degree atritbute in source_topology.file tag has to be unique')
+
+            if not cg_mol_source_topologies:
+                cg_mol_source_topologies[('*', '*')] = r.find('source_topology').text
+
+            cg_mol_source_coordinate = {}
+            for x in r.find('source_coordinate').findall('file'):
+                mol_degree = x.attrib.get('molecule_degree')
+                mol_when = x.attrib.get('when', '*')
+                file_name = x.text
+                cg_mol_source_coordinate[(mol_degree, mol_when)] = file_name
+
+            if len(cg_mol_source_coordinate) != len(r.find('source_coordinate').findall('file')):
+                raise RuntimeError('The degree atritbute in source_coordinate.file tag has to be unique')
+            if not cg_mol_source_coordinate:
+                cg_mol_source_coordinate[('*', '*')] = r.find('source_coordinate').text
+
+            if not all(map(lambda x: x[0] == x[1], zip(cg_mol_source_coordinate, cg_mol_source_topologies))):
+                raise RuntimeError('The set of degree for source_coordinate and source_topology has to be the same')
+
+            related_bead_names = [x[1] for x in cg_mol_source_coordinate]
+
+            for mol_deg_bead_name in cg_mol_source_coordinate:
+                mol_deg, related_bead_name = mol_deg_bead_name
+                cg_molecule = CGMolecule(
+                    cg_mol_name,
+                    cg_mol_ident,
+                    files_io.read_coordinates(cg_mol_source_coordinate[mol_deg_bead_name]),
+                    files_io.GROMACSTopologyFile(cg_mol_source_topologies[mol_deg_bead_name]))
+                cg_molecule.source_topology.read()
+                if (mol_deg, cg_molecule.name, related_bead_name) in self.fragments:
+                    raise RuntimeError('Fragment ({}, {}, {}) already defined'.format(
+                        mol_deg, cg_molecule.name, related_bead_name))
+
+                self.fragments[(mol_deg, cg_molecule.name, related_bead_name)] = {'cg_molecule': cg_molecule}
+                # Generate the beads.
+                for cg_bead in r.findall('cg_bead'):
+                    name = cg_bead.find('name').text  # bead name
+                    self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name] = {}
+                    for beads in cg_bead.findall('beads'):
+                        degree = beads.attrib.get('degree', '*')
+                        mol_degrees = beads.attrib.get('molecule_degree')
+                        #if mol_degrees and mol_deg not in mol_degrees.split(','):
+                        #    continue
+                        active_sites = beads.attrib.get('active_site')
+                        as_remove = {}
+                        if active_sites:
+                            active_sites = map(str.strip, active_sites.split())
+                            tmp_as = [':'.join(x.split(':')[:2]) for x in active_sites]
+                            # Remove with active sites. So whenever the active site will be used then this list
+                            # of atoms will be removed.
+                            removes = beads.findall('remove')
+                            for asr in removes:
+                                as_name = asr.attrib['active_site']
+                                if as_name not in tmp_as:
+                                    raise RuntimeError(
+                                        'Defined <remove> entry for active_site {} but it\'s not on the list'.format(
+                                            as_name))
+                                beads_to_remove = asr.text
+                                if not beads_to_remove:
+                                    raise RuntimeError('No beads to remove in active_site {}'.format(as_name))
+                                as_remove[as_name] = map(str.strip, asr.text.split())
+                        bead_list = beads.text.split()
+
+                        cm = beads.find('charge_map')
+                        charge_map = None
+                        if cm is not None:
+                            charge_map = cm.text.split()
+                            if len(charge_map) != len(bead_list):
+                                raise RuntimeError(
+                                    'Number of entries in charge_map {} does not match number of beads {}'.format(
+                                        len(charge_map), len(bead_list)))
+                        try:
+                            cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove)
+                        except KeyError:
+                            continue
+                        self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name][degree] = cg_fragment
 
             # Read charge transfer.
             # <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
@@ -288,17 +329,19 @@ class BackmapperSettings2:
             charge_transfers = r.find('charge_transfers')
             if charge_transfers is not None:
                 for ct in charge_transfers.findall('charge_transfer'):
-                    t = ct.attrib['on'].split(':')
+                    t = ct.attrib['when'].split(':')
                     on_key = '{}:{}'.format(t[0], t[1])
                     on_deg = int(t[2])
                     if on_key not in self.charge_transfer:
                         self.charge_transfer[on_key] = {}
                     if on_deg in self.charge_transfer[on_key]:
                         raise RuntimeError('Mistake in charge transfer, key {} already defined'.format(t))
-                    transfer_from = ct.attrib['from']
+                    transfer_from = ct.attrib['from_atom']
                     transfer_to_map = {}
-                    self.charge_transfer[on_key][on_deg] = {'from': transfer_from.split(':'), 'to': transfer_to_map}
-                    transfer_to = ct.attrib['to'].split(',')
+                    self.charge_transfer[on_key][on_deg] = {
+                        'from_atom': transfer_from.split(':'),
+                        'when_to_atom': transfer_to_map}
+                    transfer_to = ct.attrib['when_to_atom'].split(',')
                     print transfer_to
                     for tt in transfer_to:
                         tt_to_on, tt_to = tt.split('#')
@@ -309,111 +352,253 @@ class BackmapperSettings2:
         """Creates hybrid files."""
         outfile = self.hybrid_configuration['file']
         new_at_id = 1
-        new_res_id = 0
-        last_res_id = 0
+
         cg_ids = sorted(self.cg_graph.nodes())
 
-        for cg_id in cg_ids:
-            cg_atom = self.cg_coordinate.atoms[cg_id]
+        # Residue graph for getting the residue degree.
+        residue_graph = networkx.MultiGraph()
+
+        for cg_id in self.cg_graph.nodes():
             cg_bead = self.cg_graph.node[cg_id]
-            cg_bead_id = new_at_id
-            if cg_bead['res_id'] != last_res_id:
-                last_res_id = cg_bead['res_id']
-                new_res_id += 1
+            res_id = cg_bead['res_id']
+            if res_id not in residue_graph.node:
+                residue_graph.add_node(cg_bead['res_id'], chain_name=cg_bead['chain_name'], cg_nodes=[])
+            residue_graph.node[res_id]['cg_nodes'].append(cg_id)
 
-            cg_degree = str(cg_bead['degree'])
-            fragments = self.fragments[cg_bead['chain_name']][cg_bead['name']]
-            # Choose based on the degree of node.
-            cg_fragment = fragments.get(cg_degree, fragments.get('*'))
-            if not cg_fragment:
-                raise RuntimeError('Problem with getting atomistic fragments')
 
-            outfile.atoms[cg_bead_id] = files_io.Atom(
-                atom_id=cg_bead_id,
-                name=cg_bead['name'],
-                chain_name=cg_fragment.cg_molecule.ident, # Change chain name to one from <ident> tag in the cg_molecule
-                chain_idx=new_res_id,
-                position=cg_atom.position
-            )
-            self.cg_new_id_old[cg_bead_id] = cg_id
-            self.cg_old_new_id[cg_id] = cg_bead_id
+        for cg_bonds in self.cg_graph.edges():
+            cg_nodes = map(self.cg_graph.node.get, cg_bonds)
+            if cg_nodes[0]['res_id'] != cg_nodes[1]['res_id']:  # Ignore self-loops
+                residue_graph.add_edge(cg_nodes[0]['res_id'], cg_nodes[1]['res_id'])
 
-            self.atom_id2fragment[new_at_id] = cg_fragment
+        for res_id, deg in residue_graph.degree().items():
+            residue_graph.node[res_id]['degree'] = str(deg)
+            residue_graph.node[res_id]['fragment_key'] = None
 
-            self.global_graph.add_node(cg_bead_id, **cg_bead)
+        for res_id in sorted(residue_graph.nodes()):
+            cg_nodes = residue_graph.node[res_id]['cg_nodes']
+            residue_degree = residue_graph.node[res_id]['degree']
+            residue_name = residue_graph.node[res_id]['chain_name']
+            possible_fragments = [x for x in self.fragments.keys()
+                                  if x[1] == residue_name and (x[0] == '*' or x[0] == residue_degree)]
 
-            # Change the mass of CG bead
-            topol_atom = copy.copy(self.cg_topology.atoms[cg_id])
-            topol_atom.mass = cg_fragment.cg_mass
-            topol_atom.atom_id = cg_bead_id
-            topol_atom.chain_idx = new_res_id
-            topol_atom.chain_name = cg_fragment.cg_molecule.ident # Change chain name to one from <ident> tag in the cg_molecule
-            topol_atom.cgnr = cg_bead_id
-            self.hyb_topology.atoms[new_at_id] = topol_atom
-            if cg_fragment.cg_molecule.ident not in self.hyb_topology.chains:
-                self.hyb_topology.chains[cg_fragment.cg_molecule.ident] = {}
-            if new_res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
-                self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id] = {}
-            if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id]:
+            selected_fragment = None
+            for possible_fragment in possible_fragments:
+                f = self.fragments[possible_fragment]
+                selected_fragment = possible_fragment
+                for cg_id in cg_nodes:
+                    cg_node = self.cg_graph.node[cg_id]
+                    if str(cg_node['degree']) not in f[cg_node['name']]:
+                        selected_fragment = None
+                if selected_fragment is not None:
+                    break
+            if selected_fragment is None:
+                print('RES_ID: {}'.format(res_id))
+                print('BEAD IDS: {}'.format(cg_nodes))
+                print('RES_DEGREE: {}'.format(residue_degree))
+                print('RES_NAME: {}'.format(residue_name))
                 raise RuntimeError(
-                    '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
-            self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id][topol_atom.name] = topol_atom
+                    'Problem with the option file, could not find correct fragment for molecule {}'.format(res_id))
 
-            # Set the atomistic coordinates for this fragment, put it in the
-            # output coordinate file.
-            cg_com = cg_atom.position
-            new_at_id += 1
-            for idx, at in enumerate(cg_fragment.atom_in_fragments):
-                new_at_atom = files_io.Atom(
-                    new_at_id,
-                    at.name,
-                    cg_fragment.cg_molecule.ident,  # Change chain name to one from <ident> tag in the cg_molecule
-                    new_res_id,
-                    at.position + cg_com
+            for cg_id in cg_nodes:
+                cg_atom = self.cg_coordinate.atoms[cg_id]
+                cg_bead = self.cg_graph.node[cg_id]
+                cg_bead_id = new_at_id
+
+                fragments = self.fragments[selected_fragment][cg_bead['name']]
+
+                cg_fragment = fragments.get(str(cg_bead['degree']), fragments.get('*'))
+                if not cg_fragment:
+                    raise RuntimeError('Problem with getting atomistic fragments')
+                outfile.atoms[cg_bead_id] = files_io.Atom(
+                    atom_id=cg_bead_id,
+                    name=cg_bead['name'],
+                    chain_name=cg_fragment.cg_molecule.ident,
+                    # Change chain name to one from <ident> tag in the cg_molecule
+                    chain_idx=res_id,
+                    position=cg_atom.position
                 )
-                outfile.atoms[new_at_id] = new_at_atom
-                self.global_graph.add_node(
-                    new_at_id,
-                    name=at.name,
-                    res_id=new_res_id,
-                    position=at.position + cg_com,
-                    chain_name=at.chain_name)
+                self.cg_new_id_old[cg_bead_id] = cg_id
+                self.cg_old_new_id[cg_id] = cg_bead_id
 
-                # Set topology atom
-                topol_atom = copy.copy(cg_fragment.topology.chain_atom_names[at.chain_name][at.name][0])
-                if new_res_id not in self.mol_atomid_map[at.chain_name]:
-                    self.mol_atomid_map[at.chain_name][new_res_id] = {}
-                    self.mol_atomname_map[at.chain_name][new_res_id] = {}
-                self.mol_atomid_map[at.chain_name][new_res_id][topol_atom.atom_id] = new_at_id
-                self.mol_atomname_map[at.chain_name][new_res_id][topol_atom.name] = new_at_id
+                self.atom_id2fragment[new_at_id] = cg_fragment
 
-                if cg_fragment.charge_map:
-                    topol_atom.charge = cg_fragment.charge_map[idx]
-                topol_atom.atom_id = new_at_id
-                topol_atom.chain_idx = new_res_id
-                topol_atom.chain_name = cg_fragment.cg_molecule.ident
-                topol_atom.cgnr = new_at_id
+                self.global_graph.add_node(cg_bead_id, **cg_bead)
+
+                # Change the mass of CG bead
+                topol_atom = copy.copy(self.cg_topology.atoms[cg_id])
+                topol_atom.mass = cg_fragment.cg_mass
+                topol_atom.atom_id = cg_bead_id
+                topol_atom.chain_idx = res_id
+                topol_atom.chain_name = cg_fragment.cg_molecule.ident  # Change chain name to one from <ident> tag in the cg_molecule
+                topol_atom.cgnr = cg_bead_id
                 self.hyb_topology.atoms[new_at_id] = topol_atom
                 if cg_fragment.cg_molecule.ident not in self.hyb_topology.chains:
                     self.hyb_topology.chains[cg_fragment.cg_molecule.ident] = {}
-                if new_res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
-                    self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id] = {}
-                if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id]:
+                if res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
+                    self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id] = {}
+                if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id]:
                     raise RuntimeError(
                         '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
-                self.hyb_topology.chains[cg_fragment.cg_molecule.ident][new_res_id][topol_atom.name] = topol_atom
+                self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id][topol_atom.name] = topol_atom
 
-                # Set active sites.
-                if at.name in cg_fragment.active_sites:
-                    self.cg_active_sites[cg_bead_id].append((new_at_atom, cg_fragment.active_sites[at.name]))
-
-                self.atom_id2fragment[new_at_id] = cg_fragment
-                self.atom_ids.append(new_at_id)
-                self.atom2cg[new_at_id] = cg_bead_id
-                self.cg2atom[cg_bead_id].append(new_at_id)
-                self.res2atom[new_res_id].append(new_at_id)
-
+                # Set the atomistic coordinates for this fragment, put it in the
+                # output coordinate file.
+                cg_com = cg_atom.position
                 new_at_id += 1
+                for idx, at in enumerate(cg_fragment.atom_in_fragments):
+                    new_at_atom = files_io.Atom(
+                        new_at_id,
+                        at.name,
+                        cg_fragment.cg_molecule.ident,  # Change chain name to one from <ident> tag in the cg_molecule
+                        res_id,
+                        at.position + cg_com
+                    )
+                    outfile.atoms[new_at_id] = new_at_atom
+                    self.global_graph.add_node(
+                        new_at_id,
+                        name=at.name,
+                        res_id=res_id,
+                        position=at.position + cg_com,
+                        chain_name=at.chain_name)
+
+                    # Set topology atom
+                    topol_atom = copy.copy(cg_fragment.topology.chain_atom_names[at.chain_name][at.name][0])
+                    if res_id not in self.mol_atomid_map[at.chain_name]:
+                        self.mol_atomid_map[at.chain_name][res_id] = {}
+                        self.mol_atomname_map[at.chain_name][res_id] = {}
+                    self.mol_atomid_map[at.chain_name][res_id][topol_atom.atom_id] = new_at_id
+                    self.mol_atomname_map[at.chain_name][res_id][topol_atom.name] = new_at_id
+
+                    if cg_fragment.charge_map:
+                        topol_atom.charge = cg_fragment.charge_map[idx]
+                    topol_atom.atom_id = new_at_id
+                    topol_atom.chain_idx = res_id
+                    topol_atom.chain_name = cg_fragment.cg_molecule.ident
+                    topol_atom.cgnr = new_at_id
+                    self.hyb_topology.atoms[new_at_id] = topol_atom
+                    if cg_fragment.cg_molecule.ident not in self.hyb_topology.chains:
+                        self.hyb_topology.chains[cg_fragment.cg_molecule.ident] = {}
+                    if res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
+                        self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id] = {}
+                    if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id]:
+                        raise RuntimeError(
+                            '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
+                    self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id][topol_atom.name] = topol_atom
+
+                    # Set active sites.
+                    if at.name in cg_fragment.active_sites:
+                        self.cg_active_sites[cg_bead_id].append((new_at_atom, cg_fragment.active_sites[at.name]))
+
+                    self.atom_id2fragment[new_at_id] = cg_fragment
+                    self.atom_ids.append(new_at_id)
+                    self.atom2cg[new_at_id] = cg_bead_id
+                    self.cg2atom[cg_bead_id].append(new_at_id)
+                    self.res2atom[res_id].append(new_at_id)
+
+                    new_at_id += 1
+
+
+        # for cg_id in cg_ids:
+        #     cg_atom = self.cg_coordinate.atoms[cg_id]
+        #     cg_bead = self.cg_graph.node[cg_id]
+        #     cg_bead_id = new_at_id
+        #     res_id = cg_bead['res_id']
+        #
+        #     fragments = self.fragments[residue_graph.node[res_id]['fragment_key']][cg_bead['name']]
+        #
+        #     # Choose based on the degree of node.
+        #     cg_fragment = fragments.get(str(cg_bead['degree']), fragments.get('*'))
+        #     if not cg_fragment:
+        #         print fragments
+        #         raise RuntimeError('Problem with getting atomistic fragments')
+        #
+        #     outfile.atoms[cg_bead_id] = files_io.Atom(
+        #         atom_id=cg_bead_id,
+        #         name=cg_bead['name'],
+        #         chain_name=cg_fragment.cg_molecule.ident, # Change chain name to one from <ident> tag in the cg_molecule
+        #         chain_idx=res_id,
+        #         position=cg_atom.position
+        #     )
+        #     self.cg_new_id_old[cg_bead_id] = cg_id
+        #     self.cg_old_new_id[cg_id] = cg_bead_id
+        #
+        #     self.atom_id2fragment[new_at_id] = cg_fragment
+        #
+        #     self.global_graph.add_node(cg_bead_id, **cg_bead)
+        #
+        #     # Change the mass of CG bead
+        #     topol_atom = copy.copy(self.cg_topology.atoms[cg_id])
+        #     topol_atom.mass = cg_fragment.cg_mass
+        #     topol_atom.atom_id = cg_bead_id
+        #     topol_atom.chain_idx = res_id
+        #     topol_atom.chain_name = cg_fragment.cg_molecule.ident # Change chain name to one from <ident> tag in the cg_molecule
+        #     topol_atom.cgnr = cg_bead_id
+        #     self.hyb_topology.atoms[new_at_id] = topol_atom
+        #     if cg_fragment.cg_molecule.ident not in self.hyb_topology.chains:
+        #         self.hyb_topology.chains[cg_fragment.cg_molecule.ident] = {}
+        #     if res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
+        #         self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id] = {}
+        #     if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id]:
+        #         raise RuntimeError(
+        #             '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
+        #     self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id][topol_atom.name] = topol_atom
+        #
+        #     # Set the atomistic coordinates for this fragment, put it in the
+        #     # output coordinate file.
+        #     cg_com = cg_atom.position
+        #     new_at_id += 1
+        #     for idx, at in enumerate(cg_fragment.atom_in_fragments):
+        #         new_at_atom = files_io.Atom(
+        #             new_at_id,
+        #             at.name,
+        #             cg_fragment.cg_molecule.ident,  # Change chain name to one from <ident> tag in the cg_molecule
+        #             res_id,
+        #             at.position + cg_com
+        #         )
+        #         outfile.atoms[new_at_id] = new_at_atom
+        #         self.global_graph.add_node(
+        #             new_at_id,
+        #             name=at.name,
+        #             res_id=res_id,
+        #             position=at.position + cg_com,
+        #             chain_name=at.chain_name)
+        #
+        #         # Set topology atom
+        #         topol_atom = copy.copy(cg_fragment.topology.chain_atom_names[at.chain_name][at.name][0])
+        #         if res_id not in self.mol_atomid_map[at.chain_name]:
+        #             self.mol_atomid_map[at.chain_name][res_id] = {}
+        #             self.mol_atomname_map[at.chain_name][res_id] = {}
+        #         self.mol_atomid_map[at.chain_name][res_id][topol_atom.atom_id] = new_at_id
+        #         self.mol_atomname_map[at.chain_name][res_id][topol_atom.name] = new_at_id
+        #
+        #         if cg_fragment.charge_map:
+        #             topol_atom.charge = cg_fragment.charge_map[idx]
+        #         topol_atom.atom_id = new_at_id
+        #         topol_atom.chain_idx = res_id
+        #         topol_atom.chain_name = cg_fragment.cg_molecule.ident
+        #         topol_atom.cgnr = new_at_id
+        #         self.hyb_topology.atoms[new_at_id] = topol_atom
+        #         if cg_fragment.cg_molecule.ident not in self.hyb_topology.chains:
+        #             self.hyb_topology.chains[cg_fragment.cg_molecule.ident] = {}
+        #         if res_id not in self.hyb_topology.chains[cg_fragment.cg_molecule.ident]:
+        #             self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id] = {}
+        #         if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id]:
+        #             raise RuntimeError(
+        #                 '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
+        #         self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id][topol_atom.name] = topol_atom
+        #
+        #         # Set active sites.
+        #         if at.name in cg_fragment.active_sites:
+        #             self.cg_active_sites[cg_bead_id].append((new_at_atom, cg_fragment.active_sites[at.name]))
+        #
+        #         self.atom_id2fragment[new_at_id] = cg_fragment
+        #         self.atom_ids.append(new_at_id)
+        #         self.atom2cg[new_at_id] = cg_bead_id
+        #         self.cg2atom[cg_bead_id].append(new_at_id)
+        #         self.res2atom[res_id].append(new_at_id)
+        #
+        #         new_at_id += 1
 
         outfile.box = self.cg_coordinate.box
 
@@ -568,6 +753,8 @@ class BackmapperSettings2:
                     deg2 = global_degree[ats2.atom_id]
                     b_key1 = '{}:{}'.format(ats1.chain_name, ats1.name)
                     b_key2 = '{}:{}'.format(ats2.chain_name, ats2.name)
+
+                    charge_transfer_fragment = None
                     charge_transfer_cfg = None
                     target_atom = None
                     target_atom_key = None
@@ -575,20 +762,25 @@ class BackmapperSettings2:
                         charge_transfer_cfg = self.charge_transfer[b_key1][deg1]
                         target_atom_key = b_key2
                         target_atom = ats2
+                        charge_transfer_fragment = self.atom_id2fragment[ats1.atom_id]
                     elif b_key2 in self.charge_transfer:
                         charge_transfer_cfg = self.charge_transfer[b_key2][deg2]
                         target_atom_key = b_key1
                         target_atom = ats1
+                        charge_transfer_fragment = self.atom_id2fragment[ats2.atom_id]
 
                     if charge_transfer_cfg is not None:
-                        at_to_transfer = charge_transfer_cfg['to'][target_atom_key]
+                        at_to_transfer = charge_transfer_cfg['when_to_atom'][target_atom_key]
                         # Gets the charge from the source topology.
-                        from_chain_name, from_atom_name = charge_transfer_cfg['from']
+                        from_chain_name, from_atom_name = charge_transfer_cfg['from_atom']
                         at_from_transfer = (
-                            self.fragments[from_chain_name]['cg_molecule']
+                            charge_transfer_fragment.cg_molecule
                                 .source_topology.chain_atom_names[from_chain_name][from_atom_name][0])
                         # Now update directly hybrid topology with new charge.
-                        self.hyb_topology.chains[target_atom.chain_name][target_atom.chain_idx][at_to_transfer].charge = at_from_transfer.charge
+                        self.hyb_topology.chains[
+                            target_atom.chain_name][
+                            target_atom.chain_idx][
+                            at_to_transfer].charge = at_from_transfer.charge
                 else:
                     print b1, b2, n1, n2
                     print self.cg_active_sites[b1]

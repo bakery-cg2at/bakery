@@ -1,0 +1,93 @@
+; GROMACS like topology file
+; parameters:
+;    itp_file: cg_topol.itp
+;    options_file: convert_h5md2gromacs.xml
+;    timestep: -1
+
+[ defaults ]
+1 1 no 0.0 0.0
+
+[ atomtypes ]
+A 73.0718 0.0 A 0.0 0.0
+Q 132.183502 0.0 A 0.0 0.0
+B 194.276993 0.0 A 0.0 0.0
+E 73.0718 0.0 A 0.0 0.0
+F 84.161995 0.0 A 0.0 0.0
+I 158.241791 0.0 A 0.0 0.0
+K 170.253998 0.0 A 0.0 0.0
+
+[ bondtypes ]
+A Q 8 4 1.0
+A K 8 5 1.0
+A B 8 1 1.0
+Q I 8 3 1.0
+E Q 8 4 1.0
+E K 8 5 1.0
+E F 8 2 1.0
+
+[ angletypes ]
+A B A 8 1 1.0
+Q I Q 8 3 1.0
+E F E 8 2 1.0
+
+[ moleculetype ]
+EPO 3
+
+HDD 3
+
+JEF 3
+
+IPD 3
+
+
+[ atoms ]
+1 A 1 EPO A1 1 0.0 73.0718
+2 B 1 EPO B1 2 0.0 194.276993
+3 A 1 EPO A2 3 0.0 73.0718
+76 A 2 EPO A1 76 0.0 73.0718
+77 B 2 EPO B1 77 0.0 194.276993
+78 A 2 EPO A2 78 0.0 73.0718
+202 A 3 EPO A1 202 0.0 73.0718
+203 B 3 EPO B1 203 0.0 194.276993
+204 A 3 EPO A2 204 0.0 73.0718
+640 Q 4 JEF Q1 640 0.0 132.183502
+641 I 4 JEF I1 641 0.0 158.241791
+642 Q 4 JEF Q2 642 0.0 132.183502
+767 K 5 IPD K1 767 0.0 170.253998
+
+[ bonds ]
+1 2 8 1 1.0  ;h5md_bonds_1
+1 767 8 5 1.0  ;h5md_chem_bonds_0
+2 3 8 1 1.0  ;h5md_bonds_1
+3 642 8 4 1.0  ;h5md_chem_bonds_1
+76 77 8 1 1.0  ;h5md_bonds_1
+77 78 8 1 1.0  ;h5md_bonds_1
+78 767 8 5 1.0  ;h5md_chem_bonds_0
+202 203 8 1 1.0 ;
+203 204 8 1 1.0 ;
+640 641 8 3 1.0  ;h5md_bonds_0
+641 642 8 3 1.0  ;h5md_bonds_0
+
+[ angles ]
+1 2 3 8 1 1.0
+76 77 78 8 1 1.0
+640 641 642 8 3 1.0
+202 203 204 8 1 1.0
+
+[ dihedrals ]
+
+[ pairs ]
+
+[ system ]
+EPO
+
+[ molecules ]
+EPO 1
+
+HDD 1
+
+JEF 1
+
+IPD 1
+
+

@@ -42,9 +42,6 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        import ipdb
-        with ipdb.launch_ipdb_on_exception():
-            main()
-    except ImportError:
+    import ipdb
+    with ipdb.launch_ipdb_on_exception():
         main()

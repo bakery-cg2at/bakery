@@ -2,8 +2,18 @@
     <cg_molecule>
         <name>MF</name>
         <ident>MF</ident>
-        <source_file>single_mf.gro</source_file>
-        <source_topology>at_topol.top</source_topology>
+        <source_coordinate>
+            <file molecule_degree="0">single_mf.gro</file>
+            <file molecule_degree="1">single_mf.gro</file>
+            <file molecule_degree="2">single_mf.gro</file>
+            <file molecule_degree="3">single_mf.gro</file>
+        </source_coordinate>
+        <source_topology>
+            <file molecule_degree="0">at_topol.top</file>
+            <file molecule_degree="1">at_topol.top</file>
+            <file molecule_degree="2">at_topol.top</file>
+            <file molecule_degree="3">at_topol.top</file>
+        </source_topology>
         <!-- A1 beads -->
         <cg_bead>
             <name>A1</name>
