@@ -1,0 +1,57 @@
+<cg_molecule>
+  <name>JEF</name>
+	<ident>JEF</ident>
+  <topology>
+    <cg_beads>
+      <cg_bead>
+        <name>H1</name>
+        <type>H</type>
+        <symmetry>1</symmetry>
+        <mapping>H</mapping>
+        <beads> 1:JEF:N1 1:JEF:H1 1:JEF:H2 1:JEF:C1 1:JEF:C2 1:JEF:C3 1:JEF:O1 1:JEF:H3 1:JEF:H4 1:JEF:H5 1:JEF:H6 1:JEF:H7 1:JEF:H8 1:JEF:C4 1:JEF:C5 1:JEF:C6 1:JEF:O2 1:JEF:H9 1:JEF:H10 1:JEF:H11 1:JEF:H12 1:JEF:H13 1:JEF:H14 </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>I1</name>
+        <type>I</type>
+        <symmetry>1</symmetry>
+        <mapping>I</mapping>
+        <beads> 1:JEF:C7 1:JEF:C8 1:JEF:C9 1:JEF:O3 1:JEF:H15 1:JEF:H16 1:JEF:H17 1:JEF:H18 1:JEF:H19 1:JEF:H20  1:JEF:C10 1:JEF:C11 1:JEF:C12 1:JEF:O4 1:JEF:H21 1:JEF:H22 1:JEF:H23 1:JEF:H24 1:JEF:H25 1:JEF:H26  1:JEF:C13 1:JEF:C14 1:JEF:C15 1:JEF:H27 1:JEF:H28 1:JEF:H29 1:JEF:H30 1:JEF:H31 1:JEF:H32 </beads>
+      </cg_bead>
+      <cg_bead>
+        <name>H2</name>
+        <type>H</type>
+        <symmetry>1</symmetry>
+        <mapping>H</mapping>
+        <beads> 1:JEF:N2 1:JEF:H39 1:JEF:H40 1:JEF:C19 1:JEF:C20 1:JEF:C21  1:JEF:H41 1:JEF:H42 1:JEF:H43 1:JEF:H44 1:JEF:H45 1:JEF:H46  1:JEF:C16 1:JEF:C17 1:JEF:C18 1:JEF:O6 1:JEF:H33 1:JEF:H34 1:JEF:H35 1:JEF:H36 1:JEF:H37 1:JEF:H38 1:JEF:O5 </beads>
+      </cg_bead>
+      </cg_beads>
+
+    <cg_bonded>
+      <bond>
+        <name>bond3</name>
+        <beads>
+        H1 I1 
+        I1 H2 
+        </beads>
+      </bond>
+      <angle>
+        <name>angle3</name>
+        <beads>
+        H1 I1 H2 
+        </beads>
+      </angle>
+    </cg_bonded>
+
+  </topology>
+
+  <maps>
+    <map>
+      <name>H</name>
+      <weights> 14.0067 1.008 1.008 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 </weights>
+    </map>
+    <map>
+      <name>I</name>
+      <weights> 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 15.9994 1.008 1.008 1.008 1.008 1.008 1.008 12.011 12.011 12.011 1.008 1.008 1.008 1.008 1.008 1.008 </weights>
+    </map>
+  </maps>
+</cg_molecule>
