@@ -343,18 +343,18 @@ EPO             3
 
 
 [ dihedrals ]
-5 11 6 7 1   improper_Z_CA_X_Y
-6 31 7 8 1   improper_Z_CA_X_Y
-7 12 8 9 1   improper_Z_CA_X_Y
-8 32 9 10 1   improper_Z_CA_X_Y
-9 33 10 11 1   improper_Z_CA_X_Y
-6 10 11 34 1   improper_Z_CA_X_Y
-12 20 15 16 1   improper_Z_CA_X_Y
-15 41 16 17 1   improper_Z_CA_X_Y
-16 42 17 18 1   improper_Z_CA_X_Y
-17 43 18 19 1   improper_Z_CA_X_Y
-18 21 19 20 1   improper_Z_CA_X_Y
-15 19 20 44 1   improper_Z_CA_X_Y
+;5 11 6 7 1   improper_Z_CA_X_Y
+;6 31 7 8 1   improper_Z_CA_X_Y
+;7 12 8 9 1   improper_Z_CA_X_Y
+;8 32 9 10 1   improper_Z_CA_X_Y
+;9 33 10 11 1   improper_Z_CA_X_Y
+;6 10 11 34 1   improper_Z_CA_X_Y
+;12 20 15 16 1   improper_Z_CA_X_Y
+;15 41 16 17 1   improper_Z_CA_X_Y
+;16 42 17 18 1   improper_Z_CA_X_Y
+;17 43 18 19 1   improper_Z_CA_X_Y
+;18 21 19 20 1   improper_Z_CA_X_Y
+;15 19 20 44 1   improper_Z_CA_X_Y
 
 
 [ pairs ]

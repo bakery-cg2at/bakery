@@ -26,7 +26,7 @@ EPO 3
        20  opls_145   1   EPO      C18    18 -0.439521    12.011   
        21  opls_180   1   EPO      O3    17  -0.290066   15.9994   
        22  opls_182   1   EPO      C19    19  0.141251    12.011   
-       23  opls_158   1   EPO      C20    20 -0.093024    12.011   
+       23  opls_183   1   EPO      C20    20 -0.093024    12.011   
        24  opls_154   1   EPO      O4    20  -0.249238   15.9994   
        25  opls_182   1   EPO      C21    21 -0.082634    12.011   
        26  opls_140   1   EPO      H1    2    0.114157  1.008   
@@ -326,10 +326,10 @@ EPO 3
 21 22 23 24 3
 44 22 23 24 3
 43 22 23 24 3
-;22 23 25 47 3
+22 23 25 47 3
 45 23 25 47 3
 24 23 25 47 3
-;22 23 25 46 3
+22 23 25 46 3
 45 23 25 46 3
 24 23 25 46 3
 22 23 24 50 3
@@ -338,19 +338,19 @@ EPO 3
 
 
 [ dihedrals ]
-5 11 6 7 1   improper_Z_CA_X_Y
-6 29 7 8 1   improper_Z_CA_X_Y
-7 12 8 9 1   improper_Z_CA_X_Y
-8 30 9 10 1   improper_Z_CA_X_Y
-9 31 10 11 1   improper_Z_CA_X_Y
-6 10 11 32 1   improper_Z_CA_X_Y
-12 20 15 16 1   improper_Z_CA_X_Y
-15 39 16 17 1   improper_Z_CA_X_Y
-16 40 17 18 1   improper_Z_CA_X_Y
-17 41 18 19 1   improper_Z_CA_X_Y
-18 21 19 20 1   improper_Z_CA_X_Y
-15 19 20 42 1   improper_Z_CA_X_Y
-23 47 25 46 1   improper_Z_CM_X_Y
+;5 11 6 7 1   improper_Z_CA_X_Y
+;6 29 7 8 1   improper_Z_CA_X_Y
+;7 12 8 9 1   improper_Z_CA_X_Y
+;8 30 9 10 1   improper_Z_CA_X_Y
+;9 31 10 11 1   improper_Z_CA_X_Y
+;6 10 11 32 1   improper_Z_CA_X_Y
+;12 20 15 16 1   improper_Z_CA_X_Y
+;15 39 16 17 1   improper_Z_CA_X_Y
+;16 40 17 18 1   improper_Z_CA_X_Y
+;17 41 18 19 1   improper_Z_CA_X_Y
+;18 21 19 20 1   improper_Z_CA_X_Y
+;15 19 20 42 1   improper_Z_CA_X_Y
+;23 47 25 46 1   improper_Z_CM_X_Y
 
 
 [ pairs ]

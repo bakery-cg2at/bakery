@@ -6,7 +6,7 @@ EPO             3
 ;   nr       type  resnr residue  atom   cgnr     charge       mass  typeB    chargeB      massB
         1  opls_154   1   EPO      O1    2    -0.253296  15.9994   
         2  opls_182   1   EPO      C1    1    -0.108665  12.011   
-        3  opls_158   1   EPO      C2    2    -0.009195  12.011   
+        3  opls_183   1   EPO      C2    2    -0.009195  12.011   
         4  opls_182   1   EPO      C3    3    -0.035488  12.011   
         5  opls_180   1   EPO      O2    4    -0.247898  15.9994   
         6  opls_145   1   EPO      C4    4     0.396503  12.011   
@@ -26,11 +26,11 @@ EPO             3
        20  opls_145   1   EPO      C18    18  -0.439521    12.011   
        21  opls_180   1   EPO      O3    17   -0.290066   15.9994   
        22  opls_182   1   EPO      C19    19   0.141251    12.011   
-       23  opls_158   1   EPO      C20    20  -0.093024    12.011   
+       23  opls_183   1   EPO      C20    20  -0.093024    12.011   
        24  opls_154   1   EPO      O4    20   -0.249238   15.9994   
        25  opls_182   1   EPO      C21    21  -0.082634    12.011   
-       26  opls_144   1   EPO      H1    1     0.114157  1.008   
-       27  opls_144   1   EPO      H2    1     0.115549  1.008   
+       26  opls_140   1   EPO      H1    1     0.114157  1.008   
+       27  opls_140   1   EPO      H2    1     0.115549  1.008   
        28  opls_140   1   EPO      H3    2     0.129992  1.008   
        29  opls_140   1   EPO      H23    3     0.112389  1.008   
        30  opls_140   1   EPO      H24    3     0.071870  1.008   
@@ -51,8 +51,8 @@ EPO             3
        45  opls_140   1   EPO      H20    19   0.071516    1.008   
        46  opls_140   1   EPO      H21    19   0.030523    1.008   
        47  opls_140   1   EPO      H22    20   0.143798    1.008   
-       48  opls_144   1   EPO      H18    21   0.113660    1.008   
-       49  opls_144   1   EPO      H19    21   0.103874    1.008   
+       48  opls_140   1   EPO      H18    21   0.113660    1.008   
+       49  opls_140   1   EPO      H19    21   0.103874    1.008   
        50  opls_155   1   EPO      H25    2    0.000000  1.008   
        51  opls_155   1   EPO      H26    20   0.000000   1.008   
 
@@ -213,8 +213,8 @@ EPO             3
 26 2 3 1 3
 27 2 3 28 3
 26 2 3 28 3
-;27 2 3 4 3
-;26 2 3 4 3
+27 2 3 4 3
+26 2 3 4 3
 1 3 4 30 3
 2 3 4 30 3
 28 3 4 30 3
@@ -321,10 +321,10 @@ EPO             3
 21 22 23 24 3
 46 22 23 24 3
 45 22 23 24 3
-;22 23 25 49 3
+22 23 25 49 3
 47 23 25 49 3
 24 23 25 49 3
-;22 23 25 48 3
+22 23 25 48 3
 47 23 25 48 3
 24 23 25 48 3
 22 23 24 51 3
@@ -333,20 +333,20 @@ EPO             3
 
 
 [ dihedrals ]
-27 26 2 3 1   improper_Z_CM_X_Y
-5 11 6 7 1   improper_Z_CA_X_Y
-6 31 7 8 1   improper_Z_CA_X_Y
-7 12 8 9 1   improper_Z_CA_X_Y
-8 32 9 10 1   improper_Z_CA_X_Y
-9 33 10 11 1   improper_Z_CA_X_Y
-6 10 11 34 1   improper_Z_CA_X_Y
-12 20 15 16 1   improper_Z_CA_X_Y
-15 41 16 17 1   improper_Z_CA_X_Y
-16 42 17 18 1   improper_Z_CA_X_Y
-17 43 18 19 1   improper_Z_CA_X_Y
-18 21 19 20 1   improper_Z_CA_X_Y
-15 19 20 44 1   improper_Z_CA_X_Y
-23 49 25 48 1   improper_Z_CM_X_Y
+;27 26 2 3 1   improper_Z_CM_X_Y
+;5 11 6 7 1   improper_Z_CA_X_Y
+;6 31 7 8 1   improper_Z_CA_X_Y
+;7 12 8 9 1   improper_Z_CA_X_Y
+;8 32 9 10 1   improper_Z_CA_X_Y
+;9 33 10 11 1   improper_Z_CA_X_Y
+;6 10 11 34 1   improper_Z_CA_X_Y
+;12 20 15 16 1   improper_Z_CA_X_Y
+;15 41 16 17 1   improper_Z_CA_X_Y
+;16 42 17 18 1   improper_Z_CA_X_Y
+;17 43 18 19 1   improper_Z_CA_X_Y
+;18 21 19 20 1   improper_Z_CA_X_Y
+;15 19 20 44 1   improper_Z_CA_X_Y
+;23 49 25 48 1   improper_Z_CM_X_Y
 
 
 [ pairs ]

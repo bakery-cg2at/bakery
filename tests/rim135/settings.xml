@@ -180,12 +180,14 @@
                 1:IPD:H22 1:IPD:N1 1:IPD:N2
             </beads>
         </cg_bead>
+        <!--
         <charge_transfers>
             <charge_transfer when="IPD:N1:2" from_atom="IPD:H8" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
             <charge_transfer when="IPD:N1:3" from_atom="IPD:H9" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
             <charge_transfer when="IPD:N2:2" from_atom="IPD:H12" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
             <charge_transfer when="IPD:N2:3" from_atom="IPD:H13" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
         </charge_transfers>
+        -->
     </cg_molecule>
 
     <cg_molecule>
@@ -277,12 +279,14 @@
                 1:JEF:H38 1:JEF:O5
             </beads>
         </cg_bead>
+        <!--
         <charge_transfers>
             <charge_transfer when="JEF:N1:2" from_atom="JEF:H1" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
             <charge_transfer when="JEF:N1:3" from_atom="JEF:H2" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
             <charge_transfer when="JEF:N2:2" from_atom="JEF:H45" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
             <charge_transfer when="JEF:N2:3" from_atom="JEF:H46" when_to_atom="EPO:C1#H25,EPO:C21#H26,HDD:C1#H24,HDD:C12#H23" />
         </charge_transfers>
+        -->
     </cg_molecule>
 
     <cg_configuration>
@@ -322,6 +326,24 @@
             HDD:C12 JEF:N1
             HDD:C12 JEF:N2
         </bonds>
+        <angles params="; CROSS_BCK">
+            EPO:C1 IPD:N1 IPD:C1
+            EPO:C21 IPD:N2 IPD:C7
+EPO:C1 IPD:N1 IPD:H9
+EPO:C21 IPD:N2 IPD:H13
+EPO:C21 JEF:N2 JEF:H46
+IPD:N1 EPO:C1 EPO:H1
+IPD:N1 EPO:C1 EPO:H2
+IPD:N2 EPO:C21 EPO:H21
+JEF:N2 EPO:C21 EPO:H18
+JEF:N2 EPO:C21 EPO:H19
+IPD:N2 EPO:C21 EPO:H22
+JEF:N2 EPO:C21 EPO:C20
+            EPO:C21 JEF:N2 JEF:C20
+            IPD:N1 EPO:C1 EPO:C2
+            IPD:N2 EPO:C21 EPO:C20
+            JEF:N2 EPO:C21 EPO:C20
+        </angles>
         <!-- add angles, dihedrals, pairs?? -->
         <molecule_type>
             <name>HYB</name>

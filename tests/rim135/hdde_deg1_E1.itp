@@ -6,7 +6,7 @@ HDD             3
 ;   nr       type  resnr residue  atom   cgnr     charge       mass  typeB    chargeB      massB
         1  opls_143   1   HDD      C1    1    -0.084499  12.011   
         2  opls_154   1   HDD      O1    2    -0.259407  15.9994   
-        3  opls_158   1   HDD      C2    2    -0.026926  12.011   
+        3  opls_183   1   HDD      C2    2    -0.026926  12.011   
         4  opls_182   1   HDD      C3    3     0.052207  12.011   
         5  opls_180   1   HDD      O2    3    -0.312174  15.9994   
         6  opls_182   1   HDD      C4    4     0.153025  12.011   
@@ -20,8 +20,8 @@ HDD             3
        14  opls_183   1   HDD      C11    11  -0.030394    12.011   
        15  opls_180   1   HDD      O4    11   -0.261311   15.9994   
        16  opls_182   1   HDD      C12    12  -0.080192    12.011   
-       17  opls_144   1   HDD      H1    1     0.104053  1.008   
-       18  opls_144   1   HDD      H2    1     0.103853  1.008   
+       17  opls_140   1   HDD      H1    1     0.104053  1.008   
+       18  opls_140   1   HDD      H2    1     0.103853  1.008   
        19  opls_140   1   HDD      H3    2     0.126931  1.008   
        20  opls_140   1   HDD      H4    3     0.031868  1.008   
        21  opls_140   1   HDD      H5    3     0.077360  1.008   

@@ -412,6 +412,12 @@ def main():  # NOQA
         ext_analysis3.interval = args.energy_collect
     else:
         ext_analysis.interval = args.energy_collect
+
+    if has_capforce:
+        #cap_force.disconnect()
+        cap_force.ramp = 10.0
+        print('Set cap_force.ramp = {}'.format(cap_force.ramp))
+
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
@@ -422,6 +428,22 @@ def main():  # NOQA
             system_analysis.info()
         integrator.run(integrator_step)
         global_int_step += 1
+
+    if args.em > 0:
+        if has_capforce:
+            cap_force.disconnect()
+        print('Runninng basic energy minimization')
+        if two_phase:
+            system_analysis3.info()
+        else:
+            system_analysis.info()
+        minimize_energy = espressopp.integrator.MinimizeEnergy(system, args.em_gamma, args.em_ftol, args.em_max_d * input_gro_conf.box[0], True)
+        minimize_energy.run(args.em, True)
+        print('Energy information:')
+        if two_phase:
+            system_analysis3.info()
+        else:
+            system_analysis.info()
 
     traj_file.flush()
 

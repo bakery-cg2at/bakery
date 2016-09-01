@@ -472,6 +472,7 @@ class BackmapperSettings2:
 
                     if cg_fragment.charge_map:
                         topol_atom.charge = cg_fragment.charge_map[idx]
+                    topol_atom.charge = 0.0
                     topol_atom.atom_id = new_at_id
                     topol_atom.chain_idx = res_id
                     topol_atom.chain_name = cg_fragment.cg_molecule.ident
