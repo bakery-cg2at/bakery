@@ -14,6 +14,11 @@ Structure:
 
  - ``examples/`` - the set of examples
 
+Requirments:
+
+ - `networkx >= 1.11`
+ - modified `espressopp` - https://github.com/MrTheodor/espressopp/tree/Adress-newdd-rebased
+ - `numpy`
 
 ```
 @misc{jakub_krajniak_2016_61233,
