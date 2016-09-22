@@ -155,6 +155,7 @@ def FillFileBuffer(fname, filebuffer, cwd=None, defines=None):
             cwd_name = os.path.dirname(name)
             if cwd_name != '':
                 cwd = cwd_name
+            name = os.path.basename(name)
             FillFileBuffer(name, filebuffer, cwd, defines)
         elif 'define' in line:
             t = line.strip().split()
