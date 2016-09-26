@@ -404,6 +404,9 @@ def main():  # NOQA
             global_int_step += 1
         traj_file.flush()
 
+    # After backmapping, switch off dynamic resolution
+    dynamic_res.active = False
+
     gro_whole.update_positions(system)
     gro_whole.write(
         '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
