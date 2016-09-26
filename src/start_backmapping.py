@@ -79,7 +79,11 @@ def main():  # NOQA
     integrator_step = args.int_step
     k_eq_step = int(args.eq / integrator_step)
     long_step = int(args.long / integrator_step)
-    dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 2 if args.alpha > 0.0 else 0
+    dynamic_res_time = 0
+    if args.alpha > 0.0:
+        dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 2
+        if args.nonuniform_lambda:
+            dynamic_res_time += int(10000/integrator_step)
 
     if args.skin:
         skin = args.skin
