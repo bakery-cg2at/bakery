@@ -136,14 +136,16 @@ def main():  # NOQA
     cg_id = 0
     last_vel = (0.0, 0.0, 0.0)
     last_lambda = 0.0
+    last_res_id = -1
     index_lambda = part_prop.index('lambda_adr')
     for p in all_particles:
         t = list(p)
         if p.adrat == 0:  # this is CG particle
             last_vel = (vx[cg_id], vy[cg_id], vz[cg_id])
-            if args.nonuniform_lambda:
-                last_lambda = -1.0*random.uniform(0.0, 10000*args.alpha)
             cg_id += 1
+        if args.nonuniform_lambda and p.res_id != last_res_id:
+            last_res_id = p.res_id
+            last_lambda = -1.0 * random.uniform(0.0, 10000 * args.alpha)
         if args.nonuniform_lambda:
             t[index_lambda] = last_lambda
         del t[index_adrat]
