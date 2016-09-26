@@ -1,8 +1,8 @@
 ; GROMACS like hybrid topology file.
 ; ===================== 
 
-#include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
-;#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
+;#include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
+#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
 
 
 [ atomtypes ]

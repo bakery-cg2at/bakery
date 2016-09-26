@@ -228,15 +228,15 @@ def genParticleList(input_conf, gro_file, use_velocity=False, use_charge=False, 
                 tmp.append(input_conf.charges[pid])
             if particle_type == 'V':
                 tmp.append(0)  # adrat
-                tmp.append(0.0)
-                tmp.append(True)
+                tmp.append(0.0)  # lambda
+                tmp.append(True)  # is virtual site
                 if tmptuple != []:
                     adress_tuple.append(tmptuple[:])
                 tmptuple = [pid+1]
             else:
                 tmp.append(1)  # adrat
-                tmp.append(0.0)
-                tmp.append(False)
+                tmp.append(0.0)  # lambda
+                tmp.append(False)  # is virtual site
                 tmptuple.append(pid+1)
             particle_list.append(Particle(*tmp))
         # Set Adress tuples

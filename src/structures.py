@@ -190,7 +190,7 @@ class BackmapperSettings2:
             bead_list = angle_term.text.strip().split()
             if len(bead_list) % 3 != 0:
                 raise RuntimeError('Wrong triplets in <angles> section, found {}'.format(bead_list))
-            for idx in range(0, len(bead_list)-3, 3):
+            for idx in xrange(0, len(bead_list)-3, 3):
                 p1, p2, p3 = bead_list[idx], bead_list[idx+1], bead_list[idx+2]
                 if p1 not in self.angle_params:
                     self.angle_params[p1] = {}
@@ -208,7 +208,7 @@ class BackmapperSettings2:
             bead_list = dihedral_term.text.strip().split()
             if len(bead_list) % 4 != 0:
                 raise RuntimeError('Wrong quadruplets in <dihedrals> section, found {}'.format(bead_list))
-            for idx in range(0, len(bead_list) - 4, 4):
+            for idx in xrange(0, len(bead_list) - 4, 4):
                 p1, p2, p3, p4 = bead_list[idx], bead_list[idx + 1], bead_list[idx + 2], bead_list[idx + 3]
                 if p2 not in self.dihedral_params[p1]:
                     self.dihedral_params[p1][p2] = {}
