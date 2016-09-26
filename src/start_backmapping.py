@@ -96,6 +96,8 @@ def main():  # NOQA
         rng_seed = random.randint(1, 10000)
         args.rng_seed = rng_seed
 
+    random.seed(rng_seed)
+
     _args().save_to_file('{}_{}_params.out'.format(args.output_prefix, rng_seed), args)
 
     print('Skin: {}'.format(skin))
