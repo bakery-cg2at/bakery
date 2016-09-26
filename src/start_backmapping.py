@@ -84,6 +84,7 @@ def main():  # NOQA
         dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 2
         if args.nonuniform_lambda:
             dynamic_res_time += int(10000/integrator_step)
+            print('Running nonuniform lambda, extended running time by {} steps'.format(10000))
 
     if args.skin:
         skin = args.skin
