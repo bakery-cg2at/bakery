@@ -50,8 +50,7 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
 
     system_analysis.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
     if dynamic_res is not None:
-        system_analysis.add_observable(
-            'res', espressopp.analysis.Resolution(system, dynamic_res))
+        system_analysis.add_observable('res', espressopp.analysis.Resolution(system))
 
     try:
         system_info_filter = args.system_info_filter.split(',')

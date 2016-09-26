@@ -193,7 +193,7 @@ def main():  #NOQA
         system,
         integrator,
         '{}energy_{}_.csv'.format(args.output_prefix, args.res_rate))
-    system_analysis.add_observable('res', espressopp.analysis.Resolution(system, dynamic_res))
+    system_analysis.add_observable('res', espressopp.analysis.Resolution(system))
     system_analysis.add_observable('lj', espressopp.analysis.PotentialEnergy(system, vl_interaction))
     for (lb, cross), interHarmonic in bondedinteractions.iteritems():
         system_analysis.add_observable('bond_%d%s' % (lb, '_cross' if cross else ''),
