@@ -41,6 +41,9 @@ simulation_email = 'xxx@xxx.xxx'
 
 # Mostly you do not need to modify lines below.
 
+# init rng
+random.seed()
+
 def main():  # NOQA
     h5md_group = 'atoms'
     time0 = time.time()
