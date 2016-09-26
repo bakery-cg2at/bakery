@@ -41,9 +41,6 @@ simulation_email = 'xxx@xxx.xxx'
 
 # Mostly you do not need to modify lines below.
 
-# init rng
-random.seed()
-
 def main():  # NOQA
     h5md_group = 'atoms'
     time0 = time.time()
@@ -97,6 +94,8 @@ def main():  # NOQA
     if args.rng_seed == -1:
         rng_seed = random.randint(1, 10000)
         args.rng_seed = rng_seed
+
+    random.seed(rng_seed)
 
     _args().save_to_file('{}_{}_params.out'.format(args.output_prefix, rng_seed), args)
 
