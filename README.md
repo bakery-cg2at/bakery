@@ -20,6 +20,20 @@ Requirments:
  - modified `espressopp` - https://github.com/MrTheodor/espressopp/tree/Adress-newdd-rebased
  - `numpy`
 
+If you like to use the method in your project, modify and reuse code of `bakery` or the ingredients from `espressopp`
+that are related to the reverse mapping, please cite following materials:
+
+```
+@article{doi:10.1021/acs.jctc.6b00595,
+  author = {Krajniak, Jakub and Pandiyan, Sudharsan and Nies, Eric and Samaey, Giovanni}
+  title = {Generic Adaptive Resolution Method for Reverse Mapping of Polymers from Coarse-Grained to Atomistic Descriptions},
+  journal = {Journal of Chemical Theory and Computation},
+  doi = {10.1021/acs.jctc.6b00595},
+  note ={PMID: 27685340},
+  URL = { http://dx.doi.org/10.1021/acs.jctc.6b00595},
+}
+```
+
 ```
 @misc{jakub_krajniak_2016_61233,
   author       = {Jakub Krajniak},
