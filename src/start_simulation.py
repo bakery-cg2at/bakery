@@ -265,7 +265,7 @@ def main():  #NOQA
     traj_file.set_parameters({'temperature': args.temperature})
 
     print('Reset total velocity')
-    total_velocity = espressopp.analysis.TotalVelocity(system)
+    total_velocity = espressopp.analysis.CMVelocity(system)
     total_velocity.reset()
 
     integrator.step = args.initial_step
