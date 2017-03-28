@@ -294,7 +294,7 @@ def main():  # NOQA
 
     if args.remove_com > 0:
         print('Removes total velocity of the system every {} steps'.format(args.remove_com))
-        total_velocity = espressopp.analysis.TotalVelocity(system)
+        total_velocity = espressopp.analysis.CMVelocity(system)
         ext_remove_com = espressopp.integrator.ExtAnalyze(total_velocity, args.remove_com)
         integrator.addExtension(ext_remove_com)
 
