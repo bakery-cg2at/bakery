@@ -1,5 +1,5 @@
 """
-Copyright (C) 2015-2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2015-2017 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is part of Backmapper.
 
@@ -388,7 +388,7 @@ class BackmapperSettings2:
                 selected_fragment = possible_fragment
                 for cg_id in cg_nodes:
                     cg_node = self.cg_graph.node[cg_id]
-                    if str(cg_node['degree']) not in f[cg_node['name']]:
+                    if str(cg_node['degree']) not in f[cg_node['name']] and '*' not in f[cg_node['name']]:
                         selected_fragment = None
                 if selected_fragment is not None:
                     break
@@ -699,7 +699,7 @@ class BackmapperSettings2:
                         b2_key = '{}:{}'.format(at2.chain_name, at2.name)
                         test_bond = self.bond_params.get(b1_key, {}).get(b2_key, None)
                         if (test_bond and self.global_graph.has_node(at1.atom_id)
-                            and self.global_graph.has_node(at2.atom_id)):
+                                and self.global_graph.has_node(at2.atom_id)):
                             at1_deg = global_degree[at1.atom_id]
                             at2_deg = global_degree[at2.atom_id]
                             at_remove1 = self.atom_id2fragment[b1].active_sites_remove_map.get(b1_key)
@@ -739,9 +739,17 @@ class BackmapperSettings2:
                                     self.global_graph.remove_node(ai)
                                 global_degree = self.global_graph.degree()
                                 break
+                            else:
+                                print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
+                                    deg1=at1_deg, deg2=at2_deg, b1=b1_key, b2=b2_key, max_d1=max_d1, max_d2=max_d2, valid=valid,
+                                    b1id=b1, b2id=b2
+                                ))
+                        else:
+                            print('Params for {}-{} not found'.format(b1_key, b2_key))
                     if ats1 is not None and ats2 is not None:
+                        # Found active sites, break the for at1, for at2 loops
                         break
-
+                # End for at1, for at2 loops
                 if ats1 is not None and ats2 is not None:
                     # Selected proper active sites.
                     at_cross_bonds.append((ats1.atom_id, ats2.atom_id))
