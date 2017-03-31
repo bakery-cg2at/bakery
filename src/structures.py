@@ -835,15 +835,21 @@ class BackmapperSettings2:
                     '{}:{}'.format(x['chain_name'], x['name'])
                     for x in map(self.global_graph.node.get, triplet)]
                 try:
-                    if (triplet in self.hyb_topology.new_data[angle_key] or
-                            tuple(reversed(triplet)) in self.hyb_topology.new_data[angle_key]):
-                        raise RuntimeError('Angle {} already defined in the topology, wtf?'.format(triplet))
-                    self.hyb_topology.new_data[angle_key][triplet] = (
-                        self.angle_params[n1_key][n2_key][n3_key])
+                    triplet_defined = triplet in self.hyb_topology.new_data[angle_key]
+                    reverse_triplet_defined = (
+                        tuple(reversed(triplet)) in self.hyb_topology.new_data[angle_key])
+                    # Here the exception can be raised with missing definition
+                    if not (triplet_defined or reverse_triplet_defined):
+                        self.hyb_topology.new_data[angle_key][triplet] = (
+                            self.angle_params[n1_key][n2_key][n3_key])
                 except KeyError as ex:
-                    print('Missing definition of angle: {}-{}-{} (bond {}-{})'.format(
-                        n1_key, n2_key, n3_key, b1_key, b2_key))
-                    missing_definitions.add((n1_key, n2_key, n3_key))
+                    try:
+                        self.hyb_topology.new_data[angle_key][triplet] = (
+                            self.angle_params[n3_key][n2_key][n1_key])
+                    except KeyError as ex:
+                        print('Missing definition of angle: {}-{}-{} (bond {}-{})'.format(
+                            n1_key, n2_key, n3_key, b1_key, b2_key))
+                        missing_definitions.add((n1_key, n2_key, n3_key))
             # Generate dihedrals.
             for quadruplet in quadruplets:
                 n1_key, n2_key, n3_key, n4_key = [

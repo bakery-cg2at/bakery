@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Copyright (C) 2014-2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2014-2017 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is part of Backmapper.
 
