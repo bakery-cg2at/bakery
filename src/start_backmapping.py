@@ -193,6 +193,8 @@ def main():  # NOQA
     integrator = espressopp.integrator.VelocityVerletHybrid(system, vs_list)
     integrator.dt = args.dt
 
+    system.integrator = integrator
+
     system.storage.decompose()
 
     print('Prepared:')
@@ -248,7 +250,7 @@ def main():  # NOQA
     traj_file = espressopp.io.DumpH5MD(
         system, h5file,
         group_name=h5md_group,
-        static_box=False,
+        static_box=True,
         author=simulation_author,
         email=simulation_email,
         store_lambda=args.store_lambda,
@@ -432,9 +434,12 @@ def main():  # NOQA
         ext_analysis.interval = args.energy_collect
 
     if has_capforce:
-        #cap_force.disconnect()
-        cap_force.ramp = 10.0
-        print('Set cap_force.ramp = {}'.format(cap_force.ramp))
+        if args.cap_force_ramp is None:
+            cap_force.disconnect()
+            print('Cap-force switched off')
+        else:
+            cap_force.ramp = args.cap_force_ramp
+            print('Cap-force switched gradually, decrease of {}'.format(cap_force.ramp))
 
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
