@@ -77,6 +77,8 @@ def main():  # NOQA
 
     # Tune simulation parameter according to arguments
     integrator_step = args.int_step
+    if args.trj_collect > 0:
+        integrator_step = min([integrator_step, args.trj_collect])
     k_eq_step = int(args.eq / integrator_step)
     long_step = int(args.long / integrator_step)
     dynamic_res_time = 0
@@ -253,10 +255,12 @@ def main():  # NOQA
         static_box=True,
         author=simulation_author,
         email=simulation_email,
-        store_lambda=args.store_lambda,
+        store_lambda=True,
+        store_species=True,
         store_force=args.store_force,
         store_state=args.store_state,
-        store_species=args.store_species)
+        is_single_prec=True,
+        chunk_size=256)
     traj_file.set_parameters({
         'temperature': temperature,
         'thermostat': args.thermostat,
@@ -274,14 +278,14 @@ def main():  # NOQA
     system_analysis.dump()
 
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
+    k_trj_flush = 25 if 25 < 10*k_trj_collect else 10*k_trj_collect
 
     print('Dynamic resolution, rate={}'.format(args.alpha))
     print('CG equilibration for {}'.format(k_eq_step * integrator_step))
     print('Collect trajectory every {} step'.format(k_trj_collect * integrator_step))
+    print('Flush trajectory every {} step'.format(k_trj_flush * integrator_step))
     print('Collect energy every {} step'.format(args.energy_collect))
     print('Atomistic long run for {}'.format(long_step * integrator_step))
-
-    traj_file.dump(integrator.step, integrator.step * args.dt)
 
     system.storage.decompose()
 
@@ -309,11 +313,13 @@ def main():  # NOQA
     global_int_step = 0
     for k in range(k_eq_step):
         system_analysis.info()
-        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        if k_trj_collect > 0 and k % k_trj_collect == 0:
+            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        if k_trj_flush > 0 and k % k_trj_flush == 0:
+            traj_file.flush()  # Write HDF5 to disk.
         integrator.run(integrator_step)
         global_int_step += 1
 
-    traj_file.flush()
     system_analysis.dump()
 
     ######### Now run backmapping.  #######################
@@ -354,11 +360,13 @@ def main():  # NOQA
 
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time):
-            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+            if k_trj_collect > 0 and k % k_trj_collect == 0:
+                traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+            if k_trj_flush > 0 and k % k_trj_flush == 0:
+                traj_file.flush()  # Write HDF5 to disk.
             system_analysis2.info()
             integrator.run(integrator_step)
             global_int_step += 1
-        traj_file.flush()
 
         confout_aa = '{}confout_aa_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, rng_seed)
         at_gro_conf.update_positions(system)
@@ -395,21 +403,25 @@ def main():  # NOQA
         else:
             # Simulation
             for k in range(dynamic_res_time):
-                traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+                if k_trj_collect > 0 and k % k_trj_collect == 0:
+                    traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+                if k_trj_flush > 0 and k % k_trj_flush == 0:
+                    traj_file.flush()  # Write HDF5 to disk.
                 system_analysis3.info()
                 integrator.run(integrator_step)
                 global_int_step += 1
-            traj_file.flush()
     else:
         # Single phase backmapping
         ext_analysis.interval = args.energy_collect_bck
         print('Running a single-phase backmapping.')
         for k in range(dynamic_res_time):
-            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+            if k_trj_collect > 0 and k % k_trj_collect == 0:
+                traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+            if k_trj_flush > 0 and k % k_trj_flush == 0 and k > 0:
+                traj_file.flush()  # Write HDF5 to disk.
             system_analysis.info()
             integrator.run(integrator_step)
             global_int_step += 1
-        traj_file.flush()
 
     # After backmapping, switch off dynamic resolution
     dynamic_res.active = False
@@ -444,7 +456,10 @@ def main():  # NOQA
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
-        traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        if k_trj_collect > 0 and k % k_trj_collect == 0:
+            traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
+        if k_trj_flush > 0 and k % k_trj_flush == 0:
+            traj_file.flush()  # Write HDF5 to disk.
         if two_phase:
             system_analysis3.info()
         else:
@@ -468,8 +483,6 @@ def main():  # NOQA
         else:
             system_analysis.info()
 
-    traj_file.flush()
-
     gro_whole.update_positions(system)
     gro_whole.write(
         '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
@@ -480,7 +493,6 @@ def main():  # NOQA
     print('Final hybrid configuration write to: {}'.format(
         '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)))
 
-    traj_file.flush()
     traj_file.close()
 
     print('Finished!')

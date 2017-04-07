@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (c) 2016 Jakub Krajniak <jkrajniak@gmail.com>
+# Copyright (c) 2016,2017 Jakub Krajniak <jkrajniak@gmail.com>
 #
 # Distributed under terms of the GNU GPLv3 license.
 #
@@ -8,6 +8,7 @@
 import espressopp
 import tools_sim as tools
 import gromacs_topology
+import cPickle
 
 
 def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups=[]):
@@ -38,7 +39,7 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
             interaction=coulomb_interaction)
     else:
         coulomb_interaction = None
-    tools.setBondedInteractions(
+    ret_list = tools.setBondedInteractions(
         system, input_conf)
     tools.setAngleInteractions(
         system, input_conf)
@@ -59,6 +60,10 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         system.addInteraction(coulomb_interaction, 'coulomb')
     if tab_cg is not None:
         system.addInteraction(tab_cg, 'tab-cg')
+
+    # Save interactions
+    if args.save_interactions:
+        tools.saveInteractions(system, '{}_{}_interactions.pck'.format(args.output_prefix, args.rng_seed))
 
     return verletlistAT, verletlistCG
 
@@ -101,6 +106,9 @@ def setupFirstPhase(system, args, input_conf, at_particle_ids, cg_particle_ids):
         interaction=espressopp.interaction.VerletListTabulated(verletlistCG))
     if tab_cg is not None:
         system.addInteraction(tab_cg, 'tab-cg')
+
+    if args.save_interactions:
+        tools.saveInteractions(system, '{}_{}_phase_one_interactions.pck'.format(args.output_prefix, args.rng_seed))
 
     return verletlistCG
 
@@ -166,11 +174,15 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
         system.addInteraction(tab_cg, 'lj-tab')
 
     # The bonded terms are already correct, not scale with lambda.
-    tools.setBondedInteractions(
+    ret_list = tools.setBondedInteractions(
         system, input_conf, force_static=True, only_at=True)
+
     tools.setAngleInteractions(
         system, input_conf, force_static=True, only_at=True)
     tools.setDihedralInteractions(
         system, input_conf, force_static=True, only_at=True)
+
+    if args.save_interactions:
+        tools.saveInteractions(system, '{}_{}_phase_two_interactions.pck'.format(args.output_prefix, args.rng_seed))
 
     return verletlistAT, verletlistCG
