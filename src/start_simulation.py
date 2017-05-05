@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Copyright (C) 2015-2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2015-2017 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is distributed under free software licence:
 you can redistribute it and/or modify it under the terms of the
@@ -20,8 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import espressopp  # NOQA
 import math  # NOQA
 
-
-
 try:
     import MPI
 except ImportError:
@@ -29,6 +27,7 @@ except ImportError:
 import time
 import logging
 import random
+import os
 
 import files_io
 import gromacs_topology
@@ -65,15 +64,15 @@ def main():  #NOQA
 
     time0 = time.time()
 
-    generate_exclusions = args.exclusion_list is None
+    generate_exclusions = not os.path.exists(args.exclusion_list) if args.exclusion_list else True
 
-    input_conf = gromacs_topology.read(args.conf, args.top, doRegularExcl=generate_exclusions)
+    input_conf = gromacs_topology.read(args.top, doRegularExcl=generate_exclusions)
     input_conf_gro = files_io.GROFile(args.conf)
     input_conf_gro.read()
 
     if generate_exclusions:
         # Save exclusions for future runs.
-        exclusion_file = open('exclusions_{}.list'.format(args.top.split('.')[0]), 'w')
+        exclusion_file = open('exclusion_{}.list'.format(args.top.split('.')[0]), 'w')
         for e in input_conf.exclusions:
             exclusion_file.write('{} {}\n'.format(*e))
         exclusion_file.close()
@@ -84,7 +83,7 @@ def main():  #NOQA
         print('Read exclusion list from {} (total: {})'.format(args.exclusion_list, len(exclusions)))
         input_conf = input_conf._replace(exclusions=exclusions)
 
-    box = (input_conf.Lx, input_conf.Ly, input_conf.Lz)
+    box = input_conf_gro.box
     print('Setup simulation...')
 
     # Tune simulation parameter according to arguments
@@ -104,8 +103,8 @@ def main():  #NOQA
 
     _args_md().save_to_file('{}_{}_params.out'.format(args.output_prefix, rng_seed), args)
 
-    part_prop, all_particles = gromacs_topology.genParticleList(
-        input_conf, use_velocity=True, use_charge=True)
+    part_prop, all_particles = tools.genParticleList(
+        input_conf, input_conf_gro, adress=False, use_charge=True)
     print('Reads {} particles with properties {}'.format(len(all_particles), part_prop))
 
     particle_list = []
@@ -186,7 +185,7 @@ def main():  #NOQA
     tools.setDihedralInteractions(
         system, input_conf)
     tools.setPairInteractions(
-        system, input_conf, args.lj_cutoff)
+        system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
         vl=verletlist,
@@ -204,7 +203,7 @@ def main():  #NOQA
 
 # Define the thermostat
     temperature = args.temperature*kb
-    print('Temperature: {} ({}), gamma: {}'.format(temperature, temperature, args.thermostat_gamma))
+    print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
     print('Thermostat: {}'.format(args.thermostat))
     if args.thermostat == 'lv':
         thermostat = espressopp.integrator.LangevinThermostat(system)
@@ -249,12 +248,14 @@ def main():  #NOQA
     traj_file = espressopp.io.DumpH5MD(
         system, h5md_output_file,
         group_name=h5md_group,
-        static_box=False,
+        static_box=True,
         author='Jakub Krajniak',
         email='jkrajniak@gmail.com',
         store_species=args.store_species,
         store_state=args.store_state,
-        store_lambda=args.store_lambda)
+        store_lambda=args.store_lambda,
+        is_single_prec=True,
+        chunk_size=256)
 
     gro_whole = files_io.GROFile.copy(input_conf_gro)
     file_name = '{}_{}_confout_time_0.gro'.format(args.output_prefix, rng_seed)
@@ -281,13 +282,20 @@ def main():  #NOQA
         import IPython
         IPython.embed()
 
+    if args.gro_trj > 0:
+        dump_gro = espressopp.io.DumpGRO(system, integrator,
+                                         filename='{}_{}_traj.gro'.format(args.output_prefix, rng_seed),
+                                         append=True)
+        ext_dump_gro = espressopp.integrator.ExtAnalyze(dump_gro, args.gro_trj)
+        integrator.addExtension(ext_dump_gro)
+
     system_analysis.dump()
     # Save interactions
 
     if args.em > 0:
         print('Runninng basic energy minimization')
         system_analysis.info()
-        minimize_energy = espressopp.integrator.MinimizeEnergy(system, args.em_gamma, args.em_ftol, args.em_max_d * input_conf.Lx)
+        minimize_energy = espressopp.integrator.MinimizeEnergy(system, args.em_gamma, args.em_ftol, args.em_max_d * input_conf_gro.box[0])
         minimize_energy.run(args.em, True)
         print('Energy information:')
         system_analysis.dump()

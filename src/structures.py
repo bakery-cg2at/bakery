@@ -42,7 +42,16 @@ CGMolecule = collections.namedtuple(
 logger = logging.getLogger()
 
 class CGFragment:
-    def __init__(self, cg_molecule, fragment_list, active_sites=None, charge_map=None, as_remove=None):
+    """Complex struct, with the construct that does a bit of processing."""
+    def __init__(
+            self,
+            cg_molecule,
+            fragment_list,
+            active_sites=None,
+            charge_map=None,
+            as_remove=None,
+            equilibrate_charges=False,
+            type_map=None):
         self.topology = cg_molecule.source_topology
         self.coordinate = cg_molecule.source_coordinate
         self.fragment_list = fragment_list
@@ -50,6 +59,7 @@ class CGFragment:
         self.cg_molecule = cg_molecule
 
         self.charge_map = charge_map
+        self.type_map = type_map
         self.active_sites_remove_map = as_remove
 
         # Select the set of atomistic coordinates.
@@ -64,13 +74,40 @@ class CGFragment:
         self.com = np.zeros(3)
         total_mass = 0.0
         tmp_atom_list = []
-        for bead in self.fragment_list:
+        at_charges = []
+        num_at_change = 0
+        for bid, bead in enumerate(self.fragment_list):
             atom_name = bead.split(':')[2]
             atom = atoms[atom_name]._replace(chain_name=cg_molecule.ident)
             atom_mass = self.atomparams[atom_name].mass
+            if charge_map:
+                if charge_map[bid] == '*':
+                    at_charges.append(self.atomparams[atom_name].charge)
+                    num_at_change += 1
+                else:
+                    at_charges.append(float(charge_map[bid]))
+            else:
+                at_charges.append(self.atomparams[atom_name].charge)
+                num_at_change += 1
             self.com += atom_mass * atom.position
             total_mass += atom_mass
             tmp_atom_list.append(atom)
+
+        total_charge = sum(at_charges)
+        if equilibrate_charges and total_charge != 0.0:
+            num_atoms = len(self.fragment_list)
+            dcharge = total_charge / num_at_change
+            if charge_map:
+                for bid, c in enumerate(charge_map):
+                    if c == '*':
+                        self.charge_map[bid] = at_charges[bid] - dcharge
+                    else:
+                        self.charge_map[bid] = float(self.charge_map[bid])
+            else:
+                self.charge_map = []
+                for c in at_charges:
+                    self.charge_map.append(c - dcharge)
+            print('Equilibrate charge, total: {} -> {}'.format(total_charge, sum(self.charge_map)))
 
         self.com /= total_mass
         self.cg_mass = total_mass
@@ -234,6 +271,7 @@ class BackmapperSettings2:
     def _parse_cg_molecules(self):
         """Parse the cg_molecule section and prepares data structures."""
         for r in self.root.findall('cg_molecule'):
+            equilibrate_charges = r.attrib.get('equilibrate_charges', '0') == '1'
             cg_mol_name = r.find('name').text
             cg_mol_ident = r.find('ident').text
             # For every residue degree the molecule can have different topology/coordinate file
@@ -317,10 +355,20 @@ class BackmapperSettings2:
                                 raise RuntimeError(
                                     'Number of entries in charge_map {} does not match number of beads {}'.format(
                                         len(charge_map), len(bead_list)))
-                        try:
-                            cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove)
-                        except KeyError:
-                            continue
+                        tm = beads.find('type_map')
+                        type_map = None
+                        if tm is not None:
+                            type_map = tm.text.split()
+                            if len(type_map) != len(bead_list):
+                                raise RuntimeError(
+                                    'Number of entries in type_map {} does not match number of beads {}'.format(
+                                        len(type_map), len(bead_list)))
+                        #try:
+                        cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove, equilibrate_charges, type_map)
+                        #except KeyError as ex:
+                        #    raise ex
+                        #    print ex,cg_molecule,bead_list,active_sites,charge_map,as_remove
+                        #    continue
                         self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name][degree] = cg_fragment
 
             # Read charge transfer.
@@ -472,6 +520,8 @@ class BackmapperSettings2:
 
                     if cg_fragment.charge_map:
                         topol_atom.charge = cg_fragment.charge_map[idx]
+                    if cg_fragment.type_map and cg_fragment.type_map[idx] != '*':
+                        topol_atom.atom_type = cg_fragment.type_map[idx]
                     topol_atom.atom_id = new_at_id
                     topol_atom.chain_idx = res_id
                     topol_atom.chain_name = cg_fragment.cg_molecule.ident
@@ -790,9 +840,10 @@ class BackmapperSettings2:
                             target_atom.chain_idx][
                             at_to_transfer].charge = at_from_transfer.charge
                 else:
-                    print b1, b2, n1, n2
-                    print self.cg_active_sites[b1]
-                    print self.cg_active_sites[b2]
+                    print((b1, b2))
+                    print((n1, n2))
+                    print(self.cg_active_sites[b1])
+                    print(self.cg_active_sites[b2])
                     raise RuntimeError('Something is really wrong!')
             sys.stdout.write('{} %\r'.format(100.0*(progress_indc/progress_indc_total)))
             progress_indc += 1.0

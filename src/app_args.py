@@ -88,8 +88,6 @@ def _args_md():
     parser.add_argument('--initial_step', default=0,
                         help='Initial integrator step (useful for continue simulation',
                         type=int)
-    parser.add_argument('--reactions', default=None,
-                        help='Configuration file with chemical reactions')
     parser.add_argument('--debug', default=None, help='Turn on logging mechanism')
     parser.add_argument('--start_ar', default=0, type=int, help='When to start chemical reactions')
     parser.add_argument('--interactive', default=False, type=ast.literal_eval,
@@ -104,11 +102,12 @@ def _args_md():
                         help='Store lambda parameter')
     parser.add_argument('--exclusion_list', default=None,
                         help='The exclusion list')
+    parser.add_argument('--gro_trj', default=None, help='Store .gro', type=ast.literal_eval)
     em_group = parser.add_argument_group('Energy minimization')
     em_group.add_argument('--em', help='Maximum number of steps to perform in EM', type=int, default=0)
     em_group.add_argument('--em_gamma', help='Gamma parameter for force damping', type=float, default=0.0001)
     em_group.add_argument('--em_ftol', help='Force tolerance', type=float, default=10.0)
-    em_group.add_argument('--em_max_d', help='Max displacement x box dimension', default=0.001)
+    em_group.add_argument('--em_max_d', help='Max displacement x box dimension', default=0.001, type=float)
 
     return parser
 

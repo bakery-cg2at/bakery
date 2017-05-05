@@ -163,7 +163,7 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
         type_1 = types_names[0][0]
         type_2 = types_names[1][0]
         print('Set tabulated potential {}-{}'.format(name_1, name_2))
-        table_name = '{}-{}.espp.pot'.format(name_1, name_2)
+        table_name = 'table_{}_{}.pot'.format(name_1, name_2)
         orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
         if not os.path.exists(table_name):
             espressopp.tools.convert.gromacs.convertTable(orig_table_name, table_name)
