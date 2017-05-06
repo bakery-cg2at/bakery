@@ -11,6 +11,12 @@ Configuration file
 The description of backmapping configuration is stored in XML file format. The format of file is very similarly
 to what is used by VOTCA_. In next two examples we will explain step-by-step how to create that file.
 
+The full reference you can find in :ref:`xml-structure`
+
+.. toctree::
+   :maxdepth: 3
+
+   xml_structure
 
 Simple mapping - dodecane
 ==========================

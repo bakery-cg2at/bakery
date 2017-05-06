@@ -3,7 +3,6 @@ XML structure
 Here we describe structure of XML settings file. Every **dot** describes the tree structure, e.g. **root.a** represents :xml:`<root><a></a></root>`.
 The notation *1* or *1..N* express the number of elements in the tree.
 
-
 settings
   *1*, root
 
