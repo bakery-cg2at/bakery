@@ -19,5 +19,3 @@ transform your coarse-grained coordinate file to atomistic representation.
    settings
    commands
    workflow
-   genindex
-   modindex

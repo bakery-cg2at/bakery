@@ -1,5 +1,5 @@
 """
-Copyright (C) 2015-2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2015-2017 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is distributed under free software licence:
 you can redistribute it and/or modify it under the terms of the
@@ -118,3 +118,108 @@ def get_graph(settings):
         g.node[n_id]['degree'] = g.degree(n_id)
 
     return g
+
+
+def generate_list(input_list, id_map):
+    output = {}
+    for k, v in input_list.items():
+        try:
+            new_k = tuple(map(lambda x: id_map[x], k))
+            output[new_k] = v
+        except KeyError:
+            continue
+    return output
+
+
+def get_atomistic_topology(in_top):
+    """Returns atomistic topology from hybrid topology.
+
+    Args:
+        in_top: Input hybrid topology.
+        coord: Input coordinate file.
+    Returns:
+        atomistic topology.
+    """
+    virtual_atomtypes = {k for k, v in in_top.atomtypes.items() if v['type'] == 'V'}
+
+    # Map topol id -> atom_id
+    topol_old2new = {}
+    new_topol_atoms = {}
+    new_id = 1
+    for old_id in sorted(in_top.atoms):
+        at = in_top.atoms[old_id]
+        if at.atom_type in virtual_atomtypes:
+            continue
+        at.atom_id = new_id
+        at.cgnr = at.chain_idx
+        new_topol_atoms[new_id] = at
+        topol_old2new[old_id] = new_id
+        new_id += 1
+
+    in_top.atomtypes = {k: v for k, v in in_top.atomtypes.items() if v['type'] != 'V'}
+
+    bondtypes = {}
+    for i in in_top.bondtypes:
+        for j, params in in_top.bondtypes[i].items():
+            if not {i, j}.intersection(virtual_atomtypes):
+                if i not in bondtypes:
+                    bondtypes[i] = {}
+                bondtypes[i][j] = params
+    in_top.bondtypes = bondtypes
+    angletypes = {}
+    for i in in_top.angletypes:
+        for j in in_top.angletypes[i]:
+            for k, params in in_top.angletypes[i][j].items():
+                if not {i, j, k}.intersection(virtual_atomtypes):
+                    if i not in angletypes:
+                        angletypes[i] = {j: {k: params}}
+                    elif j not in angletypes[i]:
+                        angletypes[i][j] = {k: params}
+                    else:
+                        angletypes[i][j][k] = params
+    in_top.angletypes = angletypes
+    dihedraltypes = {}
+    for i in in_top.dihedraltypes:
+        for j in in_top.dihedraltypes[i]:
+            for k in in_top.dihedraltypes[i][j]:
+                for l in in_top.dihedraltypes[i][j][k]:
+                    if not {i, j, k, l}.intersection(virtual_atomtypes):
+                        if i not in dihedraltypes:
+                            dihedraltypes[i] = {j: {k: {l: params}}}
+                        elif j not in dihedraltypes[i]:
+                            dihedraltypes[i][j] = {k: {l: params}}
+                        elif k not in dihedraltypes[i][j]:
+                            dihedraltypes[i][j][k] = {l: params}
+                        else:
+                            dihedraltypes[i][j][k][l] = params
+    in_top.dihedraltypes = dihedraltypes
+
+    in_top.header_section.insert(0, '; input_topol: {}\n'.format(in_top.file_name))
+    in_top.header_section.insert(1, '; clean: {}\n; remove_cross: {}\n'.format(True, True))
+
+    in_top.atoms = new_topol_atoms
+
+    new_bonds = generate_list(in_top.bonds, topol_old2new)
+    new_angles = generate_list(in_top.angles, topol_old2new)
+    new_dihs = generate_list(in_top.dihedrals, topol_old2new)
+    new_pairs = generate_list(in_top.pairs, topol_old2new)
+    new_cr_bonds = generate_list(in_top.cross_bonds, topol_old2new)
+    new_cr_angles = generate_list(in_top.cross_angles, topol_old2new)
+    new_cr_dihs = generate_list(in_top.cross_dihedrals, topol_old2new)
+    new_cr_pairs = generate_list(in_top.cross_pairs, topol_old2new)
+
+    in_top.bonds = new_bonds
+    in_top.angles = new_angles
+    in_top.dihedrals = new_dihs
+    in_top.pairs = new_pairs
+
+    in_top.bonds.update(new_cr_bonds)
+    in_top.angles.update(new_cr_angles)
+    in_top.dihedrals.update(new_cr_dihs)
+    in_top.pairs.update(new_cr_pairs)
+    in_top.cross_bonds = {}
+    in_top.cross_angles = {}
+    in_top.cross_dihedrals = {}
+    in_top.cross_pairs = {}
+
+    return in_top

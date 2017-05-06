@@ -37,7 +37,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinxarg.ext',
     'alabaster',
-    'sphinxtogithub'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

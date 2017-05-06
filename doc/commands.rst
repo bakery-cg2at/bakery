@@ -20,13 +20,3 @@ start_backmapping.py
 .. argparse::
    :ref: start_backmapping._args
    :prog: start_backmapping.py
-
-
-.. _start-simulation:
-
-start_simulation.py
-==========================
-
-.. argparse::
-   :ref: start_simulation._args
-   :prog: start_simulation.py

@@ -486,12 +486,15 @@ def main():  # NOQA
     gro_whole.update_positions(system)
     gro_whole.write(
         '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
+
     confout_aa = '{}confout_final_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
     print('Final atomistic configuration write to: {}'.format(confout_aa))
     print('Final hybrid configuration write to: {}'.format(
         '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)))
+
+    # Write atomistic topology
 
     traj_file.close()
 
