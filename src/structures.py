@@ -164,13 +164,18 @@ class BackmapperSettings2:
         self.cg_topology.replicate()
 
         self.cg_graph = self.cg_topology.get_graph()
-        self.cg_coordinate = files_io.read_coordinates(
-            cg_configuration.find('file').text.strip()
-        )
+        coordinate_file = None
+        if cg_configuration.find('file') is not None:
+            coordinate_file = cg_configuration.find('file').text.strip()
+            warning.warn('cg_configuration.file is deprected, use cg_configuration.coordinate', DeprecationWarning)
+        elif cg_configuration.find('coordinate') is not None:
+            coordinate_file = cg_configuration.find('coordinate').text.strip()
+        else:
+            raise RuntimeError('Missing tag cg_configuration.coordinate')
+        self.cg_coordinate = files_io.read_coordinates(coordinate_file)
 
         hyb_configuration = self.root.find('hybrid_configuration')
         self.hybrid_configuration = {
-            'format': hyb_configuration.find('format').text.strip(),
             'file': files_io.GROFile(hyb_configuration.find('file').text.strip())
         }
 
@@ -277,7 +282,7 @@ class BackmapperSettings2:
             # For every residue degree the molecule can have different topology/coordinate file
             cg_mol_source_topologies = {}
             for x in r.find('source_topology').findall('file'):
-                mol_degree = x.attrib.get('molecule_degree')
+                mol_degree = x.attrib.get('molecule_degree', '*')
                 mol_when = x.attrib.get('when', '*')
                 file_name = x.text
                 cg_mol_source_topologies[(mol_degree, mol_when)] = file_name
@@ -290,7 +295,7 @@ class BackmapperSettings2:
 
             cg_mol_source_coordinate = {}
             for x in r.find('source_coordinate').findall('file'):
-                mol_degree = x.attrib.get('molecule_degree')
+                mol_degree = x.attrib.get('molecule_degree', '*')
                 mol_when = x.attrib.get('when', '*')
                 file_name = x.text
                 cg_mol_source_coordinate[(mol_degree, mol_when)] = file_name
