@@ -745,15 +745,17 @@ class GROMACSTopologyFile(TopologyFile):
                 sections.append('dihedraltypes')
             sections.extend([
                 'moleculetype',
-                'atoms',
-                'bonds',
-                'angles',
-                'dihedrals',
-                'pairs',
-                'cross_bonds',
-                'cross_angles',
-                'cross_dihedrals',
-                'cross_pairs',
+                'atoms'])
+            section_list = ['bonds', 'angles', 'pairs', 'cross_bonds',
+                            'cross_angles', 'cross_dihedrals', 'cross_pairs']
+            for s in section_list:
+                if getattr(self, s) or self.new_data.get(s):
+                    sections.append(s)
+            if (self.dihedrals or self.new_data['dihedrals'] or
+                    self.improper_dihedrals or self.new_data['improper_dihedrals']):
+                sections.append('dihedrals')
+
+            sections.extend([
                 'system',
                 'molecules'])
             self.content = []

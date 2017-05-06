@@ -29,6 +29,7 @@ import tools_sim as tools
 import gromacs_topology
 
 import tools_backmapping
+import tools as general_tools
 
 from app_args import _args_backmapping as _args
 
@@ -495,6 +496,12 @@ def main():  # NOQA
         '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)))
 
     # Write atomistic topology
+    hyb_top = files_io.GROMACSTopologyFile(args.top)
+    hyb_top.read()
+    at_topology = general_tools.get_atomistic_topology(hyb_top)
+    topol_aa = '{}topol_aa_{}_{}.top'.format(args.output_prefix, args.alpha, rng_seed)
+    at_topology.write(topol_aa)
+    print('Final AA topology: {}'.format(topol_aa))
 
     traj_file.close()
 
