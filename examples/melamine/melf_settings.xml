@@ -4,11 +4,8 @@
   <name>MF</name>
   <ident>MF</ident>
   <!-- Source file with atomistic fragments, it can be even single molecule. -->
-  <source_file>single_mf.gro</source_file>
-  <source_topology>at_topol.top</source_topology>
-  <topology>
-    <!-- Definition of CG beads. -->
-    <cg_beads>
+  <source_coordinate><file>single_mf.gro</file></source_coordinate>
+  <source_topology><file>at_topol.top</file></source_topology>
       <cg_bead>
         <name>A1</name>
         <type>A</type>
@@ -30,42 +27,19 @@
         <mapping>A</mapping>
         <beads> 1:MF:N13 1:MF:C13 1:MF:N23 1:MF:C3 1:MF:O3 1:MF:H03 1:MF:H031 1:MF:H032 1:MF:H11 </beads>
       </cg_bead>
-
-    </cg_beads>
-    <cg_bonded>
-      <bond>
-          <name>bond</name>
-          <params>8 1 1.0 ; bond A_A</params>
-        <beads>
-        A1 A2 
-        A2 A3 
-        A3 A1 
-        </beads>
-      </bond>
-
-    </cg_bonded>
-  </topology>
-
-  <maps>
-    <map>
-      <name>A</name>
-      <weights> 14.0067 12.0107 14.0067  12.0107 15.996  1.008 1.008 1.008 1.008 </weights>
-    </map>
-  </maps>
 </cg_molecule>
 <cg_configuration>
-    <format>GROMACS</format>
-    <file>cg_conf_500.gro</file>
+    <coordinate>cg_conf_500.gro</coordinate>
+    <topology>cg_topol.top</topology>
 </cg_configuration>
 <hybrid_configuration>
     <file>hyb_conf.gro</file>
-    <format>GRO</format>
 </hybrid_configuration>
 <hybrid_topology>
     <file>hyb_topol.top</file>
     <include>
-;#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
-#include "/apps/leuven/thinking/2014a/software/GROMACS/4.6.5-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
+;"/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
+"/apps/leuven/thinking/2014a/software/GROMACS/4.6.5-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp"
     </include>
     <molecule_type>
         <name>MF</name>

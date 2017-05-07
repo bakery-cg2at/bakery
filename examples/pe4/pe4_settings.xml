@@ -2,10 +2,8 @@
 <cg_molecule>
   <name>PE</name>
   <ident>PE</ident>
-  <source_file>pe_single.gro</source_file>
-  <source_topology>topol.top</source_topology>
-  <topology>
-    <cg_beads>
+  <source_coordinate><file>pe_single.gro</file></source_coordinate>
+  <source_topology><file>topol.top</file></source_topology>
       <cg_bead>
         <name>A1</name>
         <type>A</type>
@@ -156,118 +154,20 @@
         <mapping>A</mapping>
         <beads>1:PE:C97 1:PE:C98 1:PE:C99 1:PE:C100</beads>
       </cg_bead>
-    </cg_beads>
-    <cg_bonded>
-      <dihedral>
-        <name>dihedral</name>
-        <params>8 1 1.0 ; table_d1.xvg</params>
-        <beads>A1 B1 B2 B3
-B1 B2 B3 B4
-B2 B3 B4 B5
-B3 B4 B5 B6
-B4 B5 B6 B7
-B5 B6 B7 B8
-B6 B7 B8 B9
-B7 B8 B9 B10
-B8 B9 B10 B11
-B9 B10 B11 B12
-B10 B11 B12 B13
-B11 B12 B13 B14
-B12 B13 B14 B15
-B13 B14 B15 B16
-B14 B15 B16 B17
-B15 B16 B17 B18
-B16 B17 B18 B19
-B17 B18 B19 B20
-B18 B19 B20 B21
-B19 B20 B21 B22
-B20 B21 B22 B23
-B21 B22 B23 A2</beads>
-      </dihedral>
-      <angle>
-        <name>angle_ch2</name>
-        <params>8 1 1.0 ; table_a1.xvg</params>
-        <beads>
-A1 B1 B2
-B1 B2 B3
-B2 B3 B4
-B3 B4 B5
-B4 B5 B6
-B5 B6 B7
-B6 B7 B8
-B7 B8 B9
-B8 B9 B10
-B9 B10 B11
-B10 B11 B12
-B11 B12 B13
-B12 B13 B14
-B13 B14 B15
-B14 B15 B16
-B15 B16 B17
-B16 B17 B18
-B17 B18 B19
-B18 B19 B20
-B19 B20 B21
-B20 B21 B22
-B21 B22 B23
-B22 B23 A2
-</beads>
-      </angle>
-      <bond>
-        <name>bond</name>
-        <params>8 1 1.0 ; table_b1.xvg</params>
-        <beads>A1 B1
-B1 B2
-B2 B3
-B3 B4
-B4 B5
-B5 B6
-B6 B7
-B7 B8
-B8 B9
-B9 B10
-B10 B11
-B11 B12
-B12 B13
-B13 B14
-B14 B15
-B15 B16
-B16 B17
-B17 B18
-B18 B19
-B19 B20
-B20 B21
-B21 B22
-B22 B23
-B23 A2</beads>
-      </bond>
-    </cg_bonded>
-  </topology>
-  <maps>
-    <map>
-      <name>A</name>
-      <weights>15.035 14.027 14.027 14.027</weights>
-    </map>
-    <map>
-      <name>B</name>
-      <weights>14.027 14.027 14.027 14.027</weights>
-    </map>
-  </maps>
 </cg_molecule>
 <cg_configuration>
-    <format>GROMACS</format>
-    <file>cg_conf.gro</file>
+    <coordinate>cg_conf.gro</coordinate>
+    <topology>cg_topol.top</topology>
 </cg_configuration>
 <hybrid_configuration>
     <file>hyb_conf.gro</file>
-    <format>GROMACS</format>
 </hybrid_configuration>
 
 <hybrid_topology>
     <file>hyb_topol.top</file>
     <include>
-;#include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp
-#include "/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
+;"/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/oplsaa.ff/forcefield.itp
+"/usr/share/gromacs/top/oplsaa.ff/forcefield.itp"
     </include>
     <molecule_type>
         <name>PE</name>
