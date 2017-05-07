@@ -11,15 +11,8 @@ Configuration file
 The description of backmapping configuration is stored in XML file format. The format of file is very similarly
 to what is used by VOTCA_. In next two examples we will explain step-by-step how to create that file.
 
-The full reference you can find in :ref:`xml-structure`
-
-.. toctree::
-   :maxdepth: 3
-
-   xml_structure
-
-Simple mapping - dodecane
-==========================
+Dodecane
+========
 
 The original VOTCA_ mapping file is shown below. It represents mapping where two united-atoms are replaced by the one coarse-grained bead.
 
@@ -207,12 +200,68 @@ The options for output hybrid topology file are defined in tag :xml:`<hybrid_top
     <system>PE</system>
   </hybrid_topology>
 
-Here we define that output file is `hyb_topol.top`. We define include section in :xml:`<include></include>`. :xml:`<molecule_type>` tag defines the name of molecule in `<name>` tag and the exclusion rule. In this case, every particle that is separated by 1, 2, 3 bonds will be excluded from non-bonded interactions. This follows the GROMACS_ rules (see `GROMACS manual`_ for further information). 
+Here we define that output file is `hyb_topol.top`. We define include section in :xml:`<include></include>`. :xml:`<molecule_type>` tag defines the name of molecule in `<name>` tag and the exclusion rule. In this case, every particle that is separated by 1, 2, 3 bonds will be excluded from non-bonded interactions. This follows the GROMACS_ rules (see `GROMACS manual`_ for further information).
 
-.. Complex mapping - EPON-828 network
-   -------------------------------
+Network backmapping
+===================
 
-.. _xml-structure:
+This example is based on backampping of epoxy-like network, built with two components:
+bisphenol A diglycidyl ether and isophrone diamine.
+Full settings can be found in :download:`settings_network.xml <settings_rim135.xml>`.
+Here we only denote important sections.
+
+
+`<source_coordinate>` and `<source_topology>`
++++++++++++++++++++++++++++++++++++++++++++++
+.. code-block:: xml
+
+  <source_coordinate>
+      <file molecule_degree="0">epon-828.gro</file>
+      <file molecule_degree="1" when="A1">epon-828_deg1_A1.gro</file>
+      <file molecule_degree="1" when="A2">epon-828_deg1_A2.gro</file>
+      <file molecule_degree="2">epon-828_deg2.gro</file>
+  </source_coordinate>
+
+`source_coordinate` and `source_topology` defines the atomistic fragments to use.
+The appropriate file is selected depends on the molecule degree and the connected coarse-grained
+bead.
+In this case, the epoxied molecule is coarse-grained into three beads `A1-B1-A2`.
+During the chemical reaction, either `A1` or `A2` can be linked to other molecules and base on this
+the appropriate fragment will be selected.
+The same structure is in the case of `source_topology`.
+
+`<cg_bead>`
++++++++++++
+
+.. code-block:: xml
+
+    <cg_bead>
+        <name>A1</name>
+        <type>A</type>
+        <beads degree="1" molecule_degree="0">
+            1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H23 1:EPO:H24
+        </beads>
+        <beads degree="2" active_site="EPO:C1:4" molecule_degree="1,2">
+            1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H23 1:EPO:H24
+            1:EPO:H25
+        </beads>
+    </cg_bead>
+
+Here we put the list of atoms that will be taken from the fragment (with bonds, angles, dihedrals).
+We can define multiple bead lists that will vary with **degree** and **molecule_degree**.
+
+If the bead at CG level is reactive then we have to define an **active_site**, the atoms from the bead
+that will be use to make a connection at atomistic level.
+The concept of active sites is illustrated below:
+
+.. image:: _static/ipd_epon_scheme.png
+
+The full reference you can find in :ref:`xml-structure`
+
+.. toctree::
+   :maxdepth: 3
+
+   xml_structure
 
 
 **References**

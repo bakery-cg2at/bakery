@@ -10,81 +10,50 @@ cg_molecule
   *1..N*, different types of atomistic molecules
 
 cg_molecule.name
-  name of the molecule after mapping
+  coarse-grained name of the molecule
 
 cg_molecule.ident
-  name of the molecule in atomistic topology
+  name of the molecule after backmapping
 
-cg_molecule.source_file
+cg_molecule.source_coordinate.file
   name of coordinate file that stores atomistic fragments which represents molecule
 
-cg_molecule.source_topology
+  **attributes**
+     - molecule_degree: declares that given coordinate file will be used when the molecule is in *degree*
+
+cg_molecule.source_topology.file
   name of topology file (GROMACS format) that describes molecule
 
-cg_molecule.topology.cg_beads
-  *1*, definition of the coarse-grained beads and corresponding atomistic particles
+  **attributes**
+     - molecule_degree: declares that given coordinate file will be used when the molecule is in *degree*
 
-cg_molecule.topology.cg_beads.cg_bead
+cg_molecule.cg_bead
   *1..N*, definition of coarse-grained bead
 
-cg_molecule.topology.cg_beads.cg_bead.name
+cg_bead.name
   the name of CG bead
 
-cg_molecule.topology.cg_beads.cg_bead.type
+cg_bead.type
   the type of CG bead
 
-cg_molecule.topology.cg_beads.cg_bead.mapping
-  the corresponding mass mapping scheme
-
-cg_molecule.topology.cg_beads.cg_bead.beads
+cg_bead.beads
   the list of atomistic particles from which the CG bead will be built
 
-cg_molecule.topology.cg_bonded
-  *1*, the bonded terms of CG molecule
-
-Here we can have three types of bonded terms: `bond`, `angle`, `dihedral`. In the next lines we use term `TYPE`.
-
-cg_molecule.topology.cg_bonded.`TYPE`
-  *1..N*, the definition of the coarse-grained bonded term
-
-cg_molecule.topology.cg_bonded.`TYPE`.name
-  the name of the bonded term
-
-cg_molecule.topology.cg_bonded.`TYPE`.params
-  the parameters of the CG bonded term (that has to be in the GROMACS format)
-
-cg_molecule.topology.cg_bonded.`TYPE`.beads
-  the list of pairs, triplets or quadruplets that will form this bonded
-  term
-
-
-cg_molecule.maps
-  *1*, definition of mass mapping terms
-
-cg_molecule.maps.map
-  *1..N*, particular mass definition
-
-cg_molecule.maps.map.name
-  the name of map that will be used in `<mapping>` tag in the definition of CG beads
-
-cg_molecule.maps.map.weights
-  the list of numbers that defines mass of atomistic particles
-
+  **attributes**
+     - degree: the degree of particular CG bead
+     - molecule_degree: the degree of the whole CG molecule
+     - active_site: the atom that be used to create atomistic bond (format: `<chain_name>:<atom_name>`
 
 cg_configuration
  *1*, definition of the CG configuration
 
-cg_configuration.format
-  the format of the coarse-grained configurato, currently it can be GROMACS or LAMMPS
-
-cg_configuration.format.file
+cg_configuration.coordinate
+  the name of input file with the coarse-grained coordinate file
+cg_configuration.topology
   the name of input file with the coarse-grained coordinate file
 
 hybrid_configuration.file
   the output hybrid coordinate file
-
-hybrid_configuration.format
-  the format of output hybrid coordinate file, currently only GRO is accepted
 
 hybrid_topology
   *1*, the definition of output hybrid topology. The format is similar to the one
@@ -93,8 +62,15 @@ hybrid_topology
 hybrid_topology.file
   the name of output file
 
+hybrid_topology.(bonds|angles|dihedrals)
+  *1..N* defines the atomistic cross-bonds
+  The content contains a list fo pairs in the format <molecule name>:<atom name>
+
+  **attributes**
+     - params: parameters of the bonds
+
 hybrid_topology.include
-  the include section of hybrid top
+  the include section of hybrid top  (do not add #include part)
 
 hybrid_topology.molecule_type
   *1*, the molecule_type section
