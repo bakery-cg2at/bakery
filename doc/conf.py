@@ -52,7 +52,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Baker'
+project = u'Bakery'
 copyright = u'2015-{}, Jakub Krajniak'.format(datetime.date.today().year)
 author = u'Jakub Krajniak'
 
