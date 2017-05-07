@@ -524,6 +524,8 @@ class GROMACSTopologyFile(TopologyFile):
         self.molecules = {}
         self.system_name = None
 
+        self.skip_cross = False
+
     def init(self):
         """Reset the class properties without creating the object again."""
         logger.info('Init of topology file.')
@@ -751,9 +753,13 @@ class GROMACSTopologyFile(TopologyFile):
             for s in section_list:
                 if getattr(self, s) or self.new_data.get(s):
                     sections.append(s)
+                else:
+                    skip_sections.append(s)
             if (self.dihedrals or self.new_data['dihedrals'] or
                     self.improper_dihedrals or self.new_data['improper_dihedrals']):
                 sections.append('dihedrals')
+            else:
+                skip_sections.append('dihedrals')
 
             sections.extend([
                 'system',
@@ -768,12 +774,15 @@ class GROMACSTopologyFile(TopologyFile):
         for line in self.content:
             tmp_line = line.strip()
             if tmp_line.startswith('['):  # section part
-                new_data.append(line)
                 previous_section = current_section
                 current_section = tmp_line.replace('[', '').replace(']', '').strip()
                 if previous_section == 'dihedrals' and current_section == 'dihedrals':
                     current_section = 'improper_dihedrals'
                 section_writer = self.writers.get(current_section)
+                if current_section.startswith('cross') and self.skip_cross:
+                    skip_lines = True
+                    continue
+                new_data.append(line)
                 print('{}: Writing section {}'.format(filename, current_section))
                 skip_lines = False
             elif tmp_line.startswith(';') or tmp_line.startswith('#'):

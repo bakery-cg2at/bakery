@@ -221,5 +221,6 @@ def get_atomistic_topology(in_top):
     in_top.cross_angles = {}
     in_top.cross_dihedrals = {}
     in_top.cross_pairs = {}
+    in_top.skip_cross = True
 
     return in_top
