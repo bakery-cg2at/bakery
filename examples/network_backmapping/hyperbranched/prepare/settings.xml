@@ -2,9 +2,8 @@
     <cg_molecule>
         <name>MOL</name>
         <ident>MOL</ident>
-        <source_file>monomer_center.gro</source_file>
-        <source_topology>monomer.top</source_topology>
-        <!-- FA beads -->
+        <source_coordinate><file molecule_degree="*">monomer_center.gro</file></source_coordinate>
+        <source_topology><file molecule_degree="*">monomer.top</file></source_topology>
         <cg_bead>
             <name>A0</name>
             <beads degree="1">
@@ -14,16 +13,12 @@
                 1:MOL:C6 1:MOL:C7 1:MOL:H3 1:MOL:H4 1:MOL:O1 1:MOL:O2
             </beads>
         </cg_bead>
-
-        <!-- LN bead -->
         <cg_bead>
             <name>LI</name>
             <beads>
                 1:MOL:C1 1:MOL:C3 1:MOL:C2 1:MOL:H1 1:MOL:H2 1:MOL:H6 1:MOL:H7 1:MOL:H8
             </beads>
         </cg_bead>
-
-        <!-- FB1/2 bead -->
         <cg_bead>
             <name>B1</name>
             <beads degree="1">
@@ -46,18 +41,15 @@
                 1:MOL:H12 1:MOL:H10 1:MOL:H9
             </beads>
         </cg_bead>
-
     </cg_molecule>
 
     <cg_configuration>
-        <format>GROMACS</format>
-            <file>cg_cl_conf.gro</file>
-        <topology>cg_cl_topol.top</topology>
+        <coordinate>cg_conf.gro</coordinate>
+        <topology>cg_topol.top</topology>
     </cg_configuration>
 
     <hybrid_configuration>
         <file>hyb_conf.gro</file>
-        <format>GROMACS</format>
     </hybrid_configuration>
 
     <hybrid_topology>
