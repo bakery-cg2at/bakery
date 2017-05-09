@@ -753,13 +753,9 @@ class GROMACSTopologyFile(TopologyFile):
             for s in section_list:
                 if getattr(self, s) or self.new_data.get(s):
                     sections.append(s)
-                else:
-                    skip_sections.append(s)
             if (self.dihedrals or self.new_data['dihedrals'] or
                     self.improper_dihedrals or self.new_data['improper_dihedrals']):
                 sections.append('dihedrals')
-            else:
-                skip_sections.append('dihedrals')
 
             sections.extend([
                 'system',
