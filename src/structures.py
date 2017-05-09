@@ -29,6 +29,7 @@ import random
 import networkx
 import logging
 import sys
+import warnings
 
 __doc__ = "Data structures."""
 
@@ -167,7 +168,7 @@ class BackmapperSettings2:
         coordinate_file = None
         if cg_configuration.find('file') is not None:
             coordinate_file = cg_configuration.find('file').text.strip()
-            warning.warn('cg_configuration.file is deprected, use cg_configuration.coordinate', DeprecationWarning)
+            warnings.warn('cg_configuration.file is deprected, use cg_configuration.coordinate', DeprecationWarning)
         elif cg_configuration.find('coordinate') is not None:
             coordinate_file = cg_configuration.find('coordinate').text.strip()
         else:
@@ -368,13 +369,11 @@ class BackmapperSettings2:
                                 raise RuntimeError(
                                     'Number of entries in type_map {} does not match number of beads {}'.format(
                                         len(type_map), len(bead_list)))
-                        #try:
-                        cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove, equilibrate_charges, type_map)
-                        #except KeyError as ex:
-                        #    raise ex
-                        #    print ex,cg_molecule,bead_list,active_sites,charge_map,as_remove
-                        #    continue
-                        self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name][degree] = cg_fragment
+                        try:
+                            cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove, equilibrate_charges, type_map)
+                            self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name][degree] = cg_fragment
+                        except KeyError as ex:
+                            continue
 
             # Read charge transfer.
             # <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
