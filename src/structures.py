@@ -232,8 +232,8 @@ class BackmapperSettings2:
                 raise RuntimeError('Wrong pairs in <bonds> section, found {}'.format(bead_list))
             pair_list = zip(bead_list[::2], bead_list[1::2])
             for p1, p2 in pair_list:
-                self.bond_params[p1][p2] = params
-                self.bond_params[p2][p1] = params
+                self.bond_params[(p1, p2)] = params
+                self.bond_params[(p2, p1)] = params
         angle_terms = hyb_topology.findall('angles')
         for angle_term in angle_terms:
             params = angle_term.attrib['params'].split()
@@ -242,16 +242,10 @@ class BackmapperSettings2:
                 raise RuntimeError('Wrong triplets in <angles> section, found {}'.format(bead_list))
             for idx in xrange(0, len(bead_list)-3, 3):
                 p1, p2, p3 = bead_list[idx], bead_list[idx+1], bead_list[idx+2]
-                if p1 not in self.angle_params:
-                    self.angle_params[p1] = {}
-                if p3 not in self.angle_params:
-                    self.angle_params[p3] = {}
-                if p2 not in self.angle_params[p1]:
-                    self.angle_params[p1][p2] = {}
-                if p2 not in self.angle_params[p3]:
-                    self.angle_params[p3][p2] = {}
-                self.angle_params[p1][p2][p3] = params
-                self.angle_params[p3][p2][p1] = params
+                if (p1, p2, p3) in self.angle_params:
+                    raise RuntimeError('Parameters for triplet: {} already defined {}'.format((p1, p2, p3), params))
+                self.angle_params[(p1, p2, p3)] = params
+                self.angle_params[(p3, p2, p1)] = params
         dihedral_terms = hyb_topology.findall('dihedrals')
         for dihedral_term in dihedral_terms:
             params = dihedral_term.attrib['params'].split()
@@ -260,24 +254,11 @@ class BackmapperSettings2:
                 raise RuntimeError('Wrong quadruplets in <dihedrals> section, found {}'.format(bead_list))
             for idx in xrange(0, len(bead_list) - 4, 4):
                 p1, p2, p3, p4 = bead_list[idx], bead_list[idx + 1], bead_list[idx + 2], bead_list[idx + 3]
-                if p2 not in self.dihedral_params[p1]:
-                    self.dihedral_params[p1][p2] = {}
-                if p3 not in self.dihedral_params[p1][p2]:
-                    self.dihedral_params[p1][p2][p3] = {}
-                if p4 in self.dihedral_params[p1][p2][p3]:
-                    raise RuntimeError('Parameters for triplet: {} already defined {}'.format(
-                        (p1, p2, p3, p4), params
-                    ))
-                self.dihedral_params[p1][p2][p3][p4] = params
-                if p3 not in self.dihedral_params[p4]:
-                    self.dihedral_params[p4][p3] = {}
-                if p2 not in self.dihedral_params[p4][p3]:
-                    self.dihedral_params[p4][p3][p2] = {}
-                if p1 in self.dihedral_params[p4][p3][p2]:
-                    raise RuntimeError('Parameters for triplet: {} already defined {}'.format(
-                        (p4, p3, p2, p1), params
-                    ))
-                self.dihedral_params[p4][p3][p2][p1] = params
+                if (p1, p2, p3, p4) in self.dihedral_params:
+                    raise RuntimeError('Parameters for triplet: {} already defined {}'.format((p1, p2, p3, p4), params))
+
+                self.dihedral_params[(p1, p2, p3, p4)] = params
+                self.dihedral_params[(p4, p3, p2, p1)] = params
 
         self._parse_cg_molecules()
 
@@ -665,7 +646,9 @@ class BackmapperSettings2:
                     for at2, max_d2 in self.cg_active_sites[b2]:
                         b1_key = '{}:{}'.format(at1.chain_name, at1.name)
                         b2_key = '{}:{}'.format(at2.chain_name, at2.name)
-                        test_bond = self.bond_params.get(b1_key, {}).get(b2_key, None)
+                        test_bond = self.bond_params.get((b1_key, b2_key))
+                        if not test_bond:
+                            test_bond = self.bond_params.get((at1.name, at2.name))
                         if (test_bond and self.global_graph.has_node(at1.atom_id)
                                 and self.global_graph.has_node(at2.atom_id)):
                             at1_deg = global_degree[at1.atom_id]
@@ -783,19 +766,31 @@ class BackmapperSettings2:
         angle_key = '{}angles'.format(self.cross_prefix)
         dihedral_key = '{}dihedrals'.format(self.cross_prefix)
 
+        def get_params(input_dict, key_list, raise_exception=True):
+            param = None
+            for key in key_list:
+                param = input_dict.get(tuple(key))
+                if param:
+                    return param
+            if not param:
+                if raise_exception:
+                    raise RuntimeError('Missing definition for {}'.format(key_list))
+                else:
+                    print('Missing definition for {}'.format(key_list))
+                    return False
+            return param
+
         for b1, b2 in at_cross_bonds:
             n1 = self.global_graph.node[b1]
             n2 = self.global_graph.node[b2]
             b1_key = n1_key = '{}:{}'.format(n1['chain_name'], n1['name'])
             b2_key = n2_key = '{}:{}'.format(n2['chain_name'], n2['name'])
+            s1_key, s2_key = n1['name'], n2['name']
             if ((b1, b2) in self.hyb_topology.new_data[bond_key] or
-                    (b2, b2) in self.hyb_topology.new_data[bond_key]):
-                raise RuntimeError('Bond {}-{} already defined in the topology, wtf?'.format(b1, b2))
-            try:
-                self.hyb_topology.new_data[bond_key][(b1, b2)] = self.bond_params[n1_key][n2_key]
-            except KeyError as ex:
-                print('Missing definition of bond: {}-{}'.format(n1_key, n2_key))
-                raise ex
+                    (b2, b1) in self.hyb_topology.new_data[bond_key]):
+                raise RuntimeError('Bond {}-{} already defined in the topology, ??'.format(b1, b2))
+
+            self.hyb_topology.new_data[bond_key][(b1, b2)] = get_params(self.bond_params, [(n1_key, n2_key), (s1_key, s2_key)], True)
             # Generate angles.
             triplets = tools.gen_bonded_tuples(self.global_graph, 3, (b1, b2))
             quadruplets = tools.gen_bonded_tuples(self.global_graph, 4, (b1, b2))
@@ -803,19 +798,17 @@ class BackmapperSettings2:
                 n1_key, n2_key, n3_key = [
                     '{}:{}'.format(x['chain_name'], x['name'])
                     for x in map(self.global_graph.node.get, triplet)]
-                try:
-                    triplet_defined = triplet in self.hyb_topology.new_data[angle_key]
-                    reverse_triplet_defined = (
-                        tuple(reversed(triplet)) in self.hyb_topology.new_data[angle_key])
-                    # Here the exception can be raised with missing definition
-                    if not (triplet_defined or reverse_triplet_defined):
-                        self.hyb_topology.new_data[angle_key][triplet] = (
-                            self.angle_params[n1_key][n2_key][n3_key])
-                except KeyError as ex:
-                    try:
-                        self.hyb_topology.new_data[angle_key][triplet] = (
-                            self.angle_params[n3_key][n2_key][n1_key])
-                    except KeyError as ex:
+                s1_key, s2_key, s3_key = [x['name'] for x in map(self.global_graph.node.get, triplet)]
+
+                triplet_defined = triplet in self.hyb_topology.new_data[angle_key]
+                reverse_triplet_defined = (
+                    tuple(reversed(triplet)) in self.hyb_topology.new_data[angle_key])
+                # Here the exception can be raised with missing definition
+                if not (triplet_defined or reverse_triplet_defined):
+                    param = get_params(self.angle_params, [(n1_key, n2_key, n3_key), (s1_key, s2_key, s3_key)], False)
+                    if param:
+                        self.hyb_topology.new_data[angle_key][triplet] = param
+                    else:
                         print('Missing definition of angle: {}-{}-{} (bond {}-{})'.format(
                             n1_key, n2_key, n3_key, b1_key, b2_key))
                         missing_definitions.add((n1_key, n2_key, n3_key))
@@ -824,16 +817,16 @@ class BackmapperSettings2:
                 n1_key, n2_key, n3_key, n4_key = [
                     '{}:{}'.format(x['chain_name'], x['name'])
                     for x in map(self.global_graph.node.get, quadruplet)]
-                try:
-                    if (quadruplet in self.hyb_topology.new_data[dihedral_key] or
+                s_keys = [x['name'] for x in map(self.global_graph.node.get, triplet)]
+                if not (quadruplet in self.hyb_topology.new_data[dihedral_key] or
                             tuple(reversed(quadruplet)) in self.hyb_topology.new_data[dihedral_key]):
-                        raise RuntimeError('Dihedral {} already defined in the topology, wtf?'.format(quadruplet))
-                    self.hyb_topology.new_data[dihedral_key][quadruplet] = (
-                        self.dihedral_params[n1_key][n2_key][n3_key][n4_key])
-                except KeyError:
-                    print('Missing definition of dihedral: {}-{}-{}-{} (bond {}-{})'.format(
-                        n1_key, n2_key, n3_key, n4_key, b1_key, b2_key))
-                    missing_definitions.add((n1_key, n2_key, n3_key, n4_key))
+                    param = get_params(self.dihedral_params, [(n1_key, n2_key, n3_key, n4_key), s_keys], False)
+                    if param:
+                        self.hyb_topology.new_data[dihedral_key][quadruplet] = param
+                    else:
+                        print('Missing definition of dihedral: {}-{}-{}-{} (bond {}-{})'.format(
+                            n1_key, n2_key, n3_key, n4_key, b1_key, b2_key))
+                        missing_definitions.add((n1_key, n2_key, n3_key, n4_key))
         fout.writelines('\n'.join([' '.join(x) for x in sorted(missing_definitions)]))
         print('Wrote missing definitions in {}'.format(fout_filename))
         fout.close()
