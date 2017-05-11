@@ -17,9 +17,8 @@ help:
 push:
 	git clone git@github.com:bakery-cg2at/bakery-cg2at.github.io.git bakery-doc
 	cp -rv $(BUILDDIR)/html/* bakery-doc/
-	cd bakery-doc
-	git commit -a -m "updated doc"
-	git push
+	cd bakery-doc && git commit -a -m "updated doc" && git push
+	rm -rvf bakery-doc
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

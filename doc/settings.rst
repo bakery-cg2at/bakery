@@ -11,6 +11,11 @@ Configuration file
 The description of backmapping configuration is stored in XML file format. The format of file is very similarly
 to what is used by VOTCA_. In next two examples we will explain step-by-step how to create that file.
 
+.. toctree::
+   :maxdepth: 3
+
+   xml_structure
+
 Dodecane
 ========
 
@@ -281,15 +286,6 @@ The charges per fragment can be equilibrated by definigin the attribute :xml:`eq
 
   <cg_molecule equilibrate_charges="1">
     ...
-
-
-
-The full reference you can find in :ref:`xml-structure`
-
-.. toctree::
-   :maxdepth: 3
-
-   xml_structure
 
 
 **References**
