@@ -10,11 +10,13 @@
 for d in *; do
     if [ -d $d ]; then
         cd $d
-        ./run_test.sh
+        ./run_test.sh &> log
         RET="$?"
-        cd ..
         if [ "$RET" != "0" ]; then
+            echo "Error"
+            cat log
             exit $RET
         fi
+        cd ..
     fi
 done
