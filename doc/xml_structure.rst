@@ -8,6 +8,10 @@ settings
 
 cg_molecule
   *1..N*, different types of atomistic molecules
+  defines the list of fragments in given CG molecule.
+
+  **attributes**
+     - equilibrate_charges: if set to "1" then the partial charges will be adjusted to make the fragment neutral.
 
 cg_molecule.name
   coarse-grained name of the molecule
@@ -43,6 +47,11 @@ cg_bead.beads
      - degree: the degree of particular CG bead
      - molecule_degree: the degree of the whole CG molecule
      - active_site: the atom that be used to create atomistic bond (format: `<chain_name>:<atom_name>`
+
+cg_bead.beads.charge_map
+  the list of partial charges that will be assigned to the atoms.
+  e.g. 0.0 0.0 * * 1.0; by using *** user can declare that the partial charge for that atom
+  will be taken from topology file.
 
 cg_configuration
  *1*, definition of the CG configuration

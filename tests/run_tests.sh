@@ -10,7 +10,7 @@
 for d in *; do
     if [ -d $d ]; then
         cd $d
-        ./run_test.sh &> log
+        ./run_test.sh > log
         RET="$?"
         if [ "$RET" != "0" ]; then
             echo "Error"

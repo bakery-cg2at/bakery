@@ -235,17 +235,17 @@ The same structure is in the case of `source_topology`.
 
 .. code-block:: xml
 
-    <cg_bead>
-        <name>A1</name>
-        <type>A</type>
-        <beads degree="1" molecule_degree="0">
-            1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H23 1:EPO:H24
-        </beads>
-        <beads degree="2" active_site="EPO:C1:4" molecule_degree="1,2">
-            1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H23 1:EPO:H24
-            1:EPO:H25
-        </beads>
-    </cg_bead>
+   <cg_bead>
+       <name>A1</name>
+       <type>A</type>
+       <beads degree="1" molecule_degree="0">
+           1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H23 1:EPO:H24
+       </beads>
+       <beads degree="2" active_site="EPO:C1:4" molecule_degree="1,2">
+           1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H23 1:EPO:H24
+           1:EPO:H25
+       </beads>
+   </cg_bead>
 
 Here we put the list of atoms that will be taken from the fragment (with bonds, angles, dihedrals).
 We can define multiple bead lists that will vary with **degree** and **molecule_degree**.
@@ -255,6 +255,34 @@ that will be use to make a connection at atomistic level.
 The concept of active sites is illustrated below:
 
 .. image:: _static/ipd_epon_scheme.png
+
+`<charge_map>`
+--------------
+
+The partial charges for the atoms can be defined in the input topology file or at the level of :xml:`<beads>` tag by
+including :xml:`<charge_map></charge_map>` tag.
+
+.. code-block:: xml
+
+  <beads degree="1" molecule_degree="0">
+      1:EPO:C1 1:EPO:O1 1:EPO:C2 1:EPO:H1 1:EPO:H2 1:EPO:H3 1:EPO:C3 1:EPO:O2 1:EPO:H23 1:EPO:H24
+      <charge_map>
+      0.0 0.0 * * * * * * * *
+      </charge_map>
+  </beads>
+
+The number of elements in the charge map has to correspond number of atoms in the fragment.
+We can define explicitly the particla charge for atom or we can declare that the charge for this atom
+will be taken from the topology by using star character *****.
+
+The charges per fragment can be equilibrated by definigin the attribute :xml:`equilibrate_charges="1"` in :xml:`<cg_molecule>` tag:
+
+.. code-block:: xml
+
+  <cg_molecule equilibrate_charges="1">
+    ...
+
+
 
 The full reference you can find in :ref:`xml-structure`
 
