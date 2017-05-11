@@ -61,7 +61,7 @@ author = u'Jakub Krajniak'
 # built documents.
 #
 # The short X.Y version.
-version = '1.0'
+version = '2.0'
 # The full version, including alpha/beta/rc tags.
 release = '1.0'
 
@@ -80,7 +80,7 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', 'build']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
