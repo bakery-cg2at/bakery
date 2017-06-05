@@ -180,6 +180,7 @@ def _args_backmapping():
         help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--cap_force_ramp', default=None, type=float,
                         help='Gradually switch off cap-force')
+    parser.add_argument('--cap_force_lj', default=None, type=float, help='Max force only for non-bonded terms')
     parser.add_argument('--two_phase', default=False, type=ast.literal_eval,
                         help='Two phase process, first bonded terms and then non-bonded')
     parser.add_argument('--second_phase_em', default=False, type=ast.literal_eval,

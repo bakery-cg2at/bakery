@@ -24,13 +24,19 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
     verletlistCG = espressopp.VerletListHybridCG(
         system, cutoff=args.cg_cutoff, exclusionlist=exclusionlistCG)
 
+    lj_interaction = espressopp.interaction.VerletListHybridLennardJones(verletlistAT, False)
+    if args.cap_force_lj:
+        lj_interaction.max_force = args.cap_force_lj
     lj_interaction = tools.setLennardJonesInteractions(
         system, input_conf, verletlistAT, args.lj_cutoff,
         input_conf.nonbond_params,
-        interaction=espressopp.interaction.VerletListHybridLennardJones(
-            verletlistAT, False), table_groups=table_groups)
+        interaction=lj_interaction,
+        table_groups=table_groups)
+
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
+    if args.cap_force_lj:
+        coulomb_interaction.max_force = args.cap_force_lj
     if args.coulomb_cutoff > 0.0:
         coulomb_interaction = gromacs_topology.setCoulombInteractions(
             system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
@@ -47,13 +53,15 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         system, input_conf)
     # tools.setPairInteractions(
     #     system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
+    tab_cg_interaction = espressopp.interaction.VerletListHybridTabulated(verletlistCG, True)
+    if args.cap_force_lj:
+        tab_cg_interaction.max_force = args.cap_force_lj
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
         vl=verletlistCG,
         cutoff=args.cg_cutoff,
-        interaction=espressopp.interaction.VerletListHybridTabulated(
-            verletlistCG, True
-        ), table_groups=table_groups)
+        interaction=tab_cg_interaction,
+        table_groups=table_groups)
     if lj_interaction is not None:
         system.addInteraction(lj_interaction, 'lj')
     if coulomb_interaction is not None:
