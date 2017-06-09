@@ -1,4 +1,4 @@
-#  Copyright (C) 2015-2016
+#  Copyright (C) 2015-2017
 #      Jakub Krajniak (jkrajniak at gmail.com)
 #  Copyright (C) 2012,2013
 #      Max Planck Institute for Polymer Research
@@ -690,7 +690,13 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
                         bdtypeid = bondtypes[t1][t2]
                     except KeyError:
                         t1, t2 = attypeid_atnum[t1], attypeid_atnum[t2]
-                        bdtypeid = bondtypes[t1][t2]
+                        try:
+                            bdtypeid = bondtypes[t1][t2]
+                        except KeyError as ex:
+                            print('Bond types for {}-{} ({}-{}) not found'.format(
+                                pid1, pid2, t1, t2))
+                            print('Check your force-field or topology file.')
+                            raise ex
                 else:
                     temptype = ParseBondTypeParam(line)
                     bdtypeid = FindType(temptype, bondtypeparams)
@@ -1171,7 +1177,7 @@ def setCoulomb14Interactions(system, defaults, onefourlist, rc, types):
 
 def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None, ftpl=None, table_groups=None):
     """Sets tabulated potential for types that has particletype set to 'V'."""
-    spline_type = 2
+    spline_type = 1
     if table_groups is None:
         table_groups = []
 

@@ -176,7 +176,7 @@ def _args_backmapping():
     parser.add_argument('--trj_collect', default=1000, type=int,
                         help='Collect trajectory every (step)')
     parser.add_argument('--gro_collect', default=0, type=int, help='If set then collect trajcectory in .gro')
-    parser.add_argument('--cap_force', default=1000.0, type=float,
+    parser.add_argument('--cap_force', default=None, type=float,
         help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--cap_force_ramp', default=None, type=float,
                         help='Gradually switch off cap-force')

@@ -26,6 +26,7 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
 
     lj_interaction = espressopp.interaction.VerletListHybridLennardJones(verletlistAT, False)
     if args.cap_force_lj:
+        print('Defined max_force for LJ potential'.format(args.cap_force_lj))
         lj_interaction.max_force = args.cap_force_lj
     lj_interaction = tools.setLennardJonesInteractions(
         system, input_conf, verletlistAT, args.lj_cutoff,
@@ -35,8 +36,8 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
 
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
-    if args.cap_force_lj:
-        coulomb_interaction.max_force = args.cap_force_lj
+    #if args.cap_force_lj:
+    #    coulomb_interaction.max_force = args.cap_force_lj
     if args.coulomb_cutoff > 0.0:
         coulomb_interaction = gromacs_topology.setCoulombInteractions(
             system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
@@ -54,8 +55,8 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
     # tools.setPairInteractions(
     #     system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
     tab_cg_interaction = espressopp.interaction.VerletListHybridTabulated(verletlistCG, True)
-    if args.cap_force_lj:
-        tab_cg_interaction.max_force = args.cap_force_lj
+    #if args.cap_force_lj:
+    #    tab_cg_interaction.max_force = args.cap_force_lj
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
         vl=verletlistCG,

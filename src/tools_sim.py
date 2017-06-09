@@ -141,7 +141,7 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
 
 def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None, table_groups=[]):
     """Sets tabulated potential for types that has particletype set to 'V'."""
-    spline_type = 2
+    spline_type = 1
     if interaction is None:
         interaction = espressopp.interaction.VerletListTabulated(vl)
 

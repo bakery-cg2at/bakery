@@ -172,11 +172,19 @@ def main():  # NOQA
         cellGrid = espressopp.tools.decomp.cellGrid(box, nodeGrid, max_cutoff, skin)
     print('Cell grid: {}'.format(cellGrid))
 
+    hook_after_init = lambda *_, **__: True
+    if os.path.exists('hooks.py'):
+        print('Found hooks.py')
+        l = {}
+        execfile('hooks.py', globals(), l)
+        hook_after_init = l.get('hook_after_init', hook_after_init)
+
     system.storage = espressopp.storage.DomainDecomposition(system, nodeGrid, cellGrid)
 
     system.storage.addParticles(map(tuple, particle_list), *part_prop)
-
     system.storage.decompose()
+
+    hook_after_init(system, particle_list, adress_tuple)
 
     vs_list = espressopp.FixedVSList(system.storage)
     vs_list.addTuples(adress_tuple)
@@ -325,9 +333,9 @@ def main():  # NOQA
 
     ######### Now run backmapping.  #######################
     has_capforce = False
-    if args.cap_force > 0.0:
+    if args.cap_force:
         has_capforce = True
-        print('Define maximum cap-force during the backmapping')
+        print('Define maximum cap-force during the backmapping (max: {})'.format(args.cap_force))
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
 
     print('Activating dynamic resolution changer')

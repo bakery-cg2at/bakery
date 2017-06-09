@@ -281,7 +281,7 @@ class HarmonicAngleInteractionType(InteractionType):
 
 class TabulatedBondInteractionType(InteractionType):
     def createEspressoInteraction(self, system, fpl, is_cg=None):
-        spline=2
+        spline=1
         fg = "table_b"+str(self.parameters['tablenr'])+".xvg"
         fe = fg.split(".")[0]+".pot" # name of espressopp file
         if not os.path.exists(fe):
@@ -297,7 +297,7 @@ class TabulatedBondInteractionType(InteractionType):
 
 class TabulatedAngleInteractionType(InteractionType):
     def createEspressoInteraction(self, system, fpl, is_cg=None):
-        spline=2
+        spline=1
         fg = "table_a"+str(self.parameters['tablenr'])+".xvg"
         fe = fg.split(".")[0]+".pot" # name of espressopp file
         if not os.path.exists(fe):
@@ -311,7 +311,7 @@ class TabulatedAngleInteractionType(InteractionType):
 
 class TabulatedDihedralInteractionType(InteractionType):
     def createEspressoInteraction(self, system, fpl, is_cg=None):
-        spline = 2
+        spline = 1
         fg = "table_d"+str(self.parameters['tablenr'])+".xvg"
         fe = fg.split(".")[0]+".pot" # name of espressopp file
         if not os.path.exists(fe):
