@@ -173,18 +173,22 @@ def main():  # NOQA
     print('Cell grid: {}'.format(cellGrid))
 
     hook_after_init = lambda *_, **__: True
-    if os.path.exists('hooks.py'):
-        print('Found hooks.py')
+    hook_setup_interactions = lambda *_, **__: True
+    if args.hooks and os.path.exists(args.hooks):
+        print('Found {}'.format(args.hooks))
         l = {}
-        execfile('hooks.py', globals(), l)
+        execfile(args.hooks, globals(), l)
         hook_after_init = l.get('hook_after_init', hook_after_init)
+        hook_setup_interactions = l.get('hook_setup_interactions', hook_setup_interactions)
 
     system.storage = espressopp.storage.DomainDecomposition(system, nodeGrid, cellGrid)
 
+    print(len(adress_tuple))
+    hook_after_init(system, particle_list, adress_tuple, input_conf, part_prop)
+    print(len(adress_tuple))
+
     system.storage.addParticles(map(tuple, particle_list), *part_prop)
     system.storage.decompose()
-
-    hook_after_init(system, particle_list, adress_tuple)
 
     vs_list = espressopp.FixedVSList(system.storage)
     vs_list.addTuples(adress_tuple)
@@ -213,6 +217,8 @@ def main():  # NOQA
     print('Angles: {}'.format(sum(len(x) for x in input_conf.angletypes.values())))
     print('Dihedrals: {}'.format(sum(len(x) for x in input_conf.dihedraltypes.values())))
     print('Pairs: {}'.format(sum(len(x) for x in input_conf.pairtypes.values())))
+    print('CG particles: {}'.format(len(cg_particle_ids)))
+    print('AT particles: {}'.format(len(at_particle_ids)))
 
     print('Setting dynamic resolution')
     dynamic_res = espressopp.integrator.DynamicResolution(
@@ -226,6 +232,8 @@ def main():  # NOQA
     # Define interactions.
     verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
         system, args, input_conf, at_particle_ids, cg_particle_ids)
+
+    hook_setup_interactions(system, input_conf, verletlistAT, verletlistCG)
 
     print('Number of interactions: {}'.format(system.getNumberOfInteractions()))
 
@@ -317,6 +325,8 @@ def main():  # NOQA
     gro_whole.write(
         '{}confout_full_{}_{}_before.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
 
+    print('Number of particles: {}'.format(len(particle_list)))
+
     ############# SIMULATION: EQUILIBRATION PHASE #####################
     system_analysis.dump()
     global_int_step = 0
@@ -333,7 +343,7 @@ def main():  # NOQA
 
     ######### Now run backmapping.  #######################
     has_capforce = False
-    if args.cap_force:
+    if args.cap_force and not args.cap_force_lj:
         has_capforce = True
         print('Define maximum cap-force during the backmapping (max: {})'.format(args.cap_force))
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
@@ -433,6 +443,7 @@ def main():  # NOQA
             global_int_step += 1
 
     # After backmapping, switch off dynamic resolution
+    print('Disconnect dynamic_res')
     dynamic_res.active = False
 
     gro_whole.update_positions(system)

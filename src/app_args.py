@@ -180,7 +180,7 @@ def _args_backmapping():
         help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--cap_force_ramp', default=None, type=float,
                         help='Gradually switch off cap-force')
-    parser.add_argument('--cap_force_lj', default=None, type=float, help='Max force only for non-bonded terms')
+    parser.add_argument('--cap_force_lj', default=50000.0, type=float, help='Max force only for non-bonded terms')
     parser.add_argument('--two_phase', default=False, type=ast.literal_eval,
                         help='Two phase process, first bonded terms and then non-bonded')
     parser.add_argument('--second_phase_em', default=False, type=ast.literal_eval,
@@ -202,6 +202,7 @@ def _args_backmapping():
     parser.add_argument('--nonuniform_lambda', default=False, type=ast.literal_eval,
                         help='Distribute initial lambda non-uniformly in the box')
     parser.add_argument('--save_interactions', default=False, type=ast.literal_eval)
+    parser.add_argument('--hooks', default=None)
     em_group = parser.add_argument_group('Energy minimization')
     em_group.add_argument('--em', help='Maximum number of steps to perform in EM', type=int, default=0)
     em_group.add_argument('--em_gamma', help='Gamma parameter for force damping', type=float, default=0.0001)

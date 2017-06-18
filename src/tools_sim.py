@@ -162,7 +162,7 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
         name_2 = types_names[1][1]
         type_1 = types_names[0][0]
         type_2 = types_names[1][0]
-        print('Set tabulated potential {}-{}'.format(name_1, name_2))
+        print('Set tabulated potential {}-{} ({}-{})'.format(name_1, name_2, type_1, type_2))
         table_name = 'table_{}_{}.pot'.format(name_1, name_2)
         orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
         if not os.path.exists(table_name):
