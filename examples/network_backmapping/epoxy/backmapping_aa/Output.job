@@ -1,0 +1,56 @@
+time: 259200
+nodes: 1
+procs: 20
+account string: lp_sim_interpoco
+queue: q72h
+========================================================================
+`data_s4/sim0confout_final_aa_0.001_96439.gro' -> `gmx_s4/0.001/conf.gro'
+`data_s5/sim0confout_final_aa_0.001_93356.gro' -> `gmx_s5/0.001/conf.gro'
+`data_s6/sim0confout_final_aa_0.001_64916.gro' -> `gmx_s6/0.001/conf.gro'
+`data_s4/sim0confout_final_aa_0.0001_44407.gro' -> `gmx_s4/0.0001/conf.gro'
+`data_s5/sim0confout_final_aa_0.0001_43997.gro' -> `gmx_s5/0.0001/conf.gro'
+`data_s6/sim0confout_final_aa_0.0001_75727.gro' -> `gmx_s6/0.0001/conf.gro'
+`data_s4/sim0confout_final_aa_1e-05_16893.gro' -> `gmx_s4/0.00001/conf.gro'
+`data_s5/sim0confout_final_aa_1e-05_26640.gro' -> `gmx_s5/0.00001/conf.gro'
+`data_s6/sim0confout_final_aa_1e-05_18087.gro' -> `gmx_s6/0.00001/conf.gro'
+`data_s4/sim0confout_final_aa_1e-06_68859.gro' -> `gmx_s4/0.000001/conf.gro'
+`data_s5/sim0confout_final_aa_1e-06_78047.gro' -> `gmx_s5/0.000001/conf.gro'
+`data_s6/sim0confout_final_aa_1e-06_24292.gro' -> `gmx_s6/0.000001/conf.gro'
+========================================================================
+Epilogue args:
+Date: Wed Apr 12 12:27:01 CEST 2017
+Allocated nodes:
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+r4i0n7
+Job ID: 20492577.hpc-p-svcs-10.icts.hpc.kuleuven.be
+User ID: vsc30783
+Group ID: vsc30783
+Job Name: run_simulation.pbs
+Session ID: 27397
+Resource List: neednodes=1:ppn=20,nodes=1:ppn=20,pmem=2400mb,walltime=72:00:00
+Resources Used: cput=653:33:33,energy_used=0,mem=5590696kb,vmem=16815060kb,walltime=36:20:23
+Queue Name: q72h
+Account String: lp_sim_interpoco
+-------------------------------------------------------------------------
+time: 130823
+nodes: 1
+procs: 20
+account: lp_sim_interpoco

@@ -1,0 +1,33 @@
+#!/bin/bash -l
+#PBS -l mem=32gb
+#PBS -l walltime=72:00:00
+#PBS -o Output.job
+#PBS -j oe
+#PBS -l nodes=2:ppn=20
+#PBS -M jakub.krajniak@cs.kuleuven.be
+#PBS -A lp_sim_interpoco
+#PBS -N dacron_water
+
+source switch_to_2015a
+
+module purge
+
+cd $PBS_O_WORKDIR
+
+module load 2015a/espressopp/chem_devel
+module load chemlab/dev
+
+# Set up OpenMPI environment
+n_proc=$(cat $PBS_NODEFILE | wc -l)
+n_node=$(cat $PBS_NODEFILE | uniq | wc -l)
+#mpdboot -f $PBS_NODEFILE -n $n_node -r ssh -v
+
+for rate in 0.001; do
+    cp reaction.cfg reaction_p_${rate}.cfg
+    sed -i "s/rate.*/rate: ${rate}/g" reaction_p_${rate}.cfg
+    for i in {1..5}; do
+        rng="`shuf -i 12345-99999 -n1`"
+        output_prefix="p_${rate}_${rng}_0.95"
+        mpirun -n 32 start_simulation.py @params --rng_seed ${rng} --output_prefix data/${output_prefix} --reactions reaction_p_${rate}.cfg &> data/run_${output_prefix}.log
+    done
+done
