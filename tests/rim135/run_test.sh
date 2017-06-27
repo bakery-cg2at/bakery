@@ -15,6 +15,8 @@ TOPOL=$?
 diff ref_hyb_conf.gro hyb_conf.gro
 CONF=$?
 
+[ "$TOPOL" = "0" ] && [ "$CONF" = "0" ] && echo "$0 OK" || echo "$0 Fail"
+
 if [ "$TOPOL" = "0" ] && [ "$CONF" = "0" ]; then
     rm -f hyb_conf.gro hyb_topol.top
     rm -f missing_definitions.txt

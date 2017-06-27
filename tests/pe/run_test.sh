@@ -17,4 +17,5 @@ CONF=$?
 
 rm -f hyb_conf.gro hyb_topol.top
 
+[ "$TOPOL" = "0" ] && [ "$CONF" = "0" ] && echo "$0 OK" || echo "$0 Fail"
 [ "$TOPOL" = "0" ] && [ "$CONF" = "0" ] && exit 0 || exit 1

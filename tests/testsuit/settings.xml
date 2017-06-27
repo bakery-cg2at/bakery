@@ -2,7 +2,7 @@
     <cg_molecule>
         <name>MF</name>
         <ident>MF</ident>
-        <source_file>single_mf.gro</source_file>
+        <source_coordinate>single_mf.gro</source_coordinate>
         <source_topology>at_topol.top</source_topology>
         <!-- A1 beads -->
         <cg_bead>

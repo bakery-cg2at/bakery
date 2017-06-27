@@ -79,17 +79,13 @@ class TestCaseParseSettings(unittest.TestCase):
         g.add_edges_from(hyb_topology.new_data['bonds'])
         g.add_edges_from(hyb_topology.new_data['cross_bonds'])
 
-        # There is connection 1-2 (at CG level), so O1-C1 (5, 32)
-        self.assertEqual(len([x for x, v in hyb_topology.atoms.items() if v.name == 'O1']), 5)
+        # There is connection 1-2 (at CG level), so O1-C1 (4, 32)
+        self.assertEqual(len([x for x, v in hyb_topology.atoms.items() if v.name == 'O1']), 4)
         self.assertTrue((5, 32) in hyb_topology.new_data['cross_bonds'])
         self.assertEqual(hyb_topology.atoms[5].name, 'C1')
         self.assertEqual(hyb_topology.atoms[32].name, 'O1')
-        self.assertEqual(len(hyb_topology.new_data['cross_bonds']), 4)
-        self.assertEqual([hyb_topology.atoms[l].name for x in hyb_topology.new_data['cross_bonds'] for l in x],
-                         ['A1', 'A1', 'A1', 'A1', 'C1', 'O1', 'C2', 'O1'])
-        self.assertEqual(len(hyb_topology.new_data['cross_angles']), 1)
-        self.assertEqual([hyb_topology.atoms[l].name for x in hyb_topology.new_data['cross_angles'] for l in x],
-                         ['A1', 'A1', 'A1'])
+        self.assertEqual(len(hyb_topology.new_data['cross_bonds']), 8)  # 4 CG + 4 AT
+        self.assertEqual(len(hyb_topology.new_data['cross_angles']), 4)
         self.assertEqual(len(hyb_topology.new_data['cross_dihedrals']), 0)
 
 

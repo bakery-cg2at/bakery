@@ -10,7 +10,7 @@
 for d in *; do
     if [ -d $d ]; then
         cd $d
-        ./run_test.sh > log
+        ./run_test.sh | tee log
         RET="$?"
         if [ "$RET" != "0" ]; then
             echo "Error"
@@ -20,3 +20,4 @@ for d in *; do
         cd ..
     fi
 done
+python testsuit/test_preapre_files.py
