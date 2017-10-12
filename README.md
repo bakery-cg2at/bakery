@@ -9,19 +9,17 @@ Structure:
  - ``src/``  - the main code
 
    - start_backmapping.py - run the MD simulation with backmapping
-   - start_simulation.py - run normal MD simulation
    - prepare_files.py - prepare hybrid files
 
  - ``examples/`` - the set of examples
 
-Requirments:
+Requirements:
 
- - `networkx >= 1.11`
+ - `networkx >= 2.0`
  - modified `espressopp` - https://github.com/MrTheodor/espressopp/tree/Adress-newdd-rebased
  - `numpy`
 
-If you like to use the method in your project, modify and reuse code of `bakery` or the ingredients from `espressopp`
-that are related to the reverse mapping, please cite following materials:
+If you like to use the method in your work, please cite following materials:
 
 ```
 @article{doi:10.1021/acs.jctc.6b00595,
@@ -34,16 +32,22 @@ that are related to the reverse mapping, please cite following materials:
 }
 ```
 
+and the software package:
+
 ```
-@misc{jakub_krajniak_2016_61233,
+@misc{jakub_krajniak_2017_819783,
   author       = {Jakub Krajniak},
-  title        = {bakery: reverse mapping tool v1.3},
-  month        = aug,
-  year         = 2016,
-  doi          = {10.5281/zenodo.61233},
-  url          = {http://dx.doi.org/10.5281/zenodo.61233}
+  title        = {{bakery-cg2at/bakery: bakery: reverse mapping tool 
+                   v2.0}},
+  month        = jun,
+  year         = 2017,
+  doi          = {10.5281/zenodo.819783},
+  url          = {https://doi.org/10.5281/zenodo.819783}
 }
 ```
+
+Please note that if you use in your published work any modified version of this software package then you are obliged to
+publish your modified code.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.819783.svg)](https://doi.org/10.5281/zenodo.819783)
 [![Build Status](https://travis-ci.org/bakery-cg2at/bakery.svg?branch=devel)](https://travis-ci.org/bakery-cg2at/bakery)
