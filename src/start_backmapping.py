@@ -183,9 +183,7 @@ def main():  # NOQA
 
     system.storage = espressopp.storage.DomainDecomposition(system, nodeGrid, cellGrid)
 
-    print(len(adress_tuple))
     hook_after_init(system, particle_list, adress_tuple, input_conf, part_prop)
-    print(len(adress_tuple))
 
     system.storage.addParticles(map(tuple, particle_list), *part_prop)
     system.storage.decompose()
@@ -296,6 +294,8 @@ def main():  # NOQA
 
     k_trj_collect = int(math.ceil(float(args.trj_collect) / integrator_step))
     k_trj_flush = 25 if 25 < 10*k_trj_collect else 10*k_trj_collect
+    if k_trj_collect == 0:
+        k_trj_flush = 0
 
     print('Dynamic resolution, rate={}'.format(args.alpha))
     print('CG equilibration for {}'.format(k_eq_step * integrator_step))
@@ -327,6 +327,8 @@ def main():  # NOQA
 
     print('Number of particles: {}'.format(len(particle_list)))
 
+    time_sim0 = time.time()
+
     ############# SIMULATION: EQUILIBRATION PHASE #####################
     system_analysis.dump()
     global_int_step = 0
@@ -339,9 +341,11 @@ def main():  # NOQA
         integrator.run(integrator_step)
         global_int_step += 1
 
+    time_cg = time.time() - time_sim0
     system_analysis.dump()
 
     ######### Now run backmapping.  #######################
+    time_sim0 = time.time()
     has_capforce = False
     if args.cap_force and not args.cap_force_lj:
         has_capforce = True
@@ -446,6 +450,8 @@ def main():  # NOQA
     print('Disconnect dynamic_res')
     dynamic_res.active = False
 
+    time_bck = time.time() - time_sim0
+
     gro_whole.update_positions(system)
     gro_whole.write(
         '{}confout_full_{}_{}_phase_two.gro'.format(args.output_prefix, args.alpha, rng_seed), force=True)
@@ -459,6 +465,7 @@ def main():  # NOQA
     print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
         args.energy_collect))
     print('Set back time-step to: {}'.format(args.dt))
+    time_sim0 = time.time()
     ext_analysis.interval = args.energy_collect
     if two_phase:
         ext_analysis3.interval = args.energy_collect
@@ -502,6 +509,21 @@ def main():  # NOQA
             system_analysis3.info()
         else:
             system_analysis.info()
+
+    time_at = time.time() - time_sim0
+
+    ## Save benchmark data
+    if os.path.exists('{}benchmark.dat'.format(args.output_prefix)):
+        benchmark_file = open('{}benchmark.dat'.format(args.output_prefix), 'a')
+    else:
+        benchmark_file = open('{}benchmark.dat'.format(args.output_prefix), 'w')
+        benchmark_file.write('N_at\tN_cg\tCPUs\talpha\ttime_cg\ttime_bck\ttime_at\n')
+
+    benchmark_file.write('{Nat}\t{Ncg}\t{CPUs}\t{alpha}\t{time_cg}\t{time_bck}\t{time_at}\n'.format(
+        Nat=len(at_particle_ids), Ncg=len(cg_particle_ids), CPUs=MPI.COMM_WORLD.size, alpha=args.alpha,
+        time_cg=time_cg,time_bck=time_bck,time_at=time_at))
+    benchmark_file.close()
+    ## End save benchmark data
 
     gro_whole.update_positions(system)
     gro_whole.write(
