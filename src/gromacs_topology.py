@@ -1,4 +1,4 @@
-#  Copyright (C) 2015-2016
+#  Copyright (C) 2015-2017
 #      Jakub Krajniak (jkrajniak at gmail.com)
 #  Copyright (C) 2012,2013
 #      Max Planck Institute for Polymer Research
@@ -51,14 +51,11 @@ GromacsSystem = namedtuple(
         'pairtypes',
         'pairtypeparams',
         'nonbond_params',
-        'exclusions',
-        'x', 'y', 'z',
-        'vx', 'vy', 'vz',
-        'Lx', 'Ly', 'Lz'
+        'exclusions'
     ])
 
 
-def read(gro_file, top_file="", doRegularExcl=True, defines=None):
+def read(top_file="", doRegularExcl=True, defines=None):
     """ Read GROMACS data files.
 
     Keyword arguments:
@@ -70,32 +67,6 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
     if defines is None:
         defines = {}
 
-    # read gro file
-    if gro_file != "":
-        f = open(gro_file)
-        f.readline()  # skip comment line
-        total_num_particles = int(f.readline())
-
-        # store coordinates and velocities
-        x, y, z = [], [], []
-        vx, vy, vz = [], [], []
-        for i in range(total_num_particles):
-            s = f.readline()[20:69]
-            # coordinates
-            x.append(float(s[0:8]))
-            y.append(float(s[8:16]))
-            z.append(float(s[16:24]))
-
-            if len(s.split()) > 3:
-                # velocities
-                vx.append(float(s[24:32]))
-                vy.append(float(s[32:40]))
-                vz.append(float(s[40:49]))
-
-        # store box size
-        Lx, Ly, Lz = map(float, f.readline().split())  # read last line, convert to float
-        f.close()
-
     # read top and itp files
     masses, charges, res_ids = [], [], []  # mases and charges of the whole configuration
     types = []  # tuple: atomindex(int) to atomtypeid(int)
@@ -103,7 +74,7 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
     angles = {}  # dict: key angletype value: tuple of triples
     dihedrals = {}  # same...
     pairs_1_4 = {}  # dict: key pairtype value: tuple of pairs
-    exclusions = set()  # list of atom pairs no considered in non-bonded interactions
+    exclusions = []  # list of atom pairs no considered in non-bonded interactions
 
     defaults = {}  # gromacs default values
     atomtypeparams = {}  # a dict: key atomtypeid , value : class storing actual parameters of each type e.g. c6, c12, etc..
@@ -437,9 +408,7 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
             # find and store bonds
             bonds = storeBonds(f, at_types, bondtypes, bondtypeparams, bonds,
                                num_atoms_molecule, num_molecule_copies,
-                               molstartindex, exclusions, nrexcl,
-                               attypeid_atnum,
-                               doRegularExcl)
+                               molstartindex, attypeid_atnum)
             # find and store angles
             angles = storeAngles(f, at_types, angletypes, angletypeparams, angles,
                                  num_atoms_molecule, num_molecule_copies, molstartindex,
@@ -454,7 +423,7 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
                                    num_atoms_molecule, num_molecule_copies,
                                    molstartindex)
             if doRegularExcl:
-                storeExclusions(exclusions, nrexcl, bonds, angles, dihedrals)
+                storeExclusions(exclusions, nrexcl, bonds)
 
             molstartindex += num_molecule_copies * num_atoms_molecule
             res_idx += num_molecule_copies
@@ -466,10 +435,6 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
     angletypeparams = {k: v for k, v in angletypeparams.iteritems() if k in use_keys}
     use_keys = [s[0] for s in dihedrals]
     dihedraltypeparams = {k: v for k, v in dihedraltypeparams.iteritems() if k in use_keys}
-
-    params = []
-
-    unpackvars = []
 
     # The data is packed into a touple, unpackvars contains a string which
     # tells the user which kind of data was read.
@@ -489,15 +454,12 @@ def read(gro_file, top_file="", doRegularExcl=True, defines=None):
     print 'Found {} 1-4 pair type parameters'.format(len(use_pairtypeparams))
     print 'Found {} 1-4 pairs'.format(len(pairs_1_4))
     print 'Found {} bond exclusions'.format(len(exclusions))
-    print 'Found box: {}'.format([Lx, Ly, Lz])
-    print 'Found {} particles'.format(len(x))
 
     gromacs_system = GromacsSystem(
         defaults, types, masses, charges, res_ids, use_atomtypeparams,
         bonds, bondtypeparams, angles, angletypeparams,
         dihedrals, dihedraltypeparams, pairs_1_4, use_pairtypeparams,
-        use_nonbond_params, exclusions,
-        x, y, z, vx, vy, vz, Lx, Ly, Lz)
+        use_nonbond_params, exclusions)
 
     return gromacs_system
 
@@ -643,7 +605,6 @@ def storePairs(f, defaults, types, pairtypeparams,
                         else:
                             pairtypeid = 0
                             types_pairtypeid[(t1, t2)] = 0
-                        pair_params = pairtypeparams[(t1, t2)]
                         use_pairtypeparams[pairtypeid] = pairtypeparams[(t1, t2)]
                     else:
                         sig_1, eps_1 = at1['sig'], at1['eps']
@@ -693,8 +654,7 @@ def storePairs(f, defaults, types, pairtypeparams,
 
 
 def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
-               num_molecule_copies, molstartindex, exclusions, nregxcl, attypeid_atnum,
-               doRegularExcl=True):
+               num_molecule_copies, molstartindex, attypeid_atnum):
     line = ''
     bonds_tmp = []
     top = False
@@ -730,7 +690,13 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
                         bdtypeid = bondtypes[t1][t2]
                     except KeyError:
                         t1, t2 = attypeid_atnum[t1], attypeid_atnum[t2]
-                        bdtypeid = bondtypes[t1][t2]
+                        try:
+                            bdtypeid = bondtypes[t1][t2]
+                        except KeyError as ex:
+                            print('Bond types for {}-{} ({}-{}) not found'.format(
+                                pid1, pid2, t1, t2))
+                            print('Check your force-field or topology file.')
+                            raise ex
                 else:
                     temptype = ParseBondTypeParam(line)
                     bdtypeid = FindType(temptype, bondtypeparams)
@@ -759,20 +725,16 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
     return bonds
 
 
-def storeExclusions(exclusions, nrexcl, bonds, angles, dihedrals):
+def storeExclusions(exclusions, nrexcl, bonds):
     print('Processing exclusion lists for nrexcl={}'.format(nrexcl))
     if nrexcl > 3:
         raise RuntimeError('Currently nrexcl > 3 is not supported')
-    excl2list = {
-        1: [bonds],
-        2: [bonds, angles],
-        3: [bonds, angles, dihedrals]
-    }
 
-    for l in excl2list[nrexcl]:
-        for a in l.values():
-            for t in a:
-                exclusions.add(tuple(sorted([t[0], t[-1]])))
+    bond_list = [x for p in bonds.values() for x in p]
+
+    exclusions = GenerateRegularExclusions(bond_list, nrexcl, exclusions)
+
+    return exclusions
 
 
 def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecule, num_molecule_copies, molstartindex,
@@ -812,7 +774,11 @@ def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecul
                         typeid = angletypes[t1][t2][t3]
                     except KeyError:
                         t1, t3 = t3, t1
-                        typeid = angletypes[t1][t2][t3]
+                        try:
+                            typeid = angletypes[t1][t2][t3]
+                        except KeyError as ex:
+                            print('Cannot find params for angle {}-{}-{} (type: {}-{}-{})'.format(
+                                pid1, pid2, pid3, t1, t2, t3))
                 else:
                     # Checks if we need to make new type.
                     temptype = ParseAngleTypeParam(line)
@@ -1211,7 +1177,7 @@ def setCoulomb14Interactions(system, defaults, onefourlist, rc, types):
 
 def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None, ftpl=None, table_groups=None):
     """Sets tabulated potential for types that has particletype set to 'V'."""
-    spline_type = 2
+    spline_type = 1
     if table_groups is None:
         table_groups = []
 
@@ -1236,10 +1202,10 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
             name_1 = atomtypeparams[type_1]['atnum']
             name_2 = atomtypeparams[type_2]['atnum']
             name_1, name_2 = sorted([name_1, name_2])
-            table_name = 'table_{}_{}.tab'.format(name_1, name_2)
+            table_name = 'table_{}_{}.pot'.format(name_1, name_2)
             if not os.path.exists(table_name):
                 orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
-                print('Converting table_{name1}_{name2}.xvg to table_{name1}_{name2}.tab'.format(
+                print('Converting table_{name1}_{name2}.xvg to table_{name1}_{name2}.pot'.format(
                     name1=name_1, name2=name_2))
                 convertTable(orig_table_name, table_name)
             if ftpl:

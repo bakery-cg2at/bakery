@@ -12,10 +12,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import alabaster
+import sphinx_rtd_theme
 import sys
 import os
-import shlex
 import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -36,8 +35,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinxarg.ext',
-    'alabaster',
-    'sphinxtogithub'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -55,7 +52,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Baker'
+project = u'Bakery'
 copyright = u'2015-{}, Jakub Krajniak'.format(datetime.date.today().year)
 author = u'Jakub Krajniak'
 
@@ -64,7 +61,7 @@ author = u'Jakub Krajniak'
 # built documents.
 #
 # The short X.Y version.
-version = '1.0'
+version = '2.0'
 # The full version, including alpha/beta/rc tags.
 release = '1.0'
 
@@ -83,7 +80,7 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', 'build']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -117,20 +114,18 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'github_button': True,
-    'github_banner': True,
-    'github_user': 'MrTheodor',
-    'github_repo': 'bakery'
+    'display_version': False,
+    'sticky_navigation': False
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [alabaster.get_path()]
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".

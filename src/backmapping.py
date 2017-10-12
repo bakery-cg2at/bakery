@@ -332,7 +332,7 @@ def generate_crosslink_at_terms(settings, output_topology, plain=False):
             output_topology.new_data['{}dihedrals'.format(b_prefix)].update(
                 {x: gen_dih_params for x in dih_list})
         if gen_pair_params:
-            output_topology.new_data['{}pairs'.format('b_prefix')].update(
+            output_topology.new_data['{}pairs'.format(b_prefix)].update(
                 {(x[0], x[3]): gen_pair_params for x in dih_list})
 
 

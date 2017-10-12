@@ -28,24 +28,39 @@ def _args():
     parser.add_argument('output_file')
     parser.add_argument('--table_type', choices=('pair', 'bond', 'angle', 'dihedral'),
                         default='pair')
+    parser.add_argument('--length_scale', default=1.0, type=float)
 
     return parser.parse_args()
 
 
-def _pair_convert(input_f, output_f):
+def _pair_convert(input_f, output_f, args):
     for line in input_f:
         l = line.strip()
         if not l.startswith('#') and not l.startswith('N') and l:
             sl = l.split()
             if len(sl) == 4:
                 output_f.write('{} {} {}\n'.format(
-                    sl[1], float(sl[2])*4.184, float(sl[3])*41.84))
+                    float(sl[1])*args.length_scale,
+                    float(sl[2])*4.184, float(sl[3])*41.84))
             elif len(sl) == 3:
                 output_f.write('{} {} {}\n'.format(
-                    sl[0], float(sl[1])*4.184, float(sl[2])*41.84))
+                    float(sl[0])*args.length_scale,
+                    float(sl[1])*4.184, float(sl[2])*41.84))
 
 
-def _bond_convert(input_f, output_f):
+def _bond_convert(input_f, output_f, args):
+    for line in input_f:
+        l = line.strip()
+        if not l.startswith('#') and not l.startswith('N') and l:
+            sl = l.split()
+            if len(sl) < 4:
+                continue
+            output_f.write('{} {} {}\n'.format(
+                float(sl[1])*args.length_scale,
+                float(sl[2])*4.184, float(sl[3])*41.84))
+
+
+def _angle_convert(input_f, output_f, _):
     for line in input_f:
         l = line.strip()
         if not l.startswith('#') and not l.startswith('N') and l:
@@ -53,22 +68,11 @@ def _bond_convert(input_f, output_f):
             if len(sl) < 3:
                 continue
             output_f.write('{} {} {}\n'.format(
-                sl[0], float(sl[1])*4.184, float(sl[2])*41.84))
+                math.radians(float(sl[1])), float(sl[2])*4.184,
+                float(sl[3])*4.184*180.0/math.pi))
 
 
-def _angle_convert(input_f, output_f):
-    for line in input_f:
-        l = line.strip()
-        if not l.startswith('#') and not l.startswith('N') and l:
-            sl = l.split()
-            if len(sl) < 3:
-                continue
-            output_f.write('{} {} {}\n'.format(
-                math.radians(float(sl[0])), float(sl[1])*4.184,
-                float(sl[2])*4.184*180.0/math.pi))
-
-
-def _dihedral_convert(input_f, output_f):
+def _dihedral_convert(input_f, output_f, _):
     degrees = True
     nof = False
     data = []
@@ -108,7 +112,7 @@ def main():
         'dihedral': _dihedral_convert
     }
 
-    table_type2func[args.table_type](input_f, output_f)
+    table_type2func[args.table_type](input_f, output_f, args)
 
     output_f.close()
     input_f.close()

@@ -52,7 +52,8 @@ class TopoAtom(object):
     mass = None
     active_site = None
 
-    def __init__(self, atom_id=None, atom_type=None, chain_idx=None, chain_name=None, name=None,
+    def __init__(self, atom_id=None, atom_type=None, chain_idx=None,
+                 chain_name=None, name=None,
                  cgnr=None, charge=None, mass=None, active_site=None):
         self.atom_id = atom_id
         self.atom_type = atom_type
@@ -201,11 +202,17 @@ class GROFile(CoordinateFile):
 
         logger.info('Reading GRO file %s', self.file_name)
 
+        at_id = 1  # Ignore atom id section
+        chain_idx = 0  # Ignore chain idx section
+        last_chain_idx = None
         for line in self.content[2:number_of_atoms + 2]:
-            chain_idx = int(line[0:5].strip())
+            gro_chain_idx = int(line[0:5].strip())
+            if last_chain_idx != gro_chain_idx:  # Increment chain_idx when the original one change
+                chain_idx += 1
+                last_chain_idx = chain_idx
             chain_name = line[5:10].strip()
             at_name = line[10:15].strip()
-            at_id = int(line[15:20].strip())
+            self.id_map[at_id] = at_id
             # Need to rescale.
             pos_x = float(line[20:28].strip()) * self.scale_factor
             pos_y = float(line[28:36].strip()) * self.scale_factor
@@ -225,21 +232,23 @@ class GROFile(CoordinateFile):
             if chain_idx not in self.chains[chain_name]:
                 self.chains[chain_name][chain_idx] = {}
             self.chains[chain_name][chain_idx][at_name] = self.atoms[at_id]
+            at_id += 1
 
         # Reads the box size, the last line.
         self.box = numpy.array(
             map(float, filter(None, self.content[number_of_atoms + 2].split(' ')))
             ) * self.scale_factor
 
-    def remove_atom(self, atom_id, renumber=True):
+    def remove_atoms(self, atom_ids, renumber=True):
         """Remove atom and renumber the file."""
-        atom_to_remove = self.atoms[atom_id]
-        try:
-            del self.fragments[atom_to_remove.chain_name][atom_to_remove.name]
-            del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
-        except KeyError:
-            pass
-        del self.atoms[atom_id]
+        for atom_id in atom_ids:
+            atom_to_remove = self.atoms[atom_id]
+            try:
+                del self.fragments[atom_to_remove.chain_name][atom_to_remove.name]
+                del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
+            except KeyError:
+                pass
+            del self.atoms[atom_id]
 
         if renumber:
             new_at_id = 1
@@ -261,7 +270,14 @@ class GROFile(CoordinateFile):
 
     @staticmethod
     def copy(input_gro, particle_ids=None, renumber=False):
-        """Make copy of GROFile."""
+        """Make copy of GROFile.
+        Args:
+            particle_ids: The list of atom ids that will be copied here. There will be a map.
+            renumber: Renumber the atoms from 1.
+
+        Returns:
+            GROFile object.
+        """
         output_gro = GROFile(input_gro.file_name)
         output_gro.box = input_gro.box
         output_gro.title = input_gro.title
@@ -286,6 +302,7 @@ class GROFile(CoordinateFile):
                     output_gro.id_map[pid] = pid
         else:
             output_gro.atoms = copy.copy(input_gro.atoms)
+            output_gro.id_map = {k: k for k in output_gro.atoms}
         return output_gro
 
     def write(self, file_name=None, force=False):
@@ -309,10 +326,10 @@ class GROFile(CoordinateFile):
             for at_id in sorted(self.atoms):
                 at = self.atoms[at_id]
                 output.append(fmt % (
-                    at.chain_idx,
+                    at.chain_idx % 99999,
                     at.chain_name,
                     at.name,
-                    at.atom_id,
+                    at.atom_id % 99999,
                     at.position[0],
                     at.position[1],
                     at.position[2]
@@ -326,12 +343,20 @@ class GROFile(CoordinateFile):
             output_file.close()
             self.atoms_updated = False
 
-    def update_positions(self, system, use_id_map=False):
-        """Update positions."""
+    def update_positions(self, system, unfolded=True):
+        """Update positions. Warning! This is a very slow approach, use only to save end-state.
+
+        Args:
+            system: The espressopp.System object.
+            unfolded: Update position with unfolded coordinates.
+        """
         for at_id in self.atoms:
-            p = system.storage.getParticle(self.id_map[at_id])
+            pt = system.storage.getParticle(self.id_map.get(at_id, at_id))
             old_atom = self.atoms[at_id]
-            self.atoms[at_id] = old_atom._replace(position=p.pos)
+            new_pos = pt.pos
+            if unfolded:
+                new_pos = numpy.array(list(pt.pos)) + numpy.array(self.box)*numpy.array(list(pt.imageBox))
+            self.atoms[at_id] = old_atom._replace(position=new_pos)
 
     def dump(self, system, filename, particle_ids, chain_name, chain_idx, atom_name):
         """Dump data from storage."""
@@ -499,6 +524,8 @@ class GROMACSTopologyFile(TopologyFile):
         self.molecules = {}
         self.system_name = None
 
+        self.skip_cross = False
+
     def init(self):
         """Reset the class properties without creating the object again."""
         logger.info('Init of topology file.')
@@ -540,6 +567,33 @@ class GROMACSTopologyFile(TopologyFile):
             output_graph.node[n_id]['degree'] = output_graph.degree(n_id)
         return output_graph
 
+    def replicate(self):
+        """Based on the molecules section, replicate data of the topology."""
+        molecules = int(self.molecules['mol'])
+        if molecules > 1:
+            print('Replicate topology to {} molecules'.format(molecules))
+        atoms_per_molecule = len(self.atoms)
+        atom_ids_to_replicate = sorted(self.atoms)
+        for residx in range(2, molecules+1):
+            for at_id in atom_ids_to_replicate:
+                at_data = copy.copy(self.atoms[at_id])
+                at_data.chain_idx = residx
+                at_data.atom_id = (residx-1)*atoms_per_molecule + at_id
+                self.atoms[at_data.atom_id] = at_data
+
+        def replicate_list(N_molecules, N_single, input_dict, shift=0):
+            return {
+                tuple(map(lambda x: shift + x + (n * N_single), z)): v
+                for n in range(N_molecules) for z, v in input_dict.items()
+                }
+        # Replicate other lists.
+        self.bonds = replicate_list(molecules, atoms_per_molecule, self.bonds)
+        self.angles = replicate_list(molecules, atoms_per_molecule, self.angles)
+        self.dihedrals = replicate_list(molecules, atoms_per_molecule, self.dihedrals)
+        self.pairs = replicate_list(molecules, atoms_per_molecule, self.pairs)
+        self.improper_dihedrals = replicate_list(molecules, atoms_per_molecule, self.improper_dihedrals)
+
+
     def update_position(self, pdbfile):
         """Reads the position data from the coordinate file and update the atoms.
 
@@ -550,19 +604,18 @@ class GROMACSTopologyFile(TopologyFile):
         for k, v in pdbfile.atoms.iteritems():
             self.atoms[k].position = v.position
 
-    def remove_atom(self, atom_id, renumber=True):
+    def remove_atoms(self, atom_ids, renumber=True):
         """Removes atom from topology and clean data structures."""
-
-        atom_to_remove = self.atoms[atom_id]
-        try:
-            self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx].remove(atom_to_remove)
-            self.chain_atom_names[atom_to_remove.chain_name][atom_to_remove.name].remove(atom_to_remove)
-        except KeyError:
-            pass
-        del self.atoms[atom_id]
+        for atom_id in atom_ids:
+            atom_to_remove = self.atoms[atom_id]
+            try:
+                del self.chains[atom_to_remove.chain_name][atom_to_remove.chain_idx][atom_to_remove.name]
+                self.chain_atom_names[atom_to_remove.chain_name][atom_to_remove.name].remove(atom_to_remove)
+            except KeyError:
+                pass
+            del self.atoms[atom_id]
 
         # Renumber data.
-        old2new = {k: k for k in self.atoms}
         if renumber:
             new_at_id = 1
             old2new = {}
@@ -575,19 +628,19 @@ class GROMACSTopologyFile(TopologyFile):
             self.atoms = new_atoms
 
         # Clean bonded structures.
-        self.bonds = {k: v for k, v in self.bonds.items() if atom_id not in k}
-        self.angles = {k: v for k, v in self.angles.items() if atom_id not in k}
-        self.dihedrals = {k: v for k, v in self.dihedrals.items() if atom_id not in k}
-        self.pairs = {k: v for k, v in self.pairs.items() if atom_id not in k}
-        self.cross_bonds = {k: v for k, v in self.cross_bonds.items() if atom_id not in k}
-        self.cross_angles = {k: v for k, v in self.cross_angles.items() if atom_id not in k}
-        self.cross_dihedrals = {k: v for k, v in self.cross_dihedrals.items() if atom_id not in k}
-        self.cross_pairs = {k: v for k, v in self.cross_pairs.items() if atom_id not in k}
-        self.improper_dihedrals = {k: v for k, v in self.improper_dihedrals.items() if atom_id not in k}
+        self.bonds = {k: v for k, v in self.bonds.items() if not atom_ids.intersection(k)}
+        self.angles = {k: v for k, v in self.angles.items() if not atom_ids.intersection(k)}
+        self.dihedrals = {k: v for k, v in self.dihedrals.items() if not atom_ids.intersection(k)}
+        self.pairs = {k: v for k, v in self.pairs.items() if not atom_ids.intersection(k)}
+        self.cross_bonds = {k: v for k, v in self.cross_bonds.items() if not atom_ids.intersection(k)}
+        self.cross_angles = {k: v for k, v in self.cross_angles.items() if not atom_ids.intersection(k)}
+        self.cross_dihedrals = {k: v for k, v in self.cross_dihedrals.items() if not atom_ids.intersection(k)}
+        self.cross_pairs = {k: v for k, v in self.cross_pairs.items() if not atom_ids.intersection(k)}
+        self.improper_dihedrals = {k: v for k, v in self.improper_dihedrals.items() if not atom_ids.intersection(k)}
 
         # And new_data
         for k in self.new_data:
-            self.new_data[k] = {p: v for p, v in self.new_data[k].items() if atom_id not in p}
+            self.new_data[k] = {p: v for p, v in self.new_data[k].items() if not atom_ids.intersection(p)}
 
 
     def renumber(self):
@@ -694,15 +747,17 @@ class GROMACSTopologyFile(TopologyFile):
                 sections.append('dihedraltypes')
             sections.extend([
                 'moleculetype',
-                'atoms',
-                'bonds',
-                'angles',
-                'dihedrals',
-                'pairs',
-                'cross_bonds',
-                'cross_angles',
-                'cross_dihedrals',
-                'cross_pairs',
+                'atoms'])
+            section_list = ['bonds', 'angles', 'pairs', 'cross_bonds',
+                            'cross_angles', 'cross_dihedrals', 'cross_pairs']
+            for s in section_list:
+                if getattr(self, s) or self.new_data.get(s):
+                    sections.append(s)
+            if (self.dihedrals or self.new_data['dihedrals'] or
+                    self.improper_dihedrals or self.new_data['improper_dihedrals']):
+                sections.append('dihedrals')
+
+            sections.extend([
                 'system',
                 'molecules'])
             self.content = []
@@ -715,12 +770,15 @@ class GROMACSTopologyFile(TopologyFile):
         for line in self.content:
             tmp_line = line.strip()
             if tmp_line.startswith('['):  # section part
-                new_data.append(line)
                 previous_section = current_section
                 current_section = tmp_line.replace('[', '').replace(']', '').strip()
                 if previous_section == 'dihedrals' and current_section == 'dihedrals':
                     current_section = 'improper_dihedrals'
                 section_writer = self.writers.get(current_section)
+                if current_section.startswith('cross') and self.skip_cross:
+                    skip_lines = True
+                    continue
+                new_data.append(line)
                 print('{}: Writing section {}'.format(filename, current_section))
                 skip_lines = False
             elif tmp_line.startswith(';') or tmp_line.startswith('#'):
@@ -825,10 +883,10 @@ class GROMACSTopologyFile(TopologyFile):
             at.mass = float(raw_data[7])
 
         if at.chain_name not in self.chains:
-            self.chains[at.chain_name] = collections.defaultdict(list)
+            self.chains[at.chain_name] = collections.defaultdict(dict)
             self.chain_atom_names[at.chain_name] = collections.defaultdict(list)
 
-        self.chains[at.chain_name][at.chain_idx].append(at)
+        self.chains[at.chain_name][at.chain_idx][at.name] = at
         self.chain_atom_names[at.chain_name][at.name].append(at)
         self.atoms[at.atom_id] = at
 
@@ -1153,8 +1211,8 @@ class LammpsReader(object):
             Each of edges has attribute `bond_type` with a number that corresponds to bond type
             in force field data.
         """
-        type2chain_name = settings.cg_configuration['LAMMPS']['type2chain']
-        name_seq = settings.cg_configuration['LAMMPS']['name_seq']
+        type2chain_name = settings.type2chain
+        name_seq = settings.name_seq
         output_graph = networkx.Graph(box=(self.box['x'], self.box['y'], self.box['z']))
         seq_idx = {k: 0 for k in name_seq}
         for at_id, lmp_at in self.atoms.iteritems():
@@ -1228,14 +1286,21 @@ class LammpsReader(object):
         if at_type > self._type_counters['atom']:
             raise RuntimeError(('Atom type {} not found.'.format(at_type)))
 
+        if at_type in self.atom_charges:
+            if q != self.atom_charges[at_type]:
+                raise RuntimeError('Charge of atom type {} is different, {} != {}'.format(
+                    at_type, q, self.atom_charges[at_type]
+                ))
+        self.atom_charges[at_type] = q
+
         if update:  # Update
             if at_id not in self.atoms:
                 raise RuntimeError('Cannot update atom with id {}. Not found.'.format(at_id))
             update_dict = {
                 'position': (
-                    x*self.distance_scale_factor - self._box_translate['x'],
-                    y*self.distance_scale_factor - self._box_translate['y'],
-                    z*self.distance_scale_factor - self._box_translate['z']),
+                    x*self.distance_scale_factor, # - self._box_translate['x'],
+                    y*self.distance_scale_factor, # - self._box_translate['y'],
+                    z*self.distance_scale_factor), # - self._box_translate['z']),
                 'atom_type': at_type,
                 'res_id': at_tag,
                 'charge': q
@@ -1250,9 +1315,9 @@ class LammpsReader(object):
                 'atom_type': at_type,
                 'res_id': at_tag,
                 'position': (
-                    x*self.distance_scale_factor - self._box_translate['x'],
-                    y*self.distance_scale_factor - self._box_translate['y'],
-                    z*self.distance_scale_factor - self._box_translate['z']),
+                    x*self.distance_scale_factor, # - self._box_translate['x'],
+                    y*self.distance_scale_factor, # - self._box_translate['y'],
+                    z*self.distance_scale_factor), # - self._box_translate['z']),
                 'image': (nx, ny, nz),
                 'charge': q,
                 'vel': (0.0, 0.0, 0.0),

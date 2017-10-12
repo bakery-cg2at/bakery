@@ -29,7 +29,11 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
     """Sets system analysis routine"""
     if filename_suffix is None:
         filename_suffix = ''
-    energy_file = '{}energy_{}_{}{}.csv'.format(args.output_prefix, args.alpha, args.rng_seed, filename_suffix)
+    try:
+        alpha = args.alpha
+        energy_file = '{}_energy_{}_{}{}.csv'.format(args.output_prefix, alpha, args.rng_seed, filename_suffix)
+    except AttributeError:
+        energy_file = '{}_energy_{}{}.csv'.format(args.output_prefix, args.rng_seed, filename_suffix)
     print('Energy saved to: {}'.format(energy_file))
     system_analysis = espressopp.analysis.SystemMonitor(
         system,
@@ -46,13 +50,16 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
 
     system_analysis.add_observable('Ekin', espressopp.analysis.KineticEnergy(system, temp_comp))
     if dynamic_res is not None:
-        system_analysis.add_observable(
-            'res', espressopp.analysis.Resolution(system, dynamic_res))
+        system_analysis.add_observable('res', espressopp.analysis.Resolution(system))
 
-    system_info_filter = args.system_info_filter.split(',') if args.system_info_filter else None
+    try:
+        system_info_filter = args.system_info_filter.split(',')
+    except AttributeError:
+        system_info_filter = None
+
     for label, interaction in sorted(system.getAllInteractions().items()):
         show_in_system_info = True
-        if system_info_filter is not None:
+        if system_info_filter:
             show_in_system_info = False
             for v in system_info_filter:
                 if v in label:
@@ -68,7 +75,7 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
 
 
 def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonded_params=None,  # NOQA
-                                hadress=False, ftpl=None, interaction=None):
+                                hadress=False, ftpl=None, interaction=None, table_groups=[]):
     """ Set lennard jones interactions which were read from gromacs based on the atomypes"""
     defaults = input_conf.defaults
     atomtypeparams = input_conf.atomtypeparams
@@ -90,8 +97,12 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     type_pairs = set()
     for type_1, pi in atomtypeparams.iteritems():
         for type_2, pj in atomtypeparams.iteritems():
-            if pi['particletype'] != 'V' and pj['particletype'] != 'V':
+            if (pi.get('atnum') in table_groups and pj.get('atnum') in table_groups) or (
+                pi.get('atname') in table_groups and pj.get('atname') in table_groups):
+                continue
+            elif pi['particletype'] != 'V' and pj['particletype'] != 'V':
                 type_pairs.add(tuple(sorted([type_1, type_2])))
+
     type_pairs = sorted(type_pairs)
 
     if not type_pairs:
@@ -118,8 +129,7 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
                 sig = (sig_1*sig_2)**(1.0/2.0)
                 eps = (eps_1*eps_2)**(1.0/2.0)
         if sig > 0.0 and eps > 0.0:
-            print ("Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps",
-                   eps, "cutoff", cutoff)
+            print "Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps", eps, "cutoff", cutoff
             ljpot = espressopp.interaction.LennardJones(epsilon=eps, sigma=sig, shift='auto',
                                                         cutoff=cutoff)
             if ftpl:
@@ -129,23 +139,31 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     return interaction
 
 
-def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None):
+def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None, table_groups=[]):
     """Sets tabulated potential for types that has particletype set to 'V'."""
-    spline_type = 2
+    spline_type = 1
     if interaction is None:
         interaction = espressopp.interaction.VerletListTabulated(vl)
+
     type_pairs = set()
     for type_1, v1 in atomtypeparams.iteritems():
         for type_2, v2 in atomtypeparams.iteritems():
             if v1.get('particletype', 'A') == 'V' and v2.get('particletype', 'A') == 'V':
                 type_pairs.add(tuple(sorted([type_1, type_2])))
+            elif (v1.get('atnum') in table_groups and v2.get('atnum') in table_groups) or (
+                v1.get('atname') in table_groups and v2.get('atname') in table_groups):
+                type_pairs.add(tuple(sorted([type_1, type_2])))
     if not type_pairs:
         return None
-    for type_1, type_2 in type_pairs:
-        print('Set tabulated potential {}-{}'.format(type_1, type_2))
-        name_1 = atomtypeparams[type_1]['atnum']
-        name_2 = atomtypeparams[type_2]['atnum']
-        table_name = '{}-{}.espp.pot'.format(name_1, name_2)
+    print('Found {} pairs for tabulated interactions'.format(len(type_pairs)))
+    for type_ids in type_pairs:
+        types_names = sorted([(x, atomtypeparams[x]['atnum']) for x in type_ids], key=lambda z: z[1])
+        name_1 = types_names[0][1]
+        name_2 = types_names[1][1]
+        type_1 = types_names[0][0]
+        type_2 = types_names[1][0]
+        print('Set tabulated potential {}-{} ({}-{})'.format(name_1, name_2, type_1, type_2))
+        table_name = 'table_{}_{}.pot'.format(name_1, name_2)
         orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
         if not os.path.exists(table_name):
             espressopp.tools.convert.gromacs.convertTable(orig_table_name, table_name)
@@ -159,10 +177,11 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
     return interaction
 
 
-def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=False):  #NOQA
+def genParticleList(input_conf, gro_file, use_velocity=False, use_charge=False, adress=False):  #NOQA
     """Generates particle list
     Args:
         input_conf: The tuple generate by read method.
+        gro_file: The GRO file.
         use_velocity: If set to true then velocity will be read.
         use_charge: If set to true then charge will be read.
         adress: If set to true then adress_tuple will be generated.
@@ -195,7 +214,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
             particle_type = input_conf.atomtypeparams[atom_type]['particletype']
             tmp = [pid+1,
                    atom_type,
-                   espressopp.Real3D(input_conf.x[pid], input_conf.y[pid], input_conf.z[pid]),
+                   espressopp.Real3D(gro_file.atoms[pid+1].position),
                    input_conf.res_ids[pid]]
             if use_mass:
                 tmp.append(input_conf.masses[pid])
@@ -208,15 +227,15 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
                 tmp.append(input_conf.charges[pid])
             if particle_type == 'V':
                 tmp.append(0)  # adrat
-                tmp.append(0.0)
-                tmp.append(True)
+                tmp.append(0.0)  # lambda
+                tmp.append(True)  # is virtual site
                 if tmptuple != []:
                     adress_tuple.append(tmptuple[:])
                 tmptuple = [pid+1]
             else:
                 tmp.append(1)  # adrat
-                tmp.append(0.0)
-                tmp.append(False)
+                tmp.append(0.0)  # lambda
+                tmp.append(False)  # is virtual site
                 tmptuple.append(pid+1)
             particle_list.append(Particle(*tmp))
         # Set Adress tuples
@@ -226,7 +245,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
         for pid in range(num_particles):
             tmp = [pid+1,
                    input_conf.types[pid],
-                   espressopp.Real3D(input_conf.x[pid], input_conf.y[pid], input_conf.z[pid]),
+                   espressopp.Real3D(gro_file.atoms[pid+1].position),
                    input_conf.res_ids[pid]]
             if use_mass:
                 tmp.append(input_conf.masses[pid])
@@ -241,8 +260,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, adress=Fal
         return props, particle_list
 
 
-def setBondedInteractions(system, input_conf, force_static=False, only_at=False,
-                          only_cg=None):
+def setBondedInteractions(system, input_conf, force_static=False, only_at=False, only_cg=None):
     ret_list = {}
     bonds = input_conf.bondtypes
     bondtypeparams = input_conf.bondtypeparams
@@ -271,39 +289,93 @@ def setBondedInteractions(system, input_conf, force_static=False, only_at=False,
     return ret_list
 
 
-def setPairInteractions(system, input_conf, cutoff, ftpl=None):
-    ret_list = {}
+def setPairInteractions(system, input_conf, cutoff, coulomb_cutoff, ftpl=None):
     pairs = input_conf.pairtypes
+    fudgeQQ = float(input_conf.defaults['fudgeQQ'])
+    pref = 138.935485 * fudgeQQ  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2, scaled by fudge factor
     pairtypeparams = input_conf.pairtypeparams
+
+    static_14_pairs = []
+    cross_14_pairs_cg = []
+    cross_14_pairs_at = []
+
     for (pid, cross_bonds), pair_list in pairs.iteritems():
         params = pairtypeparams[pid]
         is_cg = input_conf.atomtypeparams[
-            input_conf.types[pair_list[0][0]-1]]['particletype'] == 'V'
+                    input_conf.types[pair_list[0][0] - 1]]['particletype'] == 'V'
         if is_cg or ftpl is None:
             fpl = espressopp.FixedPairList(system.storage)
         else:
             fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
         fpl.addBonds(pair_list)
-        print ('Pair interaction', params, ' num pairs:', len(pair_list),
-               'sig=', params['sig'], params['eps'])
+
+        if cross_bonds or is_cg:
+            if is_cg:
+                cross_14_pairs_cg.extend(pair_list)
+            else:
+                cross_14_pairs_at.extend(pair_list)
+        else:
+            static_14_pairs.extend(pair_list)
 
         if not cross_bonds:
             is_cg = None
 
-        pot = espressopp.interaction.LennardJones(
-            sigma=params['sig'],
-            epsilon=params['eps'],
-            shift='auto',
-            cutoff=cutoff)
-        if is_cg is None:
-            interaction = espressopp.interaction.FixedPairListLennardJones(system, fpl, pot)
-        else:
-            interaction = espressopp.interaction.FixedPairListAdressLennardJones(
-                system, fpl, pot, is_cg)
-        system.addInteraction(interaction, 'lj-14_{}{}'.format(
-            pid, '_cross' if cross_bonds else ''))
-        ret_list[(pid, cross_bonds)] = interaction
-    return ret_list
+        if params['sig'] > 0.0 and params['eps'] > 0.0:
+            print('Pair interaction {} num pairs: {} sig={} eps={} cutoff={} is_cg={}'.format(
+                params, len(pair_list), params['sig'], params['eps'], cutoff, is_cg))
+            pot = espressopp.interaction.LennardJones(
+                sigma=params['sig'],
+                epsilon=params['eps'],
+                shift='auto',
+                cutoff=cutoff)
+            if is_cg is None:
+                interaction = espressopp.interaction.FixedPairListLennardJones(system, fpl, pot)
+            else:
+                interaction = espressopp.interaction.FixedPairListAdressLennardJones(
+                    system, fpl, pot, is_cg)
+            system.addInteraction(interaction, 'lj-14_{}{}'.format(pid, '_cross' if cross_bonds else ''))
+
+    # Set Coulomb14
+    if static_14_pairs or cross_14_pairs_cg or cross_14_pairs_at:
+        type_pairs = set()
+        for type_1, pi in input_conf.atomtypeparams.iteritems():
+            for type_2, pj in input_conf.atomtypeparams.iteritems():
+                if pi['particletype'] != 'V' and pj['particletype'] != 'V':
+                    type_pairs.add(tuple(sorted([type_1, type_2])))
+
+        type_pairs = sorted(type_pairs)
+        print('Using fudgeQQ: {}, type_pairs: {}'.format(fudgeQQ, len(type_pairs)))
+        potQQ = espressopp.interaction.CoulombTruncated(prefactor=pref, cutoff=coulomb_cutoff)
+
+        if static_14_pairs:
+            print('Defined {} of static coulomb 1-4 pairs'.format(len(static_14_pairs)))
+            fpl_static = espressopp.FixedPairList(system.storage)
+            fpl_static.addBonds(static_14_pairs)
+            interaction_static = espressopp.interaction.FixedPairListTypesCoulombTruncated(system, fpl_static)
+            for type_1, type_2 in type_pairs:
+                interaction_static.setPotential(type1=type_1, type2=type_2, potential=potQQ)
+            system.addInteraction(interaction_static, 'coulomb14')
+        if cross_14_pairs_cg:
+            print('Defined {} of cross coulomb CG 1-4 pairs'.format(len(cross_14_pairs_cg)))
+            fpl_cross = espressopp.FixedPairList(system.storage)
+            fpl_cross.addBonds(cross_14_pairs_cg)
+            # Now set cross potential.
+            interaction_dynamic = espressopp.interaction.FixedPairListAdressTypesCoulombTruncated(
+                system, fpl_cross, True)
+            for type_1, type_2 in type_pairs:
+                interaction_dynamic.setPotential(type1=type_1, type2=type_2, potential=potQQ)
+            system.addInteraction(interaction_dynamic, 'coulomb14_cg_cross')
+
+        if cross_14_pairs_at:
+            print('Defined {} of cross coulomb AT 1-4 pairs'.format(len(cross_14_pairs_at)))
+            fpl_cross = espressopp.FixedPairList(system.storage)
+            fpl_cross.addBonds(cross_14_pairs_at)
+            # Now set cross potential.
+            interaction_dynamic = espressopp.interaction.FixedPairListAdressTypesCoulombTruncated(
+                system, fpl_cross, False)
+            for type_1, type_2 in type_pairs:
+                interaction_dynamic.setPotential(type1=type_1, type2=type_2, potential=potQQ)
+            system.addInteraction(interaction_dynamic, 'coulomb14_at_cross')
 
 
 def setAngleInteractions(system, input_conf, force_static=False, only_at=False, only_cg=None):
@@ -360,3 +432,25 @@ def setDihedralInteractions(system, input_conf, force_static=False, only_at=Fals
                 did, '_cross' if cross_dih else ''))
             ret_list.update({(did, cross_dih): dihedralinteraction})
     return ret_list
+
+
+def saveInteractions(system, output_filename):
+    number_of_interactions = system.getNumberOfInteractions()
+    print('Number of interactions: {}'.format(number_of_interactions))
+
+    data = {}
+    for interaction_name, interaction in system.getAllInteractions().items():
+        print('Interaction {}'.format(interaction_name))
+        data[interaction_name] = {
+            'class_str': str(interaction),
+            'params': interaction.getParams()
+        }
+        fixed_list = interaction.getFixedList()
+        if fixed_list is not None:
+            l = fixed_list.getList()
+            data[interaction_name]['fixed_list'] = l
+
+    with open(output_filename, 'wb') as output_file:
+        import cPickle
+        cPickle.dump(data, output_file)
+        print('Saved in {}'.format(output_filename))
