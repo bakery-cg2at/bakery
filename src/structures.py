@@ -850,7 +850,8 @@ class BackmapperSettings2:
             if 'bonds' in k:
                 bonds.extend([b for b in self.hyb_topology.new_data[k]])
         g.add_edges_from(bonds)
-        paths = networkx.all_pairs_shortest_path(g, int(self.hyb_topology.moleculetype['nrexcl']))
+        paths = dict(
+            networkx.all_pairs_shortest_path(g, int(self.hyb_topology.moleculetype['nrexcl'])))
         exclusions = set()
         for l in paths.values():
             for p in l.values():
