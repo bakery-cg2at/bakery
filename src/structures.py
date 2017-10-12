@@ -741,10 +741,9 @@ class BackmapperSettings2:
                             target_atom.chain_idx][
                             at_to_transfer].charge = at_from_transfer.charge
                 else:
-                    print((b1, b2))
+                    print('We could not find any active sites for the bond CG beads {}-{}'.format(
+                        b1, b2))
                     print((n1, n2))
-                    print(self.cg_active_sites[b1])
-                    print(self.cg_active_sites[b2])
                     raise RuntimeError('Something is really wrong!')
             sys.stdout.write('{} %\r'.format(100.0*(progress_indc/progress_indc_total)))
             progress_indc += 1.0
