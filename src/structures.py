@@ -230,9 +230,33 @@ class BackmapperSettings2:
         for k, d in self.cg_topology.atomtypes.items():
             d['type'] = 'V'
             self.hyb_topology.atomtypes[k] = d
+        # Separate exclusion for AT and CG; if exclusion present then 
+        # excl_AT=excl_AT = exclusion
+        #
+        excl_at = excl_cg = excl = None
+        if hyb_topology.find('molecule_type').find('exclusion_at') is not None:
+            excl_at = hyb_topology.find('molecule_type').find('exclusion_at').text.strip()
+        if hyb_topology.find('molecule_type').find('exclusion_cg') is not None:
+            excl_cg = hyb_topology.find('molecule_type').find('exclusion_cg').text.strip()
+        if hyb_topology.find('molecule_type').find('exclusion') is not None:
+            excl = hyb_topology.find('molecule_type').find('exclusion').text.strip()
+        else:
+            if excl_at:
+                excl = excl_at
+            elif excl_cg:
+                excl = excl_cg
+            else:
+                raise RuntimeError('exclusion not specified')
+        if excl and not excl_at:
+            excl_at = excl
+        if excl and not excl_cg:
+            excl_cg = excl
+
         self.hyb_topology.moleculetype = {
             'name': hyb_topology.find('molecule_type').find('name').text.strip(),
-            'nrexcl': hyb_topology.find('molecule_type').find('exclusion').text.strip()
+            'nrexcl': excl,
+            'excl_at': excl_at,
+            'excl_cg': excl_cg
         }
         self.hyb_topology.molecules = {
             'name': hyb_topology.find('system').text.strip(),
@@ -602,7 +626,8 @@ class BackmapperSettings2:
             outl = []
             for k, p in self.at_cross_bonds.items():
                 new_k = map(at_topol.old2new_ids.get, k)
-                outl.append([int(p.typeid)] + new_k)
+                if p.typeid:
+                    outl.append([int(p.typeid)] + new_k)
             outl.sort(key=lambda x: x[0])
             outbond.write('\n'.join([' '.join(map(str, p)) for p in outl]))
         print('Saved {}'.format(out_cross_bonds))
@@ -611,7 +636,8 @@ class BackmapperSettings2:
             outl = []
             for k, p in self.at_cross_angles.items():
                 new_k = map(at_topol.old2new_ids.get, k)
-                outl.append([int(p.typeid)] + new_k)
+                if p.typeid:
+                    outl.append([int(p.typeid)] + new_k)
             outl.sort(key=lambda x: x[0])
             outbond.write('\n'.join([' '.join(map(str, p)) for p in outl]))
         print('Saved {}'.format(out_cross_angles))
@@ -620,10 +646,13 @@ class BackmapperSettings2:
             outl = []
             for k, p in self.at_cross_dihedrals.items():
                 new_k = map(at_topol.old2new_ids.get, k)
-                outl.append([int(p.typeid)] + new_k)
+                if p.typeid:
+                    outl.append([int(p.typeid)] + new_k)
             outl.sort(key=lambda x: x[0])
             outbond.write('\n'.join([' '.join(map(str, p)) for p in outl]))
         print('Saved {}'.format(out_cross_dihedrals))
+        # Generate exclusion list.
+        self._generate_exclusion_lists()
 
     def rebuild_hybrid_topology(self):
         """Regenerate the hybrid topology based on the new particle ids."""
@@ -821,8 +850,6 @@ class BackmapperSettings2:
         print('Found {} atomistic cross bonds'.format(len(at_cross_bonds)))
         self._generate_atomistic_bonds(at_cross_bonds)
         self._remove_atomistic_particles(set(atoms_to_remove))
-        # Generate exclusion list.
-        self._generate_exclusion_lists()
 
 
     def _generate_atomistic_bonds(self, at_cross_bonds):
@@ -912,19 +939,38 @@ class BackmapperSettings2:
 
     def _generate_exclusion_lists(self):
         # Collect all bonds and greate global_graph again...
-        print('Generating exclusion lists, nrexcl={}'.format(self.hyb_topology.moleculetype['nrexcl']))
-        g = networkx.Graph()
-        bonds = [b for b in self.hyb_topology.bonds.keys()]
+        at_g = networkx.Graph()
+        cg_g = networkx.Graph()
+
+        bonds = [b for b in self.hyb_topology.bonds.keys()
+                 if b[0] in self.atom_ids and b[1] in self.atom_ids]
         for k in self.hyb_topology.new_data:
             if 'bonds' in k:
-                bonds.extend([b for b in self.hyb_topology.new_data[k]])
-        g.add_edges_from(bonds)
-        paths = networkx.all_pairs_shortest_path(g, int(self.hyb_topology.moleculetype['nrexcl']))
+                bonds.extend([b for b in self.hyb_topology.new_data[k]
+                              if b[0] in self.atom_ids and b[1] in self.atom_ids])
+        at_g.add_edges_from(bonds)
+
+        bonds = [b for b in self.hyb_topology.bonds.keys() if b[0] in self.cg2atom and b[1] in self.cg2atom]
+        for k in self.hyb_topology.new_data:
+            if 'bonds' in k:
+                bonds.extend([b for b in self.hyb_topology.new_data[k] if b[0] in self.cg2atom and b[1] in self.cg2atom])
+        cg_g.add_edges_from(bonds)
+
+        print('Generating exclusion lists AT, nrexcl={}'.format(self.hyb_topology.moleculetype['excl_at']))
+        paths = dict(networkx.all_pairs_shortest_path(at_g, int(self.hyb_topology.moleculetype['excl_at'])))
         exclusions = set()
         for l in paths.values():
             for p in l.values():
                 if len(p) > 1:
                     exclusions.add(tuple(sorted([p[0], p[-1]])))
+
+        print('Generating exclusion lists CG, nrexcl={}'.format(self.hyb_topology.moleculetype['excl_cg']))
+        paths = dict(networkx.all_pairs_shortest_path(cg_g, int(self.hyb_topology.moleculetype['excl_cg'])))
+        for l in paths.values():
+            for p in l.values():
+                if len(p) > 1:
+                    exclusions.add(tuple(sorted([p[0], p[-1]])))
+
         output_filename = 'exclusion_{}.list'.format(self.hyb_topology.file_name.split('.')[0])
         out_file = open(output_filename, 'w')
         out_file.writelines('\n'.join(['{} {}'.format(*d) for d in sorted(exclusions)]))
