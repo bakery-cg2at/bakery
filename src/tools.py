@@ -131,16 +131,18 @@ def generate_list(input_list, id_map):
     return output
 
 
-def get_atomistic_topology(in_top):
+def get_atomistic_topology(in_top, virtual_atomtypes=None):
     """Returns atomistic topology from hybrid topology.
 
     Args:
         in_top: Input hybrid topology.
-        coord: Input coordinate file.
+        virtual_atomtypes: The list of CG atom types.
     Returns:
         atomistic topology.
     """
-    virtual_atomtypes = {k for k, v in in_top.atomtypes.items() if v['type'] == 'V'}
+
+    if virtual_atomtypes is None:
+        virtual_atomtypes = {k for k, v in in_top.atomtypes.items() if v['type'] == 'V'}
 
     # Map topol id -> atom_id
     topol_old2new = {}
@@ -157,6 +159,7 @@ def get_atomistic_topology(in_top):
         new_id += 1
 
     in_top.atomtypes = {k: v for k, v in in_top.atomtypes.items() if v['type'] != 'V'}
+    in_top.old2new_ids = topol_old2new
 
     bondtypes = {}
     for i in in_top.bondtypes:

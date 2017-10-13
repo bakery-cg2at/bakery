@@ -539,8 +539,11 @@ def main():  # NOQA
     # Write atomistic topology
     hyb_top = files_io.GROMACSTopologyFile(args.top)
     hyb_top.read()
-    at_topology = general_tools.get_atomistic_topology(hyb_top)
-    topol_aa = '{}topol_aa_{}_{}.top'.format(args.output_prefix, args.alpha, rng_seed)
+    at_topology = general_tools.get_atomistic_topology(
+        hyb_top,
+        virtual_atomtypes=[
+            v['atnum'] for v in input_conf.atomtypeparams.values() if v['particletype'] == 'V'])
+    topol_aa = '{}topol_final_aa_{}_{}.top'.format(args.output_prefix, args.alpha, rng_seed)
     at_topology.write(topol_aa)
     print('Final AA topology: {}'.format(topol_aa))
 
