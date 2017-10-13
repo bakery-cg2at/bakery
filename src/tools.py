@@ -68,9 +68,9 @@ def gen_bonded_tuples(g, num, bond_pair):
     b0, b1 = bond_pair
     paths = []
     if num > 3:
-        for nb0 in g.edge[b0]:
+        for nb0 in g[b0]:
             paths.extend(nx.single_source_shortest_path(g, nb0, num-1).values())
-        for nb1 in g.edge[b1]:
+        for nb1 in g[b1]:
             paths.extend(nx.single_source_shortest_path(g, nb1, num-1).values())
 
     paths.extend(nx.single_source_shortest_path(g, b0, num-1).values())

@@ -31,7 +31,7 @@ class TestCommand(setuptools.command.test.test):
 
 config = {
     'name': 'bakery',
-    'description': 'The backmapping tool',
+    'description': 'Backmapping tool',
     'version': '1.0.0',
     'author': 'Jakub Krajniak',
     'author_email': 'jkrajniak@gmail.com',
@@ -39,7 +39,7 @@ config = {
     'install_requires':[
         'networkx'
     ],
-    'url': 'http://github.com/MrTheodor/',
+    'url': 'https://github.com/bakery-cg2at',
     'test_suite': 'src.tests',
 }
 

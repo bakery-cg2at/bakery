@@ -35,6 +35,10 @@ class Storage:
             def pos(self):
                 return (self.pid, self.pid, self.pid)
 
+            @property
+            def imageBox(self):
+                return (self.pid, self.pid, self.pid)
+
         return P(particle_id)
 
 class System:
@@ -148,4 +152,5 @@ class GROFileTestCase(unittest.TestCase):
         system = System()
         self.assertEquals(gro_file.atoms[3].position, (2, 2, 2))
         gro_file.update_positions(system)
-        self.assertEquals(gro_file.atoms[3].position, (3, 3, 3))
+        print(gro_file.atoms[3].position)
+        self.assertItemsEqual(gro_file.atoms[3].position, [33, 33, 33])

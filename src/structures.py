@@ -470,7 +470,7 @@ class BackmapperSettings2:
             if cg_nodes[0]['res_id'] != cg_nodes[1]['res_id']:  # Ignore self-loops
                 residue_graph.add_edge(cg_nodes[0]['res_id'], cg_nodes[1]['res_id'])
 
-        for res_id, deg in residue_graph.degree().items():
+        for res_id, deg in residue_graph.degree():
             residue_graph.node[res_id]['degree'] = str(deg)
             residue_graph.node[res_id]['fragment_key'] = None
 
@@ -714,7 +714,7 @@ class BackmapperSettings2:
                 ats_b2 = set(self.cg2atom[b2])
                 is_connected = False
                 for at1 in ats_b1:
-                    edges = set(self.global_graph.edge[at1])
+                    edges = set(self.global_graph[at1])
                     intersect = ats_b2.intersection(edges)
                     if intersect:
                         is_connected = True
@@ -732,7 +732,7 @@ class BackmapperSettings2:
         charge_to_transfer = []
         progress_indc = 0.0
         progress_indc_total = len(cg_cross_bonds)
-        global_degree = self.global_graph.degree()
+        global_degree = dict(self.global_graph.degree())
         for b1, b2 in cg_cross_bonds:
             n1 = self.global_graph.node[b1]
             n2 = self.global_graph.node[b2]
@@ -785,7 +785,7 @@ class BackmapperSettings2:
                                 atoms_to_remove.extend(tmp_atoms_to_remove)
                                 for ai in tmp_atoms_to_remove:
                                     self.global_graph.remove_node(ai)
-                                global_degree = self.global_graph.degree()
+                                global_degree = dict(self.global_graph.degree())
                                 break
                             else:
                                 print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(

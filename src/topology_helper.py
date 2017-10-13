@@ -153,8 +153,9 @@ def FillFileBuffer(fname, filebuffer, cwd=None, defines=None):
         if "include" in line:
             name = line.split()[1].strip('\"')
             cwd_name = os.path.dirname(name)
-            if cwd_name != '':
-                cwd = cwd_name
+            if cwd_name:
+                cwd = os.path.join(cwd, cwd_name)
+            name = os.path.basename(name)
             FillFileBuffer(name, filebuffer, cwd, defines)
         elif 'define' in line:
             t = line.strip().split()
