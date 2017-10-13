@@ -180,12 +180,12 @@ def _args_backmapping():
         help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--cap_force_ramp', default=None, type=float,
                         help='Gradually switch off cap-force')
-    parser.add_argument('--cap_force_lj', default=50000.0, type=float, help='Max force only for non-bonded terms')
+    parser.add_argument('--cap_force_lj', default=500000.0, type=float, help='Max force only for non-bonded terms')
     parser.add_argument('--two_phase', default=False, type=ast.literal_eval,
                         help='Two phase process, first bonded terms and then non-bonded')
     parser.add_argument('--second_phase_em', default=False, type=ast.literal_eval,
                         help='Second phase with minimize energy')
-    parser.add_argument('--exclusion_list', default=None,
+    parser.add_argument('--exclusion_list', default='exclusion_hyb_topol.list', required=True,
                         help='The exclusion list')
     parser.add_argument('--remove_com', type=int, default=0,
                         help='Resets the total velocity of the system every n-th steps')

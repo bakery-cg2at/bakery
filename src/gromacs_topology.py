@@ -470,17 +470,21 @@ def storeMolecules(f, molecules, mol=""):
     line = f.readlastline()
     while not 'moleculetype' in line:
         line = f.readline()
+        line = line.split(';')[0]
         if not line: break  # break out of while if EOF
     line = f.readline()
+    line = line.split(';')[0]
     while (not f.eof() and not '[' in line):
         if line[0] == ";":  # skip comment lines
             # print "skipping line: "+line.strip("\n")
             line = f.readline()
+            line = line.split(';')[0]
             continue
         fields = line.split()
         # mol = fields[0]
         nrexcl = int(fields[1])
         line = f.readline()
+        line = line.split(';')[0]
     return nrexcl
 
 
@@ -503,13 +507,17 @@ def storeAtoms(f, defaults, types, atomtypes,
     combinationrule = defaults['combinationrule']
 
     line = f.readlastline()
+    line = line.split(';')[0]
     while not 'atoms' in line:
         line = f.readline()
+        line = line.split(';')[0]
         if not line: break  # break out of while if EOF
     line = f.readline()
+    line = line.split(';')[0]
     while (len(line) > 1 and not '[' in line):
         if line[0] == ";":  # skip comment lines
             line = f.readline()
+            line = line.split(';')[0]
             continue
         fields = line.split()
         attypeid = atomtypes[fields[1]]  # map str type to int type
@@ -529,6 +537,7 @@ def storeAtoms(f, defaults, types, atomtypes,
         use_atomtypeparams.update({attypeid: atomtypeparams[attypeid]})
 
         line = f.readline()
+        line = line.split(';')[0]
 
     # Convert to sigma/epsilon
     if combinationrule == 1:
@@ -575,9 +584,11 @@ def storePairs(f, defaults, types, pairtypeparams,
     types_pairtypeid = {}
 
     line = f.readlastline()
+    line = line.split(';')[0]
     in_section = False
     cross_pairs = False
     while line and 'moleculetype' not in line:
+        line = line.split(';')[0]
         if line.startswith('['):
             if 'pairs' in line or 'cross_pairs' in line:
                 in_section = True
@@ -585,9 +596,11 @@ def storePairs(f, defaults, types, pairtypeparams,
             else:
                 in_section = False
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         elif line.startswith(';'):
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         else:
             if in_section:
@@ -624,6 +637,7 @@ def storePairs(f, defaults, types, pairtypeparams,
                         print('Warning! Supported only pair with type 1, given: {}'.format(
                             tmp[2]))
                         line = f.readline()
+                        line = line.split(';')[0]
                         continue
                     sig = float(tmp[3])
                     eps = float(tmp[4])
@@ -637,6 +651,7 @@ def storePairs(f, defaults, types, pairtypeparams,
                     pairs_tmp.append((pid1, pid2, pairtypeid, cross_pairs))
                 pairtypeid += 1
             line = f.readline()
+            line = line.split(';')[0]
 
     f.seek(pos)
     # Extend pairs to copies of molecule
@@ -663,9 +678,11 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
     local_exclusions = []  # excluded pairs of atoms within this mol (local ids)
 
     line = f.readline().strip()
+    line = line.split(';')[0]
     in_section = False
     cross_bond = False
     while line and 'moleculetype' not in line:
+        line = line.split(';')[0]
         if line.startswith('['):
             if 'bonds' in line or 'cross_bonds' in line:
                 in_section = True
@@ -673,9 +690,11 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
             else:
                 in_section = False
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         elif line.startswith(';'):
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         else:
             if in_section:
@@ -707,6 +726,7 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
                 if bondtypeparams[bdtypeid].automaticExclusion():
                     local_exclusions.append((pid1, pid2))
             line = f.readline().strip()
+            line = line.split(';')[0]
 
     f.seek(pos)
     # extend bonds to copies of this molecule
@@ -745,6 +765,7 @@ def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecul
     line = f.readlastline()
 
     line = f.readline().strip()
+    line = line.split(';')[0]
     in_section = False
     cross_angle = False
     while line and 'moleculetype' not in line:
@@ -755,9 +776,11 @@ def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecul
             else:
                 in_section = False
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         elif line.startswith(';'):
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         else:
             if in_section:
@@ -788,6 +811,7 @@ def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecul
                         angletypeparams.update({typeid: temptype})
                 angles_tmp.append((pid1, pid2, pid3, typeid, cross_angle))
         line = f.readline()
+        line = line.split(';')[0]
 
     f.seek(pos)
     # extend angles to copies of this molecule
@@ -814,6 +838,7 @@ def storeDihedrals(f, types, dihedraltypes, dihedraltypeparams, dihedrals,
     line = f.readlastline()
 
     line = f.readline().strip()
+    line = line.split(';')[0]
     in_section = False
     cross_dih = False
 
@@ -844,15 +869,18 @@ def storeDihedrals(f, types, dihedraltypes, dihedraltypeparams, dihedrals,
             else:
                 in_section = False
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         elif line.startswith(';'):
             line = f.readline().strip()
+            line = line.split(';')[0]
             continue
         else:
             if in_section:
                 # Skip improper dihedrals, not supported yet
                 if 'improper' in line:
                     line = f.readline().strip()
+                    line = line.split(';')[0]
                     continue
                 tmp = line.split(';')[0].split()
                 lookup = len(tmp) <= 5
@@ -884,6 +912,7 @@ def storeDihedrals(f, types, dihedraltypes, dihedraltypeparams, dihedrals,
                         dihedraltypeparams.update({dihtypeid: temptype})
                 dihedrals_tmp.append((pid1, pid2, pid3, pid4, dihtypeid, cross_dih))
         line = f.readline()
+        line = line.split(';')[0]
 
     f.seek(pos)
     # extend angles to copies of this molecule

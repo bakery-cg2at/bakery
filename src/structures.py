@@ -40,6 +40,8 @@ CGMolecule = collections.namedtuple(
     ['name', 'ident', 'fragment_name', 'source_coordinate', 'source_topology']
 )
 
+BondedParams = collections.namedtuple('BondedParams', ['params', 'typeid'])
+
 logger = logging.getLogger()
 
 class CGFragment:
@@ -130,6 +132,21 @@ class CGFragment:
                 self.active_sites[t[1]] = int(t[2])
 
 
+def _get_params(input_dict, key_list, raise_exception=True):
+    param = None
+    for key in key_list:
+        param = input_dict.get(tuple(key))
+        if param:
+            return param
+    if not param:
+        if raise_exception:
+            raise RuntimeError('Missing definition for {}'.format(key_list))
+        else:
+            print('Missing definition for {}'.format(key_list))
+            return False
+    return param
+
+
 class BackmapperSettings2:
     def __init__(self, input_xml):
         self.res2atom = collections.defaultdict(list)
@@ -153,6 +170,11 @@ class BackmapperSettings2:
         tree = etree.parse(input_xml)
         self.root = tree.getroot()
         self._parse()
+
+        # AT cross terms
+        self.at_cross_bonds = {}
+        self.at_cross_angles = {}
+        self.at_cross_dihedrals = {}
 
     def _parse(self):
         cg_configuration = self.root.find('cg_configuration')
@@ -208,9 +230,33 @@ class BackmapperSettings2:
         for k, d in self.cg_topology.atomtypes.items():
             d['type'] = 'V'
             self.hyb_topology.atomtypes[k] = d
+        # Separate exclusion for AT and CG; if exclusion present then 
+        # excl_AT=excl_AT = exclusion
+        #
+        excl_at = excl_cg = excl = None
+        if hyb_topology.find('molecule_type').find('exclusion_at') is not None:
+            excl_at = hyb_topology.find('molecule_type').find('exclusion_at').text.strip()
+        if hyb_topology.find('molecule_type').find('exclusion_cg') is not None:
+            excl_cg = hyb_topology.find('molecule_type').find('exclusion_cg').text.strip()
+        if hyb_topology.find('molecule_type').find('exclusion') is not None:
+            excl = hyb_topology.find('molecule_type').find('exclusion').text.strip()
+        else:
+            if excl_at:
+                excl = excl_at
+            elif excl_cg:
+                excl = excl_cg
+            else:
+                raise RuntimeError('exclusion not specified')
+        if excl and not excl_at:
+            excl_at = excl
+        if excl and not excl_cg:
+            excl_cg = excl
+
         self.hyb_topology.moleculetype = {
             'name': hyb_topology.find('molecule_type').find('name').text.strip(),
-            'nrexcl': hyb_topology.find('molecule_type').find('exclusion').text.strip()
+            'nrexcl': excl,
+            'excl_at': excl_at,
+            'excl_cg': excl_cg
         }
         self.hyb_topology.molecules = {
             'name': hyb_topology.find('system').text.strip(),
@@ -227,38 +273,46 @@ class BackmapperSettings2:
         bonded_terms = hyb_topology.findall('bonds')
         for bond_term in bonded_terms:
             params = bond_term.attrib['params'].split()
+            typeid = bond_term.attrib.get('typeid')
             bead_list = bond_term.text.strip().split()
             if len(bead_list) % 2 != 0:
                 raise RuntimeError('Wrong pairs in <bonds> section, found {}'.format(bead_list))
             pair_list = zip(bead_list[::2], bead_list[1::2])
             for p1, p2 in pair_list:
-                self.bond_params[(p1, p2)] = params
-                self.bond_params[(p2, p1)] = params
+                if (p1, p2) in self.bond_params:
+                    raise RuntimeError('Parameters for pair: {} alread defined {}'.format((p1, p2), params))
+                self.bond_params[(p1, p2)] = BondedParams(params, typeid)
+                self.bond_params[(p2, p1)] = BondedParams(params, typeid)
         angle_terms = hyb_topology.findall('angles')
         for angle_term in angle_terms:
             params = angle_term.attrib['params'].split()
+            typeid = angle_term.attrib.get('typeid')
             bead_list = angle_term.text.strip().split()
             if len(bead_list) % 3 != 0:
                 raise RuntimeError('Wrong triplets in <angles> section, found {}'.format(bead_list))
-            for idx in xrange(0, len(bead_list)-3, 3):
+            for idx in xrange(0, len(bead_list), 3):
                 p1, p2, p3 = bead_list[idx], bead_list[idx+1], bead_list[idx+2]
                 if (p1, p2, p3) in self.angle_params:
                     raise RuntimeError('Parameters for triplet: {} already defined {}'.format((p1, p2, p3), params))
-                self.angle_params[(p1, p2, p3)] = params
-                self.angle_params[(p3, p2, p1)] = params
+                self.angle_params[(p1, p2, p3)] = BondedParams(params, typeid)
+                self.angle_params[(p3, p2, p1)] = BondedParams(params, typeid)
+                print('Read angle params for {}-{}-{}: {}'.format(
+                    p1, p2, p3, params))
         dihedral_terms = hyb_topology.findall('dihedrals')
         for dihedral_term in dihedral_terms:
             params = dihedral_term.attrib['params'].split()
+            typeid = dihedral_term.attrib.get('typeid')
             bead_list = dihedral_term.text.strip().split()
             if len(bead_list) % 4 != 0:
                 raise RuntimeError('Wrong quadruplets in <dihedrals> section, found {}'.format(bead_list))
-            for idx in xrange(0, len(bead_list) - 4, 4):
+            for idx in xrange(0, len(bead_list), 4):
                 p1, p2, p3, p4 = bead_list[idx], bead_list[idx + 1], bead_list[idx + 2], bead_list[idx + 3]
                 if (p1, p2, p3, p4) in self.dihedral_params:
                     raise RuntimeError('Parameters for triplet: {} already defined {}'.format((p1, p2, p3, p4), params))
-
-                self.dihedral_params[(p1, p2, p3, p4)] = params
-                self.dihedral_params[(p4, p3, p2, p1)] = params
+                self.dihedral_params[(p1, p2, p3, p4)] = BondedParams(params, typeid)
+                self.dihedral_params[(p4, p3, p2, p1)] = BondedParams(params, typeid)
+                print('Read dihedral params for {}-{}-{}-{}: {}'.format(
+                    p1, p2, p3, p4, params))
 
         self._parse_cg_molecules()
 
@@ -398,6 +452,7 @@ class BackmapperSettings2:
         new_at_id = 1
 
         cg_ids = sorted(self.cg_graph.nodes())
+        cg_atomtypes = []
 
         # Residue graph for getting the residue degree.
         residue_graph = networkx.MultiGraph()
@@ -489,6 +544,7 @@ class BackmapperSettings2:
                 if topol_atom.name in self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id]:
                     raise RuntimeError(
                         '{} already defined, please make sure that atom names are unique'.format(topol_atom.name))
+                cg_atomtypes.append(topol_atom.atom_type)
                 self.hyb_topology.chains[cg_fragment.cg_molecule.ident][res_id][topol_atom.name] = topol_atom
 
                 # Set the atomistic coordinates for this fragment, put it in the
@@ -556,6 +612,47 @@ class BackmapperSettings2:
         self.hyb_topology.write()
         # Write the hybrid coordinate file.
         outfile.write(force=True)
+        # Write only atomistic topology
+        hyb_top = files_io.GROMACSTopologyFile(self.hyb_topology.file_name)
+        hyb_top.read()
+        at_topol = tools.get_atomistic_topology(hyb_top, virtual_atomtypes=cg_atomtypes)
+        at_topol.write('at_{}'.format(self.hyb_topology.file_name))
+
+        # Write the list of bonds, angles and dihedrals to separate files.
+        out_cross_bonds = 'cross_bonds_{}'.format(self.hyb_topology.file_name.replace('.top', '.dat'))
+        out_cross_angles = 'cross_angles_{}'.format(self.hyb_topology.file_name.replace('.top', '.dat'))
+        out_cross_dihedrals = 'cross_dihedrals_{}'.format(self.hyb_topology.file_name.replace('.top', '.dat'))
+        with open(out_cross_bonds, 'w') as outbond:
+            outl = []
+            for k, p in self.at_cross_bonds.items():
+                new_k = map(at_topol.old2new_ids.get, k)
+                if p.typeid:
+                    outl.append([int(p.typeid)] + new_k)
+            outl.sort(key=lambda x: x[0])
+            outbond.write('\n'.join([' '.join(map(str, p)) for p in outl]))
+        print('Saved {}'.format(out_cross_bonds))
+
+        with open(out_cross_angles, 'w') as outbond:
+            outl = []
+            for k, p in self.at_cross_angles.items():
+                new_k = map(at_topol.old2new_ids.get, k)
+                if p.typeid:
+                    outl.append([int(p.typeid)] + new_k)
+            outl.sort(key=lambda x: x[0])
+            outbond.write('\n'.join([' '.join(map(str, p)) for p in outl]))
+        print('Saved {}'.format(out_cross_angles))
+
+        with open(out_cross_dihedrals, 'w') as outbond:
+            outl = []
+            for k, p in self.at_cross_dihedrals.items():
+                new_k = map(at_topol.old2new_ids.get, k)
+                if p.typeid:
+                    outl.append([int(p.typeid)] + new_k)
+            outl.sort(key=lambda x: x[0])
+            outbond.write('\n'.join([' '.join(map(str, p)) for p in outl]))
+        print('Saved {}'.format(out_cross_dihedrals))
+        # Generate exclusion list.
+        self._generate_exclusion_lists()
 
     def rebuild_hybrid_topology(self):
         """Regenerate the hybrid topology based on the new particle ids."""
@@ -752,8 +849,7 @@ class BackmapperSettings2:
         print('Found {} atomistic cross bonds'.format(len(at_cross_bonds)))
         self._generate_atomistic_bonds(at_cross_bonds)
         self._remove_atomistic_particles(set(atoms_to_remove))
-        # Generate exclusion list.
-        self._generate_exclusion_lists()
+
 
     def _generate_atomistic_bonds(self, at_cross_bonds):
         """Generates parameters for atomistic bonds."""
@@ -765,20 +861,6 @@ class BackmapperSettings2:
         angle_key = '{}angles'.format(self.cross_prefix)
         dihedral_key = '{}dihedrals'.format(self.cross_prefix)
 
-        def get_params(input_dict, key_list, raise_exception=True):
-            param = None
-            for key in key_list:
-                param = input_dict.get(tuple(key))
-                if param:
-                    return param
-            if not param:
-                if raise_exception:
-                    raise RuntimeError('Missing definition for {}'.format(key_list))
-                else:
-                    print('Missing definition for {}'.format(key_list))
-                    return False
-            return param
-
         for b1, b2 in at_cross_bonds:
             n1 = self.global_graph.node[b1]
             n2 = self.global_graph.node[b2]
@@ -789,7 +871,12 @@ class BackmapperSettings2:
                     (b2, b1) in self.hyb_topology.new_data[bond_key]):
                 raise RuntimeError('Bond {}-{} already defined in the topology, ??'.format(b1, b2))
 
-            self.hyb_topology.new_data[bond_key][(b1, b2)] = get_params(self.bond_params, [(n1_key, n2_key), (s1_key, s2_key)], True)
+            param = _get_params(
+                self.bond_params,
+                [(n1_key, n2_key), (s1_key, s2_key)],
+                raise_exception=True)
+            self.hyb_topology.new_data[bond_key][(b1, b2)] = param.params
+            self.at_cross_bonds[(b1, b2)] = param
             # Generate angles.
             triplets = tools.gen_bonded_tuples(self.global_graph, 3, (b1, b2))
             quadruplets = tools.gen_bonded_tuples(self.global_graph, 4, (b1, b2))
@@ -804,29 +891,38 @@ class BackmapperSettings2:
                     tuple(reversed(triplet)) in self.hyb_topology.new_data[angle_key])
                 # Here the exception can be raised with missing definition
                 if not (triplet_defined or reverse_triplet_defined):
-                    param = get_params(self.angle_params, [(n1_key, n2_key, n3_key), (s1_key, s2_key, s3_key)], False)
+                    param = _get_params(
+                        self.angle_params,
+                        [(n1_key, n2_key, n3_key), (s1_key, s2_key, s3_key)],
+                        raise_exception=False)
                     if param:
-                        self.hyb_topology.new_data[angle_key][triplet] = param
+                        self.hyb_topology.new_data[angle_key][triplet] = param.params
+                        self.at_cross_angles[triplet] = param
                     else:
                         print('Missing definition of angle: {}-{}-{} (bond {}-{})'.format(
                             n1_key, n2_key, n3_key, b1_key, b2_key))
-                        missing_definitions.add((n1_key, n2_key, n3_key))
+                        missing_definitions.add(tuple([n1_key, n2_key, n3_key] + list(triplet)))
             # Generate dihedrals.
             for quadruplet in quadruplets:
                 n1_key, n2_key, n3_key, n4_key = [
                     '{}:{}'.format(x['chain_name'], x['name'])
                     for x in map(self.global_graph.node.get, quadruplet)]
-                s_keys = [x['name'] for x in map(self.global_graph.node.get, triplet)]
+                s_keys = [x['name'] for x in map(self.global_graph.node.get, quadruplet)]
                 if not (quadruplet in self.hyb_topology.new_data[dihedral_key] or
                             tuple(reversed(quadruplet)) in self.hyb_topology.new_data[dihedral_key]):
-                    param = get_params(self.dihedral_params, [(n1_key, n2_key, n3_key, n4_key), s_keys], False)
+                    param = _get_params(
+                        self.dihedral_params,
+                        [(n1_key, n2_key, n3_key, n4_key), s_keys],
+                        raise_exception=False)
                     if param:
-                        self.hyb_topology.new_data[dihedral_key][quadruplet] = param
+                        self.hyb_topology.new_data[dihedral_key][quadruplet] = param.params
+                        self.at_cross_dihedrals[quadruplet] = param
                     else:
                         print('Missing definition of dihedral: {}-{}-{}-{} (bond {}-{})'.format(
                             n1_key, n2_key, n3_key, n4_key, b1_key, b2_key))
-                        missing_definitions.add((n1_key, n2_key, n3_key, n4_key))
-        fout.writelines('\n'.join([' '.join(x) for x in sorted(missing_definitions)]))
+                        missing_definitions.add(tuple([n1_key, n2_key, n3_key, n4_key] + list(quadruplet)))
+
+        fout.writelines('\n'.join([' '.join(map(str, x)) for x in sorted(missing_definitions, key=lambda l: len(l))]))
         print('Wrote missing definitions in {}'.format(fout_filename))
         fout.close()
 
@@ -842,20 +938,38 @@ class BackmapperSettings2:
 
     def _generate_exclusion_lists(self):
         # Collect all bonds and greate global_graph again...
-        print('Generating exclusion lists, nrexcl={}'.format(self.hyb_topology.moleculetype['nrexcl']))
-        g = networkx.Graph()
-        bonds = [b for b in self.hyb_topology.bonds.keys()]
+        at_g = networkx.Graph()
+        cg_g = networkx.Graph()
+
+        bonds = [b for b in self.hyb_topology.bonds.keys()
+                 if b[0] in self.atom_ids and b[1] in self.atom_ids]
         for k in self.hyb_topology.new_data:
             if 'bonds' in k:
-                bonds.extend([b for b in self.hyb_topology.new_data[k]])
-        g.add_edges_from(bonds)
-        paths = dict(
-            networkx.all_pairs_shortest_path(g, int(self.hyb_topology.moleculetype['nrexcl'])))
+                bonds.extend([b for b in self.hyb_topology.new_data[k]
+                              if b[0] in self.atom_ids and b[1] in self.atom_ids])
+        at_g.add_edges_from(bonds)
+
+        bonds = [b for b in self.hyb_topology.bonds.keys() if b[0] in self.cg2atom and b[1] in self.cg2atom]
+        for k in self.hyb_topology.new_data:
+            if 'bonds' in k:
+                bonds.extend([b for b in self.hyb_topology.new_data[k] if b[0] in self.cg2atom and b[1] in self.cg2atom])
+        cg_g.add_edges_from(bonds)
+
+        print('Generating exclusion lists AT, nrexcl={}'.format(self.hyb_topology.moleculetype['excl_at']))
+        paths = dict(networkx.all_pairs_shortest_path(at_g, int(self.hyb_topology.moleculetype['excl_at'])))
         exclusions = set()
         for l in paths.values():
             for p in l.values():
                 if len(p) > 1:
                     exclusions.add(tuple(sorted([p[0], p[-1]])))
+
+        print('Generating exclusion lists CG, nrexcl={}'.format(self.hyb_topology.moleculetype['excl_cg']))
+        paths = dict(networkx.all_pairs_shortest_path(cg_g, int(self.hyb_topology.moleculetype['excl_cg'])))
+        for l in paths.values():
+            for p in l.values():
+                if len(p) > 1:
+                    exclusions.add(tuple(sorted([p[0], p[-1]])))
+
         output_filename = 'exclusion_{}.list'.format(self.hyb_topology.file_name.split('.')[0])
         out_file = open(output_filename, 'w')
         out_file.writelines('\n'.join(['{} {}'.format(*d) for d in sorted(exclusions)]))
