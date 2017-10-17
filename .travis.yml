@@ -22,7 +22,7 @@ after_success:
         git config --global user.email "jkrajniak@gmail.com";
         git add --all && git commit -m "Documentation update";
         mkdir -p ~/.ssh/
-        openssl aes-256-cbc -K $encrypted_7f9201dd6a91_key -iv $encrypted_7f9201dd6a91_iv -in id_rsa_bakery.enc -out ~/.ssh/id_rsa_bakery -d;
-        chmod 600 ~/.ssh/id_rsa_bakery;
+        openssl aes-256-cbc -K $encrypted_7f9201dd6a91_key -iv $encrypted_7f9201dd6a91_iv -in id_rsa_bakery.enc -out ~/.ssh/id_rsa -d;
+        chmod 600 ~/.ssh/id_rsa;
         git push git@github.com:bakery-cg2at/bakery-cg2at.github.io.git master
     fi;
