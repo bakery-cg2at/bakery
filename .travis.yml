@@ -18,7 +18,7 @@ script:
 after_success:
     - shopt -s extglob && [[ ${TRAVIS_BRANCH} = @(master|v1.*) ]] && DEPLOY=yes
     - if [[ ${TRAVIS_PULL_REQUEST} = false && ${DEPLOY} = yes && ${TRAVIS_JOB_NUMBER} = *.1 ]]; then
-        git clone --depth 1 git@github.com:bakery-cg2at/bakery-cg2at.github.io.git doc/_build/html;
+        git clone --depth 1 https://github.com/bakery-cg2at/bakery-cg2at.github.io.git doc/_build/html;
         cd doc;
         make html;
         cd _build/html;
