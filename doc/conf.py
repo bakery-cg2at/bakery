@@ -17,6 +17,20 @@ import sys
 import os
 import datetime
 
+git_hash = ''
+
+try:
+    import subprocess
+    import path
+    p = subprocess.Popen(['git', 'show', '-s', '--pretty=format:%ci'],
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    if out:
+        git_hash = out.decode().strip()
+except Exception as ex:
+    print(ex)
+    pass
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -53,7 +67,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Bakery'
-copyright = u'2015-{}, Jakub Krajniak'.format(datetime.date.today().year)
+copyright = u'2015-{}, Jakub Krajniak. Documentation version: {}'.format(
+    datetime.date.today().year, git_hash)
 author = u'Jakub Krajniak'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -120,7 +135,7 @@ html_theme = "sphinx_rtd_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'display_version': False,
+    'display_version': True,
     'sticky_navigation': False
 }
 
@@ -192,7 +207,7 @@ html_show_sourcelink = False
 #html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-#html_show_copyright = True
+html_show_copyright = True
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
