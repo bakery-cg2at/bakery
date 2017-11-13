@@ -204,6 +204,15 @@ class BackmapperSettings2:
             raise RuntimeError('Missing tag cg_configuration.coordinate')
         self.cg_coordinate = files_io.read_coordinates(coordinate_file)
 
+        # Predefined active sites map bid1 bid2 label_active_site1 label_active_site2
+        self.predefined_active_sites = {}
+        if cg_configuration.find('predefined_active_sites') is not None:
+            with open(cg_configuration.find('predefined_active_sites').text.strip(), 'r') as inas:
+                for l in inas:
+                    t = l.split()
+                    self.predefined_active_sites[tuple(map(int, t[:2]))] = t[2:]
+        print('Predefined active sites: {}'.format(len(self.predefined_active_sites)))
+
         hyb_configuration = self.root.find('hybrid_configuration')
         self.hybrid_configuration = {
             'file': files_io.GROFile(hyb_configuration.find('file').text.strip())
@@ -738,65 +747,13 @@ class BackmapperSettings2:
             n2 = self.global_graph.node[b2]
             if n1['res_id'] != n2['res_id']:  # Cross bond between beads in different chains.
                 # Look for active sites on both CG molecules.
-                ats1, ats2 = None, None
-                for at1, max_d1 in self.cg_active_sites[b1]:
-                    for at2, max_d2 in self.cg_active_sites[b2]:
-                        b1_key = '{}:{}'.format(at1.chain_name, at1.name)
-                        b2_key = '{}:{}'.format(at2.chain_name, at2.name)
-                        test_bond = self.bond_params.get((b1_key, b2_key))
-                        if not test_bond:
-                            test_bond = self.bond_params.get((at1.name, at2.name))
-                        if (test_bond and self.global_graph.has_node(at1.atom_id)
-                                and self.global_graph.has_node(at2.atom_id)):
-                            at1_deg = global_degree[at1.atom_id]
-                            at2_deg = global_degree[at2.atom_id]
-                            at_remove1 = self.atom_id2fragment[b1].active_sites_remove_map.get(b1_key)
-                            at_remove2 = self.atom_id2fragment[b2].active_sites_remove_map.get(b2_key)
-                            tmp_atoms_to_remove = []
-                            valid = True
-                            # Before we check the degree, let's first try to remove atoms (if they are defined to
-                            # remove and after that compare the degree.
-                            if at_remove1:
-                                for atr1 in at_remove1:
-                                    atr_chain_name, atr_name = atr1.split(':')[1], atr1.split(':')[2]
-                                    atr1_id = self.mol_atomname_map[atr_chain_name][at1.chain_idx][atr_name]
-                                    if not self.global_graph.has_node(atr1_id):
-                                        valid = False
-                                        break
-                                    tmp_atoms_to_remove.append(atr1_id)
-                                    if self.global_graph.has_edge(atr1_id, at1.atom_id):
-                                        at1_deg -= 1
-                            if at_remove2 and valid:
-                                for atr2 in at_remove2:
-                                    atr_chain_name, atr_name = atr2.split(':')[1], atr2.split(':')[2]
-                                    atr2_id = self.mol_atomname_map[atr_chain_name][at2.chain_idx][atr_name]
-                                    if not self.global_graph.has_node(atr2_id):
-                                        valid = False
-                                        break
-                                    tmp_atoms_to_remove.append(atr2_id)
-                                    if self.global_graph.has_edge(atr2_id, at2.atom_id):
-                                        at2_deg -= 1
+                if self.predefined_active_sites:
+                    ats1, ats2, global_degree = self._get_predefined_active_sites(
+                        b1, b2, global_degree, atoms_to_remove)
+                else:
+                    ats1, ats2, global_degree = self._search_active_sites(
+                        b1, b2, global_degree, atoms_to_remove)
 
-                            # Check the degree after update with virtual removing of atoms.
-                            if at1_deg < max_d1 and at2_deg < max_d2 and valid:
-                                # Found correct pair of active sites. Remove the atoms that were
-                                # connected to this atom if in settings the set of atoms to remove were defined.
-                                ats1, ats2 = at1, at2   # Pair of selected atoms.
-                                atoms_to_remove.extend(tmp_atoms_to_remove)
-                                for ai in tmp_atoms_to_remove:
-                                    self.global_graph.remove_node(ai)
-                                global_degree = dict(self.global_graph.degree())
-                                break
-                            else:
-                                print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
-                                    deg1=at1_deg, deg2=at2_deg, b1=b1_key, b2=b2_key, max_d1=max_d1, max_d2=max_d2, valid=valid,
-                                    b1id=b1, b2id=b2
-                                ))
-                        else:
-                            print('Params for {}-{} not found'.format(b1_key, b2_key))
-                    if ats1 is not None and ats2 is not None:
-                        # Found active sites, break the for at1, for at2 loops
-                        break
                 # End for at1, for at2 loops
                 if ats1 is not None and ats2 is not None:
                     # Selected proper active sites.
@@ -850,6 +807,153 @@ class BackmapperSettings2:
         self._generate_atomistic_bonds(at_cross_bonds)
         self._remove_atomistic_particles(set(atoms_to_remove))
 
+    def _get_predefined_active_sites(self, b1, b2, global_degree, atoms_to_remove):
+        """Look for correct active sites for CG bonds b1-b2."""
+        ats1, ats2 = None, None
+        old_cg_id1 = self.cg_new_id_old[b1]
+        old_cg_id2 = self.cg_new_id_old[b2]
+        predefined_as1, predefined_as2 = self.predefined_active_sites.get(
+            (old_cg_id1, old_cg_id2), self.predefined_active_sites.get(
+                (old_cg_id2, old_cg_id1)))
+        if not predefined_as1 or not predefined_as2:
+            raise RuntimeError('Cannot read predefined active sites for CG bond {}-{}'.format(
+                old_cg_id1, old_cg_id2))
+        as1 = [s for s in self.cg_active_sites[b1] if s[0].name == predefined_as1]
+        if len(as1) > 1:
+            raise RuntimeError('Found multiple candidates for active site of CG1 {}'.format(b1))
+        if not as1:
+            raise RuntimeError('Cannot find active site for CG bond {}-{}'.format(
+                old_cg_id1, old_cg_id2))
+        as2 = [s for s in self.cg_active_sites[b2] if s[0].name == predefined_as2]
+        if len(as2) > 1:
+            raise RuntimeError('Found multiple candidates for active site of CG2 {}'.format(b2))
+        if not as1:
+            raise RuntimeError('Cannot find active site for CG bond {}-{}'.format(
+                old_cg_id1, old_cg_id2))
+        at1, max_d1 = as1[0]
+        at2, max_d2 = as2[0]
+
+        #for at1, max_d1 in self.cg_active_sites[b1]:
+        #    for at6, max_d2 in self.cg_active_sites[b2]:
+        b1_key = '{}:{}'.format(at1.chain_name, at1.name)
+        b2_key = '{}:{}'.format(at2.chain_name, at2.name)
+        test_bond = self.bond_params.get((b1_key, b2_key))
+        if not test_bond:
+            test_bond = self.bond_params.get((at1.name, at2.name))
+        if (test_bond and self.global_graph.has_node(at1.atom_id)
+                and self.global_graph.has_node(at2.atom_id)):
+            at1_deg = global_degree[at1.atom_id]
+            at2_deg = global_degree[at2.atom_id]
+            at_remove1 = self.atom_id2fragment[b1].active_sites_remove_map.get(b1_key)
+            at_remove2 = self.atom_id2fragment[b2].active_sites_remove_map.get(b2_key)
+            tmp_atoms_to_remove = []
+            valid = True
+            # Before we check the degree, let's first try to remove atoms (if they are defined to
+            # remove and after that compare the degree.
+            if at_remove1:
+                for atr1 in at_remove1:
+                    atr_chain_name, atr_name = atr1.split(':')[1], atr1.split(':')[2]
+                    atr1_id = self.mol_atomname_map[atr_chain_name][at1.chain_idx][atr_name]
+                    if not self.global_graph.has_node(atr1_id):
+                        valid = False
+                    tmp_atoms_to_remove.append(atr1_id)
+                    if self.global_graph.has_edge(atr1_id, at1.atom_id):
+                        at1_deg -= 1
+            if at_remove2 and valid:
+                for atr2 in at_remove2:
+                    atr_chain_name, atr_name = atr2.split(':')[1], atr2.split(':')[2]
+                    atr2_id = self.mol_atomname_map[atr_chain_name][at2.chain_idx][atr_name]
+                    if not self.global_graph.has_node(atr2_id):
+                        valid = False
+                    tmp_atoms_to_remove.append(atr2_id)
+                    if self.global_graph.has_edge(atr2_id, at2.atom_id):
+                        at2_deg -= 1
+
+            # Check the degree after update with virtual removing of atoms.
+            if at1_deg < max_d1 and at2_deg < max_d2 and valid:
+                # Found correct pair of active sites. Remove the atoms that were
+                # connected to this atom if in settings the set of atoms to remove were defined.
+                ats1, ats2 = at1, at2   # Pair of selected atoms.
+                atoms_to_remove.extend(tmp_atoms_to_remove)
+                for ai in tmp_atoms_to_remove:
+                    self.global_graph.remove_node(ai)
+                global_degree = dict(self.global_graph.degree())
+            else:
+                print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
+                    deg1=at1_deg, deg2=at2_deg, b1=b1_key, b2=b2_key, max_d1=max_d1, max_d2=max_d2, valid=valid,
+                    b1id=b1, b2id=b2
+                ))
+        else:
+            print('Params for {}-{} not found'.format(b1_key, b2_key))
+        if ats1 is None or ats2 is None:
+            # Found active sites, break the for at1, for at2 loops
+            raise RuntimeError('Active sites not found')
+
+        return ats1, ats2, global_degree
+
+    def _search_active_sites(self, b1, b2, global_degree, atoms_to_remove):
+        """Look for correct active sites for CG bonds b1-b2."""
+        ats1, ats2 = None, None
+        for at1, max_d1 in self.cg_active_sites[b1]:
+            for at2, max_d2 in self.cg_active_sites[b2]:
+                b1_key = '{}:{}'.format(at1.chain_name, at1.name)
+                b2_key = '{}:{}'.format(at2.chain_name, at2.name)
+                test_bond = self.bond_params.get((b1_key, b2_key))
+                if not test_bond:
+                    test_bond = self.bond_params.get((at1.name, at2.name))
+                if (test_bond and self.global_graph.has_node(at1.atom_id)
+                        and self.global_graph.has_node(at2.atom_id)):
+                    at1_deg = global_degree[at1.atom_id]
+                    at2_deg = global_degree[at2.atom_id]
+                    at_remove1 = self.atom_id2fragment[b1].active_sites_remove_map.get(b1_key)
+                    at_remove2 = self.atom_id2fragment[b2].active_sites_remove_map.get(b2_key)
+                    tmp_atoms_to_remove = []
+                    valid = True
+                    # Before we check the degree, let's first try to remove atoms (if they are defined to
+                    # remove and after that compare the degree.
+                    if at_remove1:
+                        for atr1 in at_remove1:
+                            atr_chain_name, atr_name = atr1.split(':')[1], atr1.split(':')[2]
+                            atr1_id = self.mol_atomname_map[atr_chain_name][at1.chain_idx][atr_name]
+                            if not self.global_graph.has_node(atr1_id):
+                                valid = False
+                                break
+                            tmp_atoms_to_remove.append(atr1_id)
+                            if self.global_graph.has_edge(atr1_id, at1.atom_id):
+                                at1_deg -= 1
+                    if at_remove2 and valid:
+                        for atr2 in at_remove2:
+                            atr_chain_name, atr_name = atr2.split(':')[1], atr2.split(':')[2]
+                            atr2_id = self.mol_atomname_map[atr_chain_name][at2.chain_idx][atr_name]
+                            if not self.global_graph.has_node(atr2_id):
+                                valid = False
+                                break
+                            tmp_atoms_to_remove.append(atr2_id)
+                            if self.global_graph.has_edge(atr2_id, at2.atom_id):
+                                at2_deg -= 1
+
+                    # Check the degree after update with virtual removing of atoms.
+                    if at1_deg < max_d1 and at2_deg < max_d2 and valid:
+                        # Found correct pair of active sites. Remove the atoms that were
+                        # connected to this atom if in settings the set of atoms to remove were defined.
+                        ats1, ats2 = at1, at2   # Pair of selected atoms.
+                        atoms_to_remove.extend(tmp_atoms_to_remove)
+                        for ai in tmp_atoms_to_remove:
+                            self.global_graph.remove_node(ai)
+                        global_degree = dict(self.global_graph.degree())
+                        break
+                    else:
+                        print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
+                            deg1=at1_deg, deg2=at2_deg, b1=b1_key, b2=b2_key, max_d1=max_d1, max_d2=max_d2, valid=valid,
+                            b1id=b1, b2id=b2
+                        ))
+                else:
+                    print('Params for {}-{} not found'.format(b1_key, b2_key))
+            if ats1 is not None and ats2 is not None:
+                # Found active sites, break the for at1, for at2 loops
+                break
+
+        return ats1, ats2, global_degree
 
     def _generate_atomistic_bonds(self, at_cross_bonds):
         """Generates parameters for atomistic bonds."""
