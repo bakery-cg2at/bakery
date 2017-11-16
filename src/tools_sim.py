@@ -77,11 +77,7 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
 
 
 def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonded_params=None,  # NOQA
-<<<<<<< HEAD
-                                hadress=False, ftpl=None, interaction=None, table_groups=None):
-=======
-                                hadress=False, ftpl=None, interaction=None, table_groups=[], is_cg=False):
->>>>>>> 44ff6585839aeb6144ba2be4b62bacb98e6d5b1a
+                                hadress=False, ftpl=None, interaction=None, table_groups=None, is_cg=False):
     """ Set lennard jones interactions which were read from gromacs based on the atomypes"""
     defaults = input_conf.defaults
     atomtypeparams = input_conf.atomtypeparams
