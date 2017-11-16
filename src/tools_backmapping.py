@@ -68,12 +68,24 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         nonbonded_params=input_conf.nonbond_params,
         interaction=tab_cg_interaction,
         table_groups=table_groups)
+
+    lj_cg = tools.setLennardJonesInteractions(
+        system=system,
+        input_conf=input_conf,
+        verletlist=verletlistCG,
+        cutoff=args.cg_cutoff,
+        nonbonded_params=input_conf.nonbond_params,
+        interaction=espressopp.interaction.VerletListHybridLennardJones(verletlistCG, True)
+    )
     if lj_interaction is not None:
         system.addInteraction(lj_interaction, 'lj')
     if coulomb_interaction is not None:
         system.addInteraction(coulomb_interaction, 'coulomb')
     if tab_cg is not None:
         system.addInteraction(tab_cg, 'tab-cg')
+
+    if lj_cg is not None:
+        system.addInteraction(lj_cg, 'lj-cg')
 
     # Save interactions
     if args.save_interactions:
