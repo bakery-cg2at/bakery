@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 """
 Copyright (C) 2015-2016 Jakub Krajniak <jkrajniak@gmail.com>
 
@@ -92,7 +94,7 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
         nonbonded_params = {}
 
     combinationrule = int(defaults['combinationrule'])
-    print "Setting up Lennard-Jones interactions"
+    print("Setting up Lennard-Jones interactions")
 
     type_pairs = set()
     for type_1, pi in atomtypeparams.iteritems():
@@ -117,7 +119,7 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
             continue
         param = nonbonded_params.get((type_1, type_2))
         if param:
-            print 'Using defined non-bonded cross params', param
+            print('Using defined non-bonded cross params', param)
             sig, eps = param['sig'], param['eps']
         else:
             sig_1, eps_1 = float(pi['sig']), float(pi['eps'])
@@ -129,7 +131,7 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
                 sig = (sig_1*sig_2)**(1.0/2.0)
                 eps = (eps_1*eps_2)**(1.0/2.0)
         if sig > 0.0 and eps > 0.0:
-            print "Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps", eps, "cutoff", cutoff
+            print("Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps", eps, "cutoff", cutoff)
             ljpot = espressopp.interaction.LennardJones(epsilon=eps, sigma=sig, shift='auto',
                                                         cutoff=cutoff)
             if ftpl:
@@ -139,15 +141,24 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     return interaction
 
 
-def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None, table_groups=[]):
+def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=None,
+                             table_groups=None, nonbonded_params=None):
     """Sets tabulated potential for types that has particletype set to 'V'."""
     spline_type = 1
     if interaction is None:
         interaction = espressopp.interaction.VerletListTabulated(vl)
 
+    if table_groups is None:
+        table_groups = []
+
+    if nonbonded_params is None:
+        nonbonded_params = {}
+
     type_pairs = set()
     for type_1, v1 in atomtypeparams.iteritems():
         for type_2, v2 in atomtypeparams.iteritems():
+            if (type_1, type_2) in nonbonded_params or (type_2, type_1) in nonbonded_params:
+                continue
             if v1.get('particletype', 'A') == 'V' and v2.get('particletype', 'A') == 'V':
                 type_pairs.add(tuple(sorted([type_1, type_2])))
             elif (v1.get('atnum') in table_groups and v2.get('atnum') in table_groups) or (

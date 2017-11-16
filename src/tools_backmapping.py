@@ -11,7 +11,7 @@ import gromacs_topology
 import cPickle
 
 
-def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups=[]):
+def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups=None):
     exclusionlistAT = [p for p in input_conf.exclusions
                        if p[0] in at_particle_ids and p[1] in at_particle_ids]
     exclusionlistCG = [p for p in input_conf.exclusions
@@ -29,8 +29,11 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         print('Defined max_force for LJ potential: {}'.format(args.cap_force_lj))
         lj_interaction.max_force = args.cap_force_lj
     lj_interaction = tools.setLennardJonesInteractions(
-        system, input_conf, verletlistAT, args.lj_cutoff,
-        input_conf.nonbond_params,
+        system=system,
+        input_conf=input_conf,
+        verletlist=verletlistAT,
+        cutoff=args.lj_cutoff,
+        nonbonded_params=input_conf.nonbond_params,
         interaction=lj_interaction,
         table_groups=table_groups)
 
@@ -56,12 +59,13 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
     # tools.setPairInteractions(
     #     system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
     tab_cg_interaction = espressopp.interaction.VerletListHybridTabulated(verletlistCG, True)
-    #if args.cap_force_lj:
-    #    tab_cg_interaction.max_force = args.cap_force_lj
+    if args.cap_force_lj:
+       tab_cg_interaction.max_force = args.cap_force_lj
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
         vl=verletlistCG,
         cutoff=args.cg_cutoff,
+        nonbonded_params=input_conf.nonbond_params,
         interaction=tab_cg_interaction,
         table_groups=table_groups)
     if lj_interaction is not None:
