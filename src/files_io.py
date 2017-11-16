@@ -209,7 +209,7 @@ class GROFile(CoordinateFile):
             gro_chain_idx = int(line[0:5].strip())
             if last_chain_idx != gro_chain_idx:  # Increment chain_idx when the original one change
                 chain_idx += 1
-                last_chain_idx = chain_idx
+                last_chain_idx = gro_chain_idx
             chain_name = line[5:10].strip()
             at_name = line[10:15].strip()
             self.id_map[at_id] = at_id
