@@ -75,7 +75,8 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         verletlist=verletlistCG,
         cutoff=args.cg_cutoff,
         nonbonded_params=input_conf.nonbond_params,
-        interaction=espressopp.interaction.VerletListHybridLennardJones(verletlistCG, True)
+        interaction=espressopp.interaction.VerletListHybridLennardJones(verletlistCG, True),
+        is_cg=True
     )
     if lj_interaction is not None:
         system.addInteraction(lj_interaction, 'lj')
