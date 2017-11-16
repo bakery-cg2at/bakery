@@ -77,7 +77,7 @@ def setSystemAnalysis(system, integrator, args, interval, filename_suffix=None,
 
 
 def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonded_params=None,  # NOQA
-                                hadress=False, ftpl=None, interaction=None, table_groups=[]):
+                                hadress=False, ftpl=None, interaction=None, table_groups=[], is_cg=False):
     """ Set lennard jones interactions which were read from gromacs based on the atomypes"""
     defaults = input_conf.defaults
     atomtypeparams = input_conf.atomtypeparams
@@ -102,7 +102,9 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
             if (pi.get('atnum') in table_groups and pj.get('atnum') in table_groups) or (
                 pi.get('atname') in table_groups and pj.get('atname') in table_groups):
                 continue
-            elif pi['particletype'] != 'V' and pj['particletype'] != 'V':
+            if is_cg and (pi['particletype'] == 'V' and pj['particletype'] == 'V'):
+                type_pairs.add(tuple(sorted([type_1, type_2])))
+            elif not is_cg and (pi['particletype'] != 'V' and pj['particletype'] != 'V'):
                 type_pairs.add(tuple(sorted([type_1, type_2])))
 
     type_pairs = sorted(type_pairs)
@@ -114,7 +116,7 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     for type_1, type_2 in type_pairs:
         pi = atomtypeparams[type_1]
         pj = atomtypeparams[type_2]
-        if pi['particletype'] == 'V' or pj['particletype'] == 'V':
+        if not is_cg and (pi['particletype'] == 'V' or pj['particletype'] == 'V'):
             print('Skip {}-{}'.format(type_1, type_2))
             continue
         param = nonbonded_params.get((type_1, type_2))
