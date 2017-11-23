@@ -197,7 +197,7 @@ def _args_backmapping():
                         help='Store chemical state')
     parser.add_argument('--store_lambda', default=True, type=ast.literal_eval,
                         help='Store lambda parameter')
-    parser.add_argument('--table_groups', default=None,
+    parser.add_argument('--table_groups', required=True,
                         help='Name of CG groups to read from tables')
     parser.add_argument('--nonuniform_lambda', default=False, type=ast.literal_eval,
                         help='Distribute initial lambda non-uniformly in the box')

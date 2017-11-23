@@ -11,7 +11,7 @@ import gromacs_topology
 import cPickle
 
 
-def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups=None):
+def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups):
     exclusionlistAT = [p for p in input_conf.exclusions
                        if p[0] in at_particle_ids and p[1] in at_particle_ids]
     exclusionlistCG = [p for p in input_conf.exclusions
@@ -39,9 +39,9 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
 
     coulomb_interaction = espressopp.interaction.VerletListHybridReactionFieldGeneralized(
         verletlistAT, False)
-    if args.cap_force_lj:
-        coulomb_interaction.max_force = args.cap_force_lj
-        print('Defined max_force for Coulomb potential: {}'.format(args.cap_force_lj))
+    #if args.cap_force_lj:
+    #    coulomb_interaction.max_force = args.cap_force_lj
+    #    print('Defined max_force for Coulomb potential: {}'.format(args.cap_force_lj))
     if args.coulomb_cutoff > 0.0:
         coulomb_interaction = gromacs_topology.setCoulombInteractions(
             system, verletlistAT, args.coulomb_cutoff, input_conf.atomtypeparams,
@@ -76,7 +76,8 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         cutoff=args.cg_cutoff,
         nonbonded_params=input_conf.nonbond_params,
         interaction=espressopp.interaction.VerletListHybridLennardJones(verletlistCG, True),
-        is_cg=True
+        is_cg=True,
+        table_groups=table_groups
     )
     if lj_interaction is not None:
         system.addInteraction(lj_interaction, 'lj')

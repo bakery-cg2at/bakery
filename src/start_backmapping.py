@@ -227,9 +227,15 @@ def main():  # NOQA
     dynamic_res.active = False
     dynamic_res.resolution = args.initial_resolution
 
+    if args.table_groups is None:
+        table_groups = []
+    else:
+        table_groups = args.table_groups.split(',')
+        print('Using table groups: {}'.format(table_groups))
+
     # Define interactions.
     verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
-        system, args, input_conf, at_particle_ids, cg_particle_ids)
+        system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups=table_groups)
 
     hook_setup_interactions(system, input_conf, verletlistAT, verletlistCG)
 

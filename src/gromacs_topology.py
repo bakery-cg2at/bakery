@@ -1105,12 +1105,11 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
                            pot=None, interaction=None
                            ):
     pref = 138.935485  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2
-
     type_pairs = sorted({
                             tuple(sorted([type_1, type_2]))
                             for type_1, pi in atomtypeparams.iteritems()
                             for type_2, pj in atomtypeparams.iteritems()
-                            if ((pi.get('charge', 0.0) != 0.0 and pj.get('charge', 0.0) != 0.0) and \
+                            if (#(pi.get('charge', 0.0) != 0.0 and pj.get('charge', 0.0) != 0.0) and \
                                 (pi['particletype'] != 'V' and pj['particletype'] != 'V'))
                             })
 
