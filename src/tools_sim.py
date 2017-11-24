@@ -84,11 +84,11 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     if interaction is None:
         if ftpl:
             if hadress:
-                interaction = espressopp.interaction.VerletListHadressLennardJones(verletlist, ftpl)
+                interaction = espressopp.interaction.VerletListHadressLennardJonesEnergyCapped(verletlist, ftpl)
             else:
-                interaction = espressopp.interaction.VerletListAdressLennardJones(verletlist, ftpl)
+                interaction = espressopp.interaction.VerletListAdressLennardJonesEnergyCapped(verletlist, ftpl)
         else:
-            interaction = espressopp.interaction.VerletListLennardJones(verletlist)
+            interaction = espressopp.interaction.VerletListLennardJonesEnergyCapped(verletlist)
 
     if nonbonded_params is None:
         nonbonded_params = {}
@@ -137,8 +137,8 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
                 eps = (eps_1*eps_2)**(1.0/2.0)
         if sig > 0.0 and eps > 0.0:
             print("Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps", eps, "cutoff", cutoff)
-            ljpot = espressopp.interaction.LennardJones(epsilon=eps, sigma=sig, shift='auto',
-                                                        cutoff=cutoff)
+            ljpot = espressopp.interaction.LennardJonesEnergyCapped(epsilon=eps, sigma=sig, shift='auto',
+                                                                    cutoff=cutoff, caprad=0.5*sig)
             if ftpl:
                 interaction.setPotentialAT(type1=type_1, type2=type_2, potential=ljpot)
             else:

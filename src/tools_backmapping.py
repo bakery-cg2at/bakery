@@ -25,9 +25,9 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         system, cutoff=args.cg_cutoff, exclusionlist=exclusionlistCG)
 
     lj_interaction = espressopp.interaction.VerletListHybridLennardJones(verletlistAT, False)
-    if args.cap_force_lj:
-        print('Defined max_force for LJ potential: {}'.format(args.cap_force_lj))
-        lj_interaction.max_force = args.cap_force_lj
+    # if args.cap_force_lj:
+    #     print('Defined max_force for LJ potential: {}'.format(args.cap_force_lj))
+    #     lj_interaction.max_force = args.cap_force_lj
     lj_interaction = tools.setLennardJonesInteractions(
         system=system,
         input_conf=input_conf,
