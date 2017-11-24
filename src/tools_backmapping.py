@@ -59,8 +59,8 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
     # tools.setPairInteractions(
     #     system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
     tab_cg_interaction = espressopp.interaction.VerletListHybridTabulated(verletlistCG, True)
-    if args.cap_force_lj:
-       tab_cg_interaction.max_force = args.cap_force_lj
+    #if args.cap_force_lj:
+    #   tab_cg_interaction.max_force = args.cap_force_lj
     tab_cg = tools.setTabulatedInteractions(
         system, input_conf.atomtypeparams,
         vl=verletlistCG,
