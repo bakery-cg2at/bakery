@@ -31,6 +31,19 @@ If you like to use the method in your work, please cite following materials:
   URL = { http://dx.doi.org/10.1021/acs.jctc.6b00595},
 }
 ```
+If in your work you willing to reverse map complex polymer structures like polymer networks, please cite following article:
+```
+@article {JCC:JCC25129,
+    author = {Krajniak, Jakub and Zhang, Zidan and Pandiyan, Sudharsan and Nies, Eric and Samaey, Giovanni},
+    title = {Reverse mapping method for complex polymer systems},
+    journal = {Journal of Computational Chemistry},
+    issn = {1096-987X},
+    url = {http://dx.doi.org/10.1002/jcc.25129},
+    doi = {10.1002/jcc.25129},
+    pages = {n/a--n/a},
+    keywords = {molecular dynamics, simulation, soft matter, polymer networks, reverse mapping, epoxy, melamine, dendritic, polyester},
+}
+```
 
 and the software package:
 
