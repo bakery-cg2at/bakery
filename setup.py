@@ -1,5 +1,5 @@
 """
-Copyright (C) 2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2016,2019 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is part of bakery.
 
@@ -37,9 +37,9 @@ config = {
     'author_email': 'jkrajniak@gmail.com',
     'license': 'GPLv3',
     'install_requires':[
-        'networkx'
+        'networkx==2.0.0'
     ],
-    'url': 'https://github.com/bakery-cg2at',
+    'url': 'https://github.com/bakery-cg2at/bakery',
     'test_suite': 'src.tests',
 }
 
