@@ -1,5 +1,5 @@
 """
-Copyright (C) 2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2016,2019 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is distributed under free software licence:
 you can redistribute it and/or modify it under the terms of the
@@ -27,90 +27,6 @@ def _args_analyze():
     parser.add_argument('--top', '--topology', required=True, help='Topology file')
     
     return parser
-
-
-def _args_md():
-    parser = general_tools.MyArgParser(description='Runs classical MD simulation',
-                                       fromfile_prefix_chars='@')
-    parser.add_argument('--conf', required=True, help='Input .gro coordinate file')
-    parser.add_argument('--top', '--topology', required=True, help='Topology file',
-                        dest='top')
-    parser.add_argument('--node_grid')
-    parser.add_argument('--skin', type=float, default=0.16,
-                        help='Skin value for Verlet list')
-    parser.add_argument('--run', type=int, default=10000,
-                        help='Number of simulation steps')
-    parser.add_argument('--int_step', default=1000, type=int, help='Steps in integrator')
-    parser.add_argument('--rng_seed', type=int, help='Seed for RNG', required=False,
-                        default=random.randint(1000, 10000))
-    parser.add_argument('--output_prefix',
-                        default='sim', type=str,
-                        help='Prefix for output files')
-    parser.add_argument('--output_file',
-                        default='trjout.h5', type=str,
-                        help='Name of output trajectory file')
-    parser.add_argument('--thermostat',
-                        default='lv',
-                        choices=('lv', 'vr'),
-                        help='Thermostat to use, lv: Langevine, vr: Stochastic velocity rescale')
-    parser.add_argument('--barostat', default='lv', choices=('lv', 'br'),
-                        help='Barostat to use, lv: Langevine, br: Berendsen')
-    parser.add_argument('--barostat_tau', default=5.0, type=float,
-                        help='Tau parameter for Berendsen barostat')
-    parser.add_argument('--barostat_mass', default=50.0, type=float,
-                        help='Mass parameter for Langevin barostat')
-    parser.add_argument('--barostat_gammaP', default=1.0, type=float,
-                        help='gammaP parameter for Langevin barostat')
-    parser.add_argument('--thermostat_gamma', type=float, default=0.5,
-                        help='Thermostat coupling constant')
-    parser.add_argument('--temperature', default=423.0, type=float, help='Temperature')
-    parser.add_argument('--pressure', help='Pressure', type=float)
-    parser.add_argument('--trj_collect', default=1000, type=int,
-                        help='Collect trajectory every (step)')
-    parser.add_argument('--energy_collect', default=1000, type=int,
-                        help='Collect energy every (step)')
-    parser.add_argument('--dt', default=0.001, type=float,
-                        help='Integrator time step')
-    parser.add_argument('--lj_cutoff', default=1.2, type=float,
-                        help='Cutoff of atomistic non-bonded interactions')
-    parser.add_argument('--cg_cutoff', default=1.4, type=float,
-                        help='Cuoff of coarse-grained non-bonded interactions')
-    parser.add_argument('--coulomb_epsilon1', default=1.0, type=float,
-                        help='Epsilon_1 for coulomb interactions')
-    parser.add_argument('--coulomb_epsilon2', default=78.0, type=float,
-                        help='Epsilon_2 for coulomb interactions')
-    parser.add_argument('--coulomb_kappa', default=0.0, type=float,
-                        help='Kappa paramter for coulomb interactions')
-    parser.add_argument('--coulomb_cutoff', default=0.9, type=float,
-                        help='Cut-off for generalized reactive coulomb reactions')
-    parser.add_argument('--table_groups', default=None,
-                        help='Name of CG groups to read from tables')
-    parser.add_argument('--initial_step', default=0,
-                        help='Initial integrator step (useful for continue simulation',
-                        type=int)
-    parser.add_argument('--debug', default=None, help='Turn on logging mechanism')
-    parser.add_argument('--start_ar', default=0, type=int, help='When to start chemical reactions')
-    parser.add_argument('--interactive', default=False, type=ast.literal_eval,
-                        help='Run interactive mode')
-    parser.add_argument('--store_species', default=False, type=ast.literal_eval,
-                        help='Store particle types')
-    parser.add_argument('--store_force', default=False, type=ast.literal_eval,
-                        help='Store particle force')
-    parser.add_argument('--store_state', default=True, type=ast.literal_eval,
-                        help='Store chemical state')
-    parser.add_argument('--store_lambda', default=False, type=ast.literal_eval,
-                        help='Store lambda parameter')
-    parser.add_argument('--exclusion_list', default=None,
-                        help='The exclusion list')
-    parser.add_argument('--gro_trj', default=None, help='Store .gro', type=ast.literal_eval)
-    em_group = parser.add_argument_group('Energy minimization')
-    em_group.add_argument('--em', help='Maximum number of steps to perform in EM', type=int, default=0)
-    em_group.add_argument('--em_gamma', help='Gamma parameter for force damping', type=float, default=0.0001)
-    em_group.add_argument('--em_ftol', help='Force tolerance', type=float, default=10.0)
-    em_group.add_argument('--em_max_d', help='Max displacement x box dimension', default=0.001, type=float)
-
-    return parser
-
 
 def _args_backmapping():
     parser = general_tools.MyArgParser(
