@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 numpy = "*"
 networkx = "==2.0"
+mpi4py = "*"
+ipdb = "*"
 
 [requires]
 python_version = "2.7"

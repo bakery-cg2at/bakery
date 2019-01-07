@@ -491,13 +491,17 @@ class BackmapperSettings2:
                                   if x[1] == residue_name and (x[0] == '*' or x[0] == residue_degree)]
 
             selected_fragment = None
+            wrong_cg_nodes = []
             for possible_fragment in possible_fragments:
                 f = self.fragments[possible_fragment]
                 selected_fragment = possible_fragment
+                # Iterates over all cg nodes for given residue.
                 for cg_id in cg_nodes:
                     cg_node = self.cg_graph.node[cg_id]
                     if str(cg_node['degree']) not in f[cg_node['name']] and '*' not in f[cg_node['name']]:
                         selected_fragment = None
+                        wrong_cg_nodes.append(
+                            (cg_node, f[cg_node['name']]))
                 if selected_fragment is not None:
                     break
             if selected_fragment is None:
@@ -508,6 +512,12 @@ class BackmapperSettings2:
 
                 print(('It is very likely that your .xml file does not'
                        ' contains definition of a fragment for residue {}').format(residue_name))
+
+                print('====== List of problematic CG nodes ======')
+                for wcn in wrong_cg_nodes:
+                    print(wcn)
+
+                print(40*'=')
 
                 raise RuntimeError(
                     'Problem with the option file, could not find correct fragment for molecule {}'.format(res_id))

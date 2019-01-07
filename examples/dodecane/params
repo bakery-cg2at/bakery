@@ -20,3 +20,4 @@ output_prefix=sim0
 thermostat_whole=True
 cap_force=10000
 cap_force_ramp=10.0
+table_groups=A,B
