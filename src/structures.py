@@ -66,6 +66,7 @@ class CGFragment:
         self.active_sites_remove_map = as_remove
 
         # Select the set of atomistic coordinates.
+        fragment_from_coordinate = False
         if cg_molecule.fragment_name:
             fragment_name = cg_molecule.fragment_name
         else:
@@ -73,12 +74,29 @@ class CGFragment:
                 raise RuntimeError('Please specify fragment_name for {} as it contains more than one chain type'.format(
                     cg_molecule.name))
             fragment_name = self.coordinate.chains.keys()[0]
+            fragment_from_coordinate = True
         chains = self.coordinate.chains[fragment_name]
         # Select random chain from the ensemble of chains.
         atoms = chains[random.sample(chains.keys(), 1)[0]]
-        self.atomparams = {
-            k: v[0] for k, v in self.topology.chain_atom_names[fragment_name].items()
-            }
+        self.atomparams = {}
+        if fragment_name not in self.topology.chain_atom_names:
+            print(80*'!')
+            print('\nError while preparing cg fragments')
+            print('Fragment topology: {}'.format(self.topology.file_name))
+            print('Fragment coordinates: {}\n'.format(self.coordinate.file_name))
+            print('Fragment {} not found in the list of residues {}'.format(
+                fragment_name, self.topology.chain_atom_names))
+            if fragment_from_coordinate:
+                print(('\nPlease check your coordinate file {}. Very likely the name of molecules ({}) does not cooresponds'
+                       ' to the names defined in the settings file and the topology file'
+                       ' ({}).'
+                       ).format(
+                        self.coordinate.file_name, fragment_name, self.topology.chains.keys()[0]))
+            print(80*'!')
+            raise RuntimeError('Wrong fragment')
+        for k, v in self.topology.chain_atom_names[fragment_name].items():
+            self.atomparams[k] = v[0]
+
         self.active_sites = {}
 
         self.com = np.zeros(3)
@@ -203,6 +221,11 @@ class BackmapperSettings2:
         else:
             raise RuntimeError('Missing tag cg_configuration.coordinate')
         self.cg_coordinate = files_io.read_coordinates(coordinate_file)
+        print('Read coordinate file {} (num: {})'.format(coordinate_file, len(self.cg_coordinate.atoms)))
+
+        if len(self.cg_coordinate.atoms) != len(self.cg_topology.atoms):
+            raise RuntimeError('Number of atoms defined in the coordinate file {} (num: {}) is not the same as in topology (num: {})'.format(
+                coordinate_file, len(self.cg_coordinate.atoms), len(self.cg_topology.atoms)))
 
         # Predefined active sites map bid1 bid2 label_active_site1 label_active_site2
         self.predefined_active_sites = {}
@@ -374,6 +397,8 @@ class BackmapperSettings2:
                     files_io.read_coordinates(cg_mol_source_coordinate[mol_deg_bead_name]),
                     files_io.GROMACSTopologyFile(cg_mol_source_topologies[mol_deg_bead_name]))
                 cg_molecule.source_topology.read()
+                cg_molecule.source_coordinate.read()
+
                 if (mol_deg, cg_molecule.name, related_bead_name) in self.fragments:
                     raise RuntimeError('Fragment ({}, {}, {}) already defined'.format(
                         mol_deg, cg_molecule.name, related_bead_name))
@@ -424,11 +449,22 @@ class BackmapperSettings2:
                                 raise RuntimeError(
                                     'Number of entries in type_map {} does not match number of beads {}'.format(
                                         len(type_map), len(bead_list)))
+
+                        cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove, equilibrate_charges, type_map)
                         try:
-                            cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove, equilibrate_charges, type_map)
                             self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name][degree] = cg_fragment
                         except KeyError as ex:
                             continue
+
+            print(80*'=')
+            print('Found following fragment definitions')
+            for k, v in self.fragments.items():
+                print('==== {} ===='.format(k))
+                for kk, vv in v.items():
+                    if kk == 'cg_molecule':
+                        continue
+                    print('++ {} degs={}'.format(kk, vv.keys()))
+            print(80*'=')
 
             # Read charge transfer.
             # <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
@@ -473,7 +509,6 @@ class BackmapperSettings2:
                 residue_graph.add_node(cg_bead['res_id'], chain_name=cg_bead['chain_name'], cg_nodes=[])
             residue_graph.node[res_id]['cg_nodes'].append(cg_id)
 
-
         for cg_bonds in self.cg_graph.edges():
             cg_nodes = map(self.cg_graph.node.get, cg_bonds)
             if cg_nodes[0]['res_id'] != cg_nodes[1]['res_id']:  # Ignore self-loops
@@ -505,12 +540,14 @@ class BackmapperSettings2:
                 if selected_fragment is not None:
                     break
             if selected_fragment is None:
+                print('\n\n===== FATAL ERROR =====')
+                print('Last processed molecule:')
                 print('Residue id: {}'.format(res_id))
                 print('Bead ids: {}'.format(cg_nodes))
                 print('Residue degree: {}'.format(residue_degree))
                 print('Residue name: {}'.format(residue_name))
 
-                print(('It is very likely that your .xml file does not'
+                print(('\nIt is very likely that your .xml file does not'
                        ' contains definition of a fragment for residue {}').format(residue_name))
 
                 print('====== List of problematic CG nodes ======')
