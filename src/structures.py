@@ -262,6 +262,7 @@ class BackmapperSettings2:
         for k, d in self.cg_topology.atomtypes.items():
             d['type'] = 'V'
             self.hyb_topology.atomtypes[k] = d
+
         # Separate exclusion for AT and CG; if exclusion present then 
         # excl_AT=excl_AT = exclusion
         #
@@ -297,6 +298,13 @@ class BackmapperSettings2:
         self.hyb_topology.bondtypes = self.cg_topology.bondtypes
         self.hyb_topology.angletypes = self.cg_topology.angletypes
         self.hyb_topology.dihedraltypes = self.cg_topology.dihedraltypes
+
+        # Allowed hybrid bond patterns.
+        self.restricted_cross_bond_patterns = None
+        if hyb_topology.find('restricted_cross_bond_patterns') is not None:
+            self.restricted_cross_bond_patterns = {
+                tuple(x.split('-')) for x in hyb_topology.find('restricted_cross_bond_patterns').text.strip().split()}
+            print('Found restrictions on the cross bonds: {}'.format(self.restricted_cross_bond_patterns))
 
         # Reads parameters of bonded terms.
         self.bond_params = collections.defaultdict(dict)
@@ -582,7 +590,7 @@ class BackmapperSettings2:
 
                 self.atom_id2fragment[new_at_id] = cg_fragment
 
-                self.global_graph.add_node(cg_bead_id, **cg_bead)
+                self.global_graph.add_node(cg_bead_id, cg_bead_id=cg_bead_id, **cg_bead)
 
                 # Change the mass of CG bead
                 chain_name = cg_fragment.cg_molecule.ident
@@ -620,6 +628,7 @@ class BackmapperSettings2:
                         new_at_id,
                         name=at.name,
                         res_id=res_id,
+                        cg_bead_id=cg_id,
                         position=at.position + cg_com,
                         chain_name=chain_name)
 
@@ -789,6 +798,7 @@ class BackmapperSettings2:
         progress_indc = 0.0
         progress_indc_total = len(cg_cross_bonds)
         global_degree = dict(self.global_graph.degree())
+        cg_cross_bonds = sorted(cg_cross_bonds)
         for b1, b2 in cg_cross_bonds:
             n1 = self.global_graph.node[b1]
             n2 = self.global_graph.node[b2]
@@ -842,9 +852,10 @@ class BackmapperSettings2:
                             target_atom.chain_idx][
                             at_to_transfer].charge = at_from_transfer.charge
                 else:
-                    print('We could not find any active sites for the bond CG beads {}-{}'.format(
+                    print('We could not find any active sites for the CG bonds between beads {}-{}'.format(
                         b1, b2))
-                    print((n1, n2))
+                    print('node 1: {} ats 1 {}'.format(n1, ats1))
+                    print('node 2: {} ats 2 {}'.format(n2, ats2))
                     raise RuntimeError('Something is really wrong!')
             sys.stdout.write('{} %\r'.format(100.0*(progress_indc/progress_indc_total)))
             progress_indc += 1.0
@@ -945,9 +956,15 @@ class BackmapperSettings2:
             for at2, max_d2 in self.cg_active_sites[b2]:
                 b1_key = '{}:{}'.format(at1.chain_name, at1.name)
                 b2_key = '{}:{}'.format(at2.chain_name, at2.name)
+                if self.restricted_cross_bond_patterns and ((b1_key, b2_key) in self.restricted_cross_bond_patterns):
+                    # print('Bond {}-{} not used due to the restriction'.format(b1_key, b2_key))
+                    continue
+
                 test_bond = self.bond_params.get((b1_key, b2_key))
                 if not test_bond:
                     test_bond = self.bond_params.get((at1.name, at2.name))
+                if not test_bond:
+                    print('params for {} {} not found'.format(b1_key, b2_key))
                 if (test_bond and self.global_graph.has_node(at1.atom_id)
                         and self.global_graph.has_node(at2.atom_id)):
                     at1_deg = global_degree[at1.atom_id]
@@ -990,10 +1007,23 @@ class BackmapperSettings2:
                         global_degree = dict(self.global_graph.degree())
                         break
                     else:
+                        valid = False
                         print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
                             deg1=at1_deg, deg2=at2_deg, b1=b1_key, b2=b2_key, max_d1=max_d1, max_d2=max_d2, valid=valid,
                             b1id=b1, b2id=b2
                         ))
+                        if at1_deg >= max_d1:
+                            print('AT1 has degree {} >= {} ({})'.format(at1_deg, max_d1, at1))
+                            nbs_1 = self.global_graph[at1.atom_id]
+                            print('Found neighbours of {}: '.format(at1))
+                            for nb in nbs_1:
+                                print(self.global_graph.node[nb])
+                        if at2_deg >= max_d2:
+                            print('AT2 has degree {} >= {} ({})'.format(at2_deg, max_d2, at2))
+                            nbs_2 = self.global_graph[at2.atom_id]
+                            print('Found neighbours of {}: '.format(at2))
+                            for nb in nbs_2:
+                                print(self.global_graph.node[nb])
                 else:
                     print('Params for {}-{} not found'.format(b1_key, b2_key))
             if ats1 is not None and ats2 is not None:
