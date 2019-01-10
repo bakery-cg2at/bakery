@@ -44,6 +44,7 @@ BondedParams = collections.namedtuple('BondedParams', ['params', 'typeid'])
 
 logger = logging.getLogger()
 
+
 class CGFragment:
     """Complex struct, with the construct that does a bit of processing."""
     def __init__(

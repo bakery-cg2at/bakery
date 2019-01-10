@@ -574,11 +574,11 @@ class GROMACSTopologyFile(TopologyFile):
             print('Replicate topology to {} molecules'.format(molecules))
         atoms_per_molecule = len(self.atoms)
         atom_ids_to_replicate = sorted(self.atoms)
-        for residx in range(2, molecules+1):
+        for molidx in range(2, molecules+1):
             for at_id in atom_ids_to_replicate:
                 at_data = copy.copy(self.atoms[at_id])
-                at_data.chain_idx = residx
-                at_data.atom_id = (residx-1)*atoms_per_molecule + at_id
+                at_data.chain_idx += (molidx-1)*molecules
+                at_data.atom_id = (molidx-1)*atoms_per_molecule + at_id
                 self.atoms[at_data.atom_id] = at_data
 
         def replicate_list(N_molecules, N_single, input_dict, shift=0):
