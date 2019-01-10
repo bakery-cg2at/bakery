@@ -7,7 +7,6 @@ python:
     - "2.7"
 
 install:
-    - sudo apt install -y python-sphinx
     - pip install -r requirements.txt
     - pip install sphinx sphinx_rtd_theme sphinx-argparse
 
