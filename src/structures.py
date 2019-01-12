@@ -1011,7 +1011,7 @@ class BackmapperSettings2:
                         valid = False
                         print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
                             deg1=at1_deg, deg2=at2_deg, b1=b1_key, b2=b2_key, max_d1=max_d1, max_d2=max_d2, valid=valid,
-                            b1id=b1, b2id=b2
+                            b1id=self.cg_new_id_old[b1], b2id=self.cg_new_id_old[b2]
                         ))
                         if at1_deg >= max_d1:
                             print('AT1 has degree {} >= {} ({})'.format(at1_deg, max_d1, at1))
