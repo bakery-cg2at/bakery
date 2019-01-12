@@ -156,6 +156,8 @@ def FillFileBuffer(fname, filebuffer, cwd=None, defines=None):
             if cwd_name:
                 cwd = os.path.join(cwd, cwd_name)
             name = os.path.basename(name)
+            if cwd_name == '.':
+                cwd = '.'
             FillFileBuffer(name, filebuffer, cwd, defines)
         elif 'define' in line:
             t = line.strip().split()

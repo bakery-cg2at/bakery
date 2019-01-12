@@ -32,6 +32,7 @@ def _args_backmapping():
     parser = general_tools.MyArgParser(
         description='Starts MD simulation and run backmapping',
         fromfile_prefix_chars='@')
+    parser.add_argument('--debug', default=False, action='store_true')
     parser.add_argument('--conf', required=True, help='Coordinate file')
     parser.add_argument('--top', '--topology', required=True, help='Topology file',
                         dest='top')

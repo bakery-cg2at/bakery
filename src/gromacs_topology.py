@@ -1,4 +1,4 @@
-#  Copyright (C) 2015-2017
+#  Copyright (C) 2015-2017,2019
 #      Jakub Krajniak (jkrajniak at gmail.com)
 #  Copyright (C) 2012,2013
 #      Max Planck Institute for Polymer Research
@@ -22,6 +22,8 @@
 
 # The file was modyfied to support non-standard entries that appears in gromacs topology
 # file.
+
+import enum
 
 from collections import namedtuple, defaultdict
 import espressopp
@@ -54,6 +56,15 @@ GromacsSystem = namedtuple(
         'exclusions'
     ])
 
+class Section(enum.Enum):
+    Defaults = 'defaults'
+    AtomTypes = 'atomtypes'
+    NonbondParams = 'nonbond_params'
+    PairTypes = 'pairtypes'
+    BondTypes = 'bondtypes'
+    AngleTypes = 'angletypes'
+    DihedralTypes = 'dihedraltypes'
+    Molecules = 'molecules'
 
 def read(top_file="", doRegularExcl=True, defines=None):
     """ Read GROMACS data files.
@@ -104,6 +115,8 @@ def read(top_file="", doRegularExcl=True, defines=None):
         bondtypecount, angletypecount, dihedraltypecount = 0, 0, 0
         readdefaults, readattypes, readnonbondtypes, readpairtypes, readbdtypes, readantypes, readdhtypes = (
             False, False, False, False, False, False, False)
+        current_section = None
+        previous_section = None
         defaults = {}  # gromacs default values
         atomtypes = {}  # a dict: key atomtypename(str) value: atomtypeid(int)
         bondtypes = {}  # a dict: key atomindex(int),atomindex(int)  value: bondtypeid(int)
@@ -129,7 +142,8 @@ def read(top_file="", doRegularExcl=True, defines=None):
         skip_section = False
 
         for line in f.lines:
-            if line[0] == ";":  # skip comment line
+            line = line.strip()
+            if not line or line[0] == ";":  # skip comment line
                 continue
 
             if skip_section and line.startswith('#end'):
@@ -156,77 +170,75 @@ def read(top_file="", doRegularExcl=True, defines=None):
                 defines[define_tmp[1]] = True
                 continue
 
-            if 'defaults' in line:  # store some gromacs default values
-                readdefaults = True
-                continue
+            # Gets current section
+            if '[' in line:
+                section = line.replace('[', '').replace(']', '').strip()
+                previous_section = current_section
+                print('Reading new section {} (previous: {})'.format(section, previous_section))
+                try:
+                    current_section = Section(section)
+                except ValueError as ex:
+                    print('Section {} not found - skipping'.format(section))
+                    current_section = None
 
-            if readdefaults:
-                if line.strip() == "" or '[' in line:  # end of defaults section
-                    readdefaults = False
-                    print "Defaults: ", defaults
-                else:
-                    fields = line.split()
-                    if len(fields) == 5:
-                        defaults = {"nbtype": fields[0], "combinationrule": int(fields[1]),
-                                    "genpairs": fields[2], "fudgeLJ": float(fields[3]), "fudgeQQ": float(fields[4])}
-                    else:
-                        defaults = {"nbtype": fields[0], "combinationrule": fields[1]}
-
-            if 'atomtypes' in line:  # map atom types (espressopp++ uses ints)
-                readattypes = True
-                print "Reading atomtypes (GROMACS: ESPResSo++): "
-                continue
-
-            if readattypes:
-                if line.strip() == "" or '[' in line:  # end of atomtypes section
-                    readattypes = False
+                if previous_section == Section.AtomTypes:
                     atomtypes.update({'X': a})
                     wildcard_type = a
                     atnum_attype['X'] = 'X'
-                else:
-                    fields = line.split(';')[0].split()
-                    attypename = fields[0]
+                continue
 
-                    # make a map containing the properties
-                    # sig, eps may be c6 and c12: this is specified in the defaults
-                    # and converted later
-                    if fields[0].startswith('opls'):
-                        tmpprop = {
-                            'atnum': fields[1],
-                            'mass': float(fields[3]),
-                            'charge': float(fields[4]),
-                            'particletype': fields[5],
-                            'sig': float(fields[6]),
-                            'eps': float(fields[7])
-                        }
-                        atnum_attype[attypename] = fields[1]
-                    elif len(fields) == 7:
-                        tmpprop = {
-                            "atnum": int(fields[1]),
-                            "atname": fields[0],
-                            "mass": float(fields[2]),
-                            "charge": float(fields[3]),
-                            "particletype": fields[4],
-                            "sig": float(fields[5]),
-                            "eps": float(fields[6])}
-                    elif len(fields) == 8:
-                        tmpprop = {
-                            'atnum': fields[1],
-                            'mass': float(fields[3]),
-                            'charge': float(fields[4]),
-                            'sig': float(fields[6]),
-                            'eps': float(fields[7])
-                        }
-                    else:
-                        print('AA other: {}'.format(fields))
-                        tmpprop = {
-                            "atnum": fields[0],
-                            "mass": float(fields[1]),
-                            "charge": float(fields[2]),
-                            "particletype": fields[3],
-                            "sig": float(fields[4]),
-                            "eps": float(fields[5])
-                        }
+            if current_section == Section.Defaults:
+                fields = line.split()
+                if len(fields) == 5:
+                    defaults = {"nbtype": fields[0], "combinationrule": int(fields[1]),
+                                "genpairs": fields[2], "fudgeLJ": float(fields[3]), "fudgeQQ": float(fields[4])}
+                else:
+                    defaults = {"nbtype": fields[0], "combinationrule": fields[1]}
+
+            if current_section == Section.AtomTypes:
+                fields = line.split(';')[0].split()
+                attypename = fields[0]
+
+                # make a map containing the properties
+                # sig, eps may be c6 and c12: this is specified in the defaults
+                # and converted later
+                if fields[0].startswith('opls'):
+                    tmpprop = {
+                        'atnum': fields[1],
+                        'mass': float(fields[3]),
+                        'charge': float(fields[4]),
+                        'particletype': fields[5],
+                        'sig': float(fields[6]),
+                        'eps': float(fields[7])
+                    }
+                    atnum_attype[attypename] = fields[1]
+                elif len(fields) == 7:
+                    tmpprop = {
+                        "atnum": int(fields[1]),
+                        "atname": fields[0],
+                        "mass": float(fields[2]),
+                        "charge": float(fields[3]),
+                        "particletype": fields[4],
+                        "sig": float(fields[5]),
+                        "eps": float(fields[6])}
+                elif len(fields) == 8:
+                    tmpprop = {
+                        'atnum': fields[1],
+                        'mass': float(fields[3]),
+                        'charge': float(fields[4]),
+                        'sig': float(fields[6]),
+                        'eps': float(fields[7])
+                    }
+                else:
+                    print('AA other: {}'.format(fields))
+                    tmpprop = {
+                        "atnum": fields[0],
+                        "mass": float(fields[1]),
+                        "charge": float(fields[2]),
+                        "particletype": fields[3],
+                        "sig": float(fields[4]),
+                        "eps": float(fields[5])
+                    }
 
                 if attypename not in atomtypes:
                     atomtypes.update({attypename: a})  # atomtypes is used when reading the "atoms" section
@@ -234,155 +246,111 @@ def read(top_file="", doRegularExcl=True, defines=None):
                     attypeid_atnum[a] = tmpprop['atnum']
                     a += 1
 
-            if 'nonbond_params' in line:
-                print 'Reading [ nonbond_params ]'
-                readnonbondtypes = True
-                continue
-            if readnonbondtypes:
+            if current_section == Section.NonbondParams:
                 l = line.strip()
-                if l == '' or '[' in l:
-                    readnonbondtypes = False
-                else:
-                    fields = l.split(';')[0].split()
-                    if len(fields) == 5:
-                        a1, a2, fn, c6, c12 = fields[:5]
-                        if int(fn) != 1:
-                            continue
-                        at1, at2 = sorted([atomtypes.get(a1), atomtypes.get(a2)])
-                        if (at1, at2) not in nonbond_params:
-                            nonbond_params[(at1, at2)] = {
+
+                fields = l.split(';')[0].split()
+                if len(fields) == 5:
+                    a1, a2, fn, c6, c12 = fields[:5]
+                    if int(fn) != 1:
+                        continue
+                    at1, at2 = sorted([atomtypes.get(a1), atomtypes.get(a2)])
+                    if (at1, at2) not in nonbond_params:
+                        nonbond_params[(at1, at2)] = {
+                            'sig': float(c6),
+                            'eps': float(c12)
+                        }
+
+            if current_section == Section.PairTypes:
+                fields = line.split(';')[0].split()
+                if len(fields) > 0:
+                    a1, a2, fn, c6, c12 = fields[:5]
+                    if int(fn) != 1:
+                        continue
+                    at1, at2 = sorted([atomtypes.get(a1), atomtypes.get(a2)])
+                    if at1 and at2:
+                        if (at1, at2) not in pairtypeparams:
+                            pairtypeparams[(at1, at2)] = {
                                 'sig': float(c6),
                                 'eps': float(c12)
                             }
 
-            if 'pairtypes' in line:
-                print 'Reading [ pairtypes ]'
-                readpairtypes = True
-                continue
-            if readpairtypes:
-                l = line.strip()
-                if l == '' or '[' in l:
-                    readpairtypes = False
+            if current_section == Section.BondTypes:
+                tmp = line.split()
+                i, j = tmp[:2]
+                p = ParseBondTypeParam(line)
+                # check if this type has been defined before
+                bdtypeid = FindType(p, bondtypeparams)
+                if bdtypeid == None:
+                    bdtypeid = len(bondtypeparams)
+                    bondtypeparams.update({bdtypeid: p})
+                if i in bondtypes:
+                    bondtypes[i].update({j: bdtypeid})
                 else:
-                    fields = l.split(';')[0].split()
-                    if len(fields) > 0:
-                        a1, a2, fn, c6, c12 = fields[:5]
-                        if int(fn) != 1:
-                            continue
-                        at1, at2 = sorted([atomtypes.get(a1), atomtypes.get(a2)])
-                        if at1 and at2:
-                            if (at1, at2) not in pairtypeparams:
-                                pairtypeparams[(at1, at2)] = {
-                                    'sig': float(c6),
-                                    'eps': float(c12)
-                                }
-
-            if 'bondtypes' in line:
-                print 'Reading [ bondtypes ]'
-                readbdtypes = True
-                continue
-
-            if readbdtypes:
-                if line.strip() == "" or '[' in line:  # end of bondtypes section
-                    readbdtypes = False
+                    bondtypes.update({i: {j: bdtypeid}})
+                if j in bondtypes:
+                    bondtypes[j].update({i: bdtypeid})
                 else:
-                    tmp = line.split()
-                    i, j = tmp[:2]
-                    p = ParseBondTypeParam(line)
-                    # check if this type has been defined before
-                    bdtypeid = FindType(p, bondtypeparams)
-                    if bdtypeid == None:
-                        bdtypeid = len(bondtypeparams)
-                        bondtypeparams.update({bdtypeid: p})
-                    if i in bondtypes:
-                        bondtypes[i].update({j: bdtypeid})
+                    bondtypes.update({j: {i: bdtypeid}})
+
+            if current_section == Section.AngleTypes:
+                tmp = line.split()
+                i, j, k = tmp[:3]
+                p = ParseAngleTypeParam(line)
+                if p is False:
+                    print('Skip angle line: {}'.format(line))
+
+                atypeid = FindType(p, angletypeparams)
+                if atypeid == None:
+                    atypeid = len(angletypeparams)
+                    angletypeparams.update({atypeid: p})
+
+                if i in angletypes:
+                    if j in angletypes[i]:
+                        angletypes[i][j].update({k: atypeid})
                     else:
-                        bondtypes.update({i: {j: bdtypeid}})
-                    if j in bondtypes:
-                        bondtypes[j].update({i: bdtypeid})
-                    else:
-                        bondtypes.update({j: {i: bdtypeid}})
-
-            if 'angletypes' in line:
-                print 'Reading [ angletypes ]'
-                readantypes = True
-                continue
-
-            if readantypes:
-                if line.strip() == "" or '[' in line:  # end of angletypes section
-                    readantypes = False
+                        angletypes[i].update({j: {k: atypeid}})
                 else:
-                    tmp = line.split()
-                    i, j, k = tmp[:3]
-                    p = ParseAngleTypeParam(line)
+                    angletypes.update({i: {j: {k: atypeid}}})
 
-                    atypeid = FindType(p, angletypeparams)
-                    if atypeid == None:
-                        atypeid = len(angletypeparams)
-                        angletypeparams.update({atypeid: p})
+            if current_section == Section.DihedralTypes:
+                tmp = line.split()
+                try:
+                    int(tmp[4])
+                except ValueError:
+                    print('Invalid dihedral type {}'.format(tmp))
+                    continue
+                i, j, k, l = tmp[:4]
+                p = ParseDihedralTypeParam(line)
+                if p is False:
+                    print('Skip dihedral line: {}'.format(line))
+                    continue
 
-                    if i in angletypes:
-                        if j in angletypes[i]:
-                            angletypes[i][j].update({k: atypeid})
+                dtypeid = FindType(p, dihedraltypeparams)
+                if dtypeid == None:
+                    dtypeid = len(dihedraltypeparams)
+                    dihedraltypeparams.update({dtypeid: p})
+                if i in dihedraltypes:
+                    if j in dihedraltypes[i]:
+                        if k in dihedraltypes[i][j]:
+                            dihedraltypes[i][j][k].update({l: dtypeid})
                         else:
-                            angletypes[i].update({j: {k: atypeid}})
+                            dihedraltypes[i][j].update({k: {l: dtypeid}})
                     else:
-                        angletypes.update({i: {j: {k: atypeid}}})
-                        # print "FOUND angletype: ", angletypecount, " : ", p.parameters
-                        # angletypeparams.update({angletypecount:p})
-                        # angletypecount+=1
-
-            if 'dihedraltypes' in line:
-                print 'Reading [ dihedraltypes ]'
-                readdhtypes = True
-                continue
-
-            if readdhtypes:
-                if line.strip() == "" or '[' in line:  # end of angletypes section
-                    readdhtypes = False
+                        dihedraltypes[i].update({j: {k: {l: dtypeid}}})
                 else:
-                    tmp = line.split()
-                    try:
-                        int(tmp[4])
-                    except ValueError:
-                        continue
-                    i, j, k, l = tmp[:4]
-                    p = ParseDihedralTypeParam(line)
-                    if p is False:
-                        print('Skip dihedral line: {}'.format(line))
-                        continue
+                    dihedraltypes.update({i: {j: {k: {l: dtypeid}}}})
 
-                    dtypeid = FindType(p, dihedraltypeparams)
-                    if dtypeid == None:
-                        dtypeid = len(dihedraltypeparams)
-                        dihedraltypeparams.update({dtypeid: p})
-                    if i in dihedraltypes:
-                        if j in dihedraltypes[i]:
-                            if k in dihedraltypes[i][j]:
-                                dihedraltypes[i][j][k].update({l: dtypeid})
-                            else:
-                                dihedraltypes[i][j].update({k: {l: dtypeid}})
-                        else:
-                            dihedraltypes[i].update({j: {k: {l: dtypeid}}})
-                    else:
-                        dihedraltypes.update({i: {j: {k: {l: dtypeid}}}})
-
-            if 'molecules' in line:  # store number of chains
-                readmolecules = True
-                continue
-
-            if readmolecules:
-                if line.strip() == "" or '[' in line:  # end of molecules section
-                    readmolecules = False
+            if current_section == Section.Molecules:
+                print('Reading molecules')
+                mol, nrmol = line.strip().split()
+                # we have to check if the same molecules comes multiple times in the molecules section
+                if len(molecules) == 0:
+                    molecules.append({'name': mol, 'count': int(nrmol)})
+                elif molecules[-1]['name'] == mol:  # check if mol was added earlier already
+                    molecules[-1]['count'] = molecules[-1]['count'] + int(nrmol)  # update count
                 else:
-                    mol, nrmol = line.strip().split()
-                    # we have to check if the same molecules comes multiple times in the molecules section
-                    if len(molecules) == 0:
-                        molecules.append({'name': mol, 'count': int(nrmol)})
-                    elif molecules[-1]['name'] == mol:  # check if mol was added earlier already
-                        molecules[-1]['count'] = molecules[-1]['count'] + int(nrmol)  # update count
-                    else:
-                        molecules.append({'name': mol, 'count': int(nrmol)})  # if mol newly added
+                    molecules.append({'name': mol, 'count': int(nrmol)})  # if mol newly added
 
         molstartindex = 0  # this is the index of the first atom in the molecule being parsed
         res_idx = 0  # index of molecule like single polymer chain.

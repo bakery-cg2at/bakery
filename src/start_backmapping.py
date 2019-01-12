@@ -42,10 +42,9 @@ simulation_email = 'xxx@xxx.xxx'
 
 # Mostly you do not need to modify lines below.
 
-def main():  # NOQA
+def main(args):  # NOQA
     h5md_group = 'atoms'
     time0 = time.time()
-    args = _args().parse_args()
 
     lj_cutoff = args.lj_cutoff
     cg_cutoff = args.cg_cutoff
@@ -561,4 +560,10 @@ def main():  # NOQA
 
 
 if __name__ == '__main__':
-    main()
+    args = _args().parse_args()
+    if args.debug:
+        import ipdb
+        with ipdb.launch_ipdb_on_exception():
+            main(args)
+    else:
+        main(args)
