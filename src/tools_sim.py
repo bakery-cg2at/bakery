@@ -181,8 +181,21 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
         print('Set tabulated potential {}-{} ({}-{})'.format(name_1, name_2, type_1, type_2))
         table_name = 'table_{}_{}.pot'.format(name_1, name_2)
         orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
-        if not os.path.exists(table_name):
-            espressopp.tools.convert.gromacs.convertTable(orig_table_name, table_name)
+        orig_table_name_reverse = 'table_{}_{}.xvg'.format(name_2, name_1)
+        table_name_rev = 'table_{}_{}.pot'.format(name_2, name_1)
+        if os.path.exists(table_name):
+            pass
+        elif os.path.exists(table_name_rev):
+            table_name = table_name_rev
+        else:
+            if os.path.exists(orig_table_name):
+                espressopp.tools.convert.gromacs.convertTable(orig_table_name, table_name)
+            elif os.path.exists(orig_table_name_reverse):
+                espressopp.tools.convert.gromacs.convertTable(orig_table_name_reverse, table_name_rev)
+                table_name = table_name_rev
+            else:
+                raise RuntimeError('Could not find tabulated potential for pair {}-{}'.format(name_1, name_2))
+
         interaction.setPotential(
             type1=type_1,
             type2=type_2,
@@ -190,6 +203,7 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
                 itype=spline_type,
                 filename=table_name,
                 cutoff=cutoff))
+
     return interaction
 
 
