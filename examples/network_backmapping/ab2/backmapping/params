@@ -28,3 +28,4 @@ cap_force_lj=100000.0
 cap_force=0.0
 #cap_force_ramp=500.0
 exclusion_list=exclusion_hyb_topol.list
+table_groups=MA,MB,ML,PA,PB,PL,RA,RB
