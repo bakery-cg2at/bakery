@@ -37,7 +37,11 @@ config = {
     'author_email': 'jkrajniak@gmail.com',
     'license': 'GPLv3',
     'install_requires':[
-        'networkx==2.0.0'
+        'networkx==2.0.0',
+        'enum34',
+        'mpi4py',
+        'pathlib2',
+        'six'
     ],
     'url': 'https://github.com/bakery-cg2at/bakery',
     'test_suite': 'src.tests',
