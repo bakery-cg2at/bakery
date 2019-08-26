@@ -195,13 +195,13 @@ def PostProcessFileBuffer(filebuffer, defines):
 
 
 def FindType(proposedtype, typelist):
-    list=[typeid for (typeid,atype) in typelist.iteritems() if atype==proposedtype ]
-    if len(list)>1:
+    type_list=[typeid for (typeid,atype) in typelist.iteritems() if atype==proposedtype ]
+    if len(type_list)>1:
         print "Error: duplicate type definitons", proposedtype.parameters
         exit()
-    elif len(list)==0:
+    elif len(type_list)==0:
         return None
-    return list[0]
+    return type_list[0]
 
 
 def convertc6c12(c6, c12):
@@ -393,6 +393,18 @@ def ParseAngleTypeParam(line):
         exit()
     return p
 
+
+class HarmonicDihedralInteractionType(InteractionType):
+    def createEspressoInteraction(self, system, fpl, is_cg=None):
+        theta0 = self.parameters['theta0'] * math.pi/180.0
+        print('DihedralHarmonic, theta0: {}, k:{}'.format(theta0, self.parameters['k']))
+        pot = espressopp.interaction.DihedralHarmonic(K=self.parameters['k'], phi0=theta0)
+        if is_cg is not None:
+            return espressopp.interaction.FixedQuadrupleListAdressDihedralHarmonic(system, fpl, pot, is_cg)
+        else:
+            return espressopp.interaction.FixedQuadrupleListDihedralHarmonic(system, fpl, pot)
+
+
 def ParseDihedralTypeParam(line):
     #
     tmp = line.split(';')[0].split()
@@ -404,6 +416,8 @@ def ParseDihedralTypeParam(line):
         p = RyckaertBellemansDihedralInteractionType({'K0': tmp[5], 'K1': tmp[6], 'K2': tmp[7], 'K3': tmp[8], 'K4': tmp[9], 'K5': tmp[10]})
     elif type == 1:
         p = HarmonicNCosDihedralInteractionType({'theta0': float(tmp[5]), 'k': float(tmp[6]), 'n': int(tmp[7])})
+    elif type == 2:
+        p = HarmonicDihedralInteractionType({'theta0': float(tmp[0]), 'k': float(tmp[1])})
     else:
         print "Unsupported dihedral type", type, "in line:"
         print line
