@@ -523,7 +523,7 @@ class BackmapperSettings2:
             if cg_nodes[0]['res_id'] != cg_nodes[1]['res_id']:  # Ignore self-loops
                 residue_graph.add_edge(cg_nodes[0]['res_id'], cg_nodes[1]['res_id'])
 
-        for res_id, deg in residue_graph.degree():
+        for res_id, deg in residue_graph.degree().items():
             residue_graph.node[res_id]['degree'] = str(deg)
             residue_graph.node[res_id]['fragment_key'] = None
 
