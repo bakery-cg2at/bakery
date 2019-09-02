@@ -397,7 +397,6 @@ def ParseAngleTypeParam(line):
 class HarmonicDihedralInteractionType(InteractionType):
     def createEspressoInteraction(self, system, fpl, is_cg=None):
         theta0 = self.parameters['theta0'] * math.pi/180.0
-        print('DihedralHarmonic, theta0: {}, k:{}'.format(theta0, self.parameters['k']))
         pot = espressopp.interaction.DihedralHarmonic(K=self.parameters['k'], phi0=theta0)
         if is_cg is not None:
             return espressopp.interaction.FixedQuadrupleListAdressDihedralHarmonic(system, fpl, pot, is_cg)

@@ -178,7 +178,7 @@ def read(top_file="", doRegularExcl=True, defines=None):
                 try:
                     current_section = Section(section)
                 except ValueError as ex:
-                    print('Section {} not found - skipping'.format(section))
+                    print('Section {} not found - skipping ({})'.format(section, ex))
                     current_section = None
 
                 if previous_section == Section.AtomTypes:
