@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 Copyright (C) 2014-2017 Jakub Krajniak <jkrajniak@gmail.com>
 
@@ -30,13 +30,14 @@ def _args():
         add_help=True)
 
     parser.add_argument('--options', help='XML options file', required=True)
+    parser.add_argument('--allow-no-bonds', help='Allow to skip AT bonds', action='store_true', dest='allow_no_bonds')
 
     return parser
 
 
 def main():
     args = _args().parse_args()
-    bck_settings = structures.BackmapperSettings2(args.options)
+    bck_settings = structures.BackmapperSettings2(args.options, args.allow_no_bonds)
 
     bck_settings.prepare_hybrid()
 
