@@ -25,9 +25,9 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
         system, cutoff=args.cg_cutoff, exclusionlist=exclusionlistCG)
 
     lj_interaction = espressopp.interaction.VerletListHybridLennardJonesEnergyCapped(verletlistAT, False)
-    # if args.cap_force_lj:
-    #     print('Defined max_force for LJ potential: {}'.format(args.cap_force_lj))
-    #     lj_interaction.max_force = args.cap_force_lj
+    #if args.cap_force_lj:
+    #    print('Defined max_force for LJ potential: {}'.format(args.cap_force_lj))
+    #    lj_interaction.max_force = args.cap_force_lj
     lj_interaction = tools.setLennardJonesInteractions(
         system=system,
         input_conf=input_conf,
@@ -50,12 +50,11 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
             interaction=coulomb_interaction)
     else:
         coulomb_interaction = None
-    ret_list = tools.setBondedInteractions(
-        system, input_conf)
-    tools.setAngleInteractions(
-        system, input_conf)
-    tools.setDihedralInteractions(
-        system, input_conf)
+    tools.setBondedInteractions(system, input_conf)
+    if not args.disable_angles:
+        tools.setAngleInteractions(system, input_conf)
+    if not args.disable_dihedrals:
+        tools.setDihedralInteractions(system, input_conf)
     # tools.setPairInteractions(
     #     system, input_conf, args.lj_cutoff, args.coulomb_cutoff)
     tab_cg_interaction = espressopp.interaction.VerletListHybridTabulated(verletlistCG, True)

@@ -120,6 +120,11 @@ def _args_backmapping():
                         help='Distribute initial lambda non-uniformly in the box')
     parser.add_argument('--save_interactions', default=False, type=ast.literal_eval)
     parser.add_argument('--hooks', default=None)
+
+    disable_interactions = parser.add_argument_group('Disabled interactions')
+    disable_interactions.add_argument('--disable_angles', default=False, type=ast.literal_eval)
+    disable_interactions.add_argument('--disable_dihedrals', default=False, type=ast.literal_eval)
+    
     em_group = parser.add_argument_group('Energy minimization')
     em_group.add_argument('--em', help='Maximum number of steps to perform in EM', type=int, default=0)
     em_group.add_argument('--em_gamma', help='Gamma parameter for force damping', type=float, default=0.0001)
