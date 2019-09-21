@@ -1,7 +1,7 @@
 """
-Copyright (C) 2015-2017 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2015-2019 Jakub Krajniak <jkrajniak@gmail.com>
 
-This file is part of Backmapper.
+This file is part of bakery.
 
 This file is distributed under free software licence:
 you can redistribute it and/or modify it under the terms of the
@@ -24,12 +24,16 @@ import files_io
 import tools
 import xml.etree.ElementTree as etree
 
+import datetime
 import numpy as np
 import random
 import networkx
 import logging
 import sys
+import os
 import warnings
+
+import cPickle
 
 __doc__ = "Data structures."""
 
@@ -47,6 +51,7 @@ logger = logging.getLogger()
 
 class CGFragment:
     """Complex struct, with the construct that does a bit of processing."""
+
     def __init__(
             self,
             cg_molecule,
@@ -81,19 +86,20 @@ class CGFragment:
         atoms = chains[random.sample(chains.keys(), 1)[0]]
         self.atomparams = {}
         if fragment_name not in self.topology.chain_atom_names:
-            print(80*'!')
+            print(80 * '!')
             print('\nError while preparing cg fragments')
             print('Fragment topology: {}'.format(self.topology.file_name))
             print('Fragment coordinates: {}\n'.format(self.coordinate.file_name))
             print('Fragment {} not found in the list of residues {}'.format(
                 fragment_name, self.topology.chain_atom_names))
             if fragment_from_coordinate:
-                print(('\nPlease check your coordinate file {}. Very likely the name of molecules ({}) does not cooresponds'
-                       ' to the names defined in the settings file and the topology file'
-                       ' ({}).'
-                       ).format(
-                        self.coordinate.file_name, fragment_name, self.topology.chains.keys()[0]))
-            print(80*'!')
+                print(
+                ('\nPlease check your coordinate file {}. Very likely the name of molecules ({}) does not cooresponds'
+                 ' to the names defined in the settings file and the topology file'
+                 ' ({}).'
+                 ).format(
+                    self.coordinate.file_name, fragment_name, self.topology.chains.keys()[0]))
+            print(80 * '!')
             raise RuntimeError('Wrong fragment')
         for k, v in self.topology.chain_atom_names[fragment_name].items():
             self.atomparams[k] = v[0]
@@ -144,7 +150,7 @@ class CGFragment:
         self.atom_in_fragments = [
             files_io.Atom(x[0], x[1], x[2], x[3], x[4] - self.com)
             for x in tmp_atom_list
-            ]
+        ]
         if active_sites:
             for at_as in active_sites:
                 t = at_as.split(':')  # Format: atom name -> maximum degree
@@ -167,7 +173,7 @@ def _get_params(input_dict, key_list, raise_exception=True):
 
 
 class BackmapperSettings2:
-    def __init__(self, input_xml, allow_no_bonds=False):
+    def __init__(self, input_xml, allow_no_bonds=False, generate_only_graph=False):
         self.res2atom = collections.defaultdict(list)
         self.cg_active_sites = collections.defaultdict(list)
         self.atom_id2fragment = {}
@@ -182,8 +188,9 @@ class BackmapperSettings2:
         self.cg2atom = collections.defaultdict(list)
 
         self.allow_no_bonds = allow_no_bonds
+        self.generate_only_graph = generate_only_graph
 
-        self.charge_transfer = {}   # Map with charge transfer.
+        self.charge_transfer = {}  # Map with charge transfer.
 
         self.global_graph = networkx.Graph()
 
@@ -227,16 +234,20 @@ class BackmapperSettings2:
         print('Read coordinate file {} (num: {})'.format(coordinate_file, len(self.cg_coordinate.atoms)))
 
         if len(self.cg_coordinate.atoms) != len(self.cg_topology.atoms):
-            raise RuntimeError('Number of atoms defined in the coordinate file {} (num: {}) is not the same as in topology (num: {})'.format(
-                coordinate_file, len(self.cg_coordinate.atoms), len(self.cg_topology.atoms)))
+            raise RuntimeError(
+                'Number of atoms defined in the coordinate file {} (num: {}) is not the same as in topology (num: {})'.format(
+                    coordinate_file, len(self.cg_coordinate.atoms), len(self.cg_topology.atoms)))
 
         # Predefined active sites map bid1 bid2 label_active_site1 label_active_site2
         self.predefined_active_sites = {}
         if cg_configuration.find('predefined_active_sites') is not None:
-            with open(cg_configuration.find('predefined_active_sites').text.strip(), 'r') as inas:
-                for l in inas:
+            predef_fname = cg_configuration.find('predefined_active_sites').text.strip()
+            if os.path.exists(predef_fname):
+                for l in open(predef_fname, 'r'):
                     t = l.split()
                     self.predefined_active_sites[tuple(map(int, t[:2]))] = t[2:]
+            else:
+                print('File {} with predefined active sites not found'.format(predef_fname))
         print('Predefined active sites: {}'.format(len(self.predefined_active_sites)))
 
         hyb_configuration = self.root.find('hybrid_configuration')
@@ -336,7 +347,7 @@ class BackmapperSettings2:
             if len(bead_list) % 3 != 0:
                 raise RuntimeError('Wrong triplets in <angles> section, found {}'.format(bead_list))
             for idx in xrange(0, len(bead_list), 3):
-                p1, p2, p3 = bead_list[idx], bead_list[idx+1], bead_list[idx+2]
+                p1, p2, p3 = bead_list[idx], bead_list[idx + 1], bead_list[idx + 2]
                 if (p1, p2, p3) in self.angle_params:
                     raise RuntimeError('Parameters for triplet: {} already defined {}'.format((p1, p2, p3), params))
                 self.angle_params[(p1, p2, p3)] = BondedParams(params, typeid)
@@ -424,7 +435,7 @@ class BackmapperSettings2:
                     for beads in cg_bead.findall('beads'):
                         degree = beads.attrib.get('degree', '*')
                         mol_degrees = beads.attrib.get('molecule_degree')
-                        #if mol_degrees and mol_deg not in mol_degrees.split(','):
+                        # if mol_degrees and mol_deg not in mol_degrees.split(','):
                         #    continue
                         active_sites = beads.attrib.get('active_site')
                         as_remove = {}
@@ -463,13 +474,14 @@ class BackmapperSettings2:
                                     'Number of entries in type_map {} does not match number of beads {}'.format(
                                         len(type_map), len(bead_list)))
 
-                        cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove, equilibrate_charges, type_map)
+                        cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove,
+                                                 equilibrate_charges, type_map)
                         try:
                             self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name][degree] = cg_fragment
                         except KeyError as ex:
                             continue
 
-            print(80*'=')
+            print(80 * '=')
             print('Found following fragment definitions')
             for k, v in self.fragments.items():
                 print('==== {} ===='.format(k))
@@ -477,7 +489,7 @@ class BackmapperSettings2:
                     if kk == 'cg_molecule':
                         continue
                     print('++ {} degs={}'.format(kk, vv.keys()))
-            print(80*'=')
+            print(80 * '=')
 
             # Read charge transfer.
             # <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
@@ -502,7 +514,6 @@ class BackmapperSettings2:
                     for tt in transfer_to:
                         tt_to_on, tt_to = tt.split('#')
                         transfer_to_map[tt_to_on] = tt_to
-
 
     def prepare_hybrid(self):
         """Creates hybrid files."""
@@ -561,13 +572,13 @@ class BackmapperSettings2:
                 print('Residue name: {}'.format(residue_name))
 
                 print(('\nIt is very likely that your .xml file does not'
-                       ' contains definition of a fragment for residue {}').format(residue_name))
+                       ' contain definition of a fragment for residue {}').format(residue_name))
 
                 print('====== List of problematic CG nodes ======')
                 for wcn in wrong_cg_nodes:
                     print(wcn)
 
-                print(40*'=')
+                print(40 * '=')
 
                 raise RuntimeError(
                     'Problem with the option file, could not find correct fragment for molecule {}'.format(res_id))
@@ -595,7 +606,7 @@ class BackmapperSettings2:
 
                 self.atom_id2fragment[new_at_id] = cg_fragment
 
-                self.global_graph.add_node(cg_bead_id, cg_bead_id=cg_bead_id, **cg_bead)
+                self.global_graph.add_node(cg_bead_id, atom_id=new_at_id, bead_type='CG', cg_bead_id=cg_bead_id, **cg_bead)
 
                 # Change the mass of CG bead
                 chain_name = cg_fragment.cg_molecule.ident
@@ -631,11 +642,17 @@ class BackmapperSettings2:
                     outfile.atoms[new_at_id] = new_at_atom
                     self.global_graph.add_node(
                         new_at_id,
+                        atom_id=new_at_id,
                         name=at.name,
+                        bead_type='AT',
                         res_id=res_id,
-                        cg_bead_id=cg_id,
+                        cg_bead_id=cg_bead_id,
+                        orig_cg_bead_id=cg_id,
                         position=at.position + cg_com,
                         chain_name=chain_name)
+                    if 'atom_ids' not in self.global_graph.node[cg_bead_id]:
+                        self.global_graph.node[cg_bead_id]['atom_ids'] = []
+                    self.global_graph.node[cg_bead_id]['atom_ids'].append(new_at_id)
 
                     # Set topology atom
                     topol_atom = copy.copy(cg_fragment.topology.chain_atom_names[at.chain_name][at.name][0])
@@ -726,6 +743,7 @@ class BackmapperSettings2:
 
     def rebuild_hybrid_topology(self):
         """Regenerate the hybrid topology based on the new particle ids."""
+
         # First build coarse-grained topology.
         def generate_cg_b_list(old_list):
             if not old_list:
@@ -794,6 +812,15 @@ class BackmapperSettings2:
 
         print('Found {} bonds between coarse-grained beads'.format(len(cg_cross_bonds)))
         print('Generating atomistic cross-bonds between coarse-grained beads; It will take a while...')
+
+        with open('graph_before_cross_bonds.pck', 'wb+') as outf:
+            cPickle.dump(self.global_graph, outf, protocol=2)
+        print('Saved graph before cross-bonds in graph_before_cross_bonds.pck')
+
+        if self.generate_only_graph:
+            print("That's all for now - graph_before_cross_bonds.pck was generated.")
+            sys.exit(0)
+
         # Create the atomistic bonds across the coarse-grained beads.
         # We iterate over bonds in cg_graph and then generate the bonds.
         # At the level of topology, CG bonds are already defined.
@@ -810,17 +837,21 @@ class BackmapperSettings2:
             if n1['res_id'] != n2['res_id']:  # Cross bond between beads in different chains.
                 # Look for active sites on both CG molecules.
                 if self.predefined_active_sites:
-                    ats1, ats2, global_degree = self._get_predefined_active_sites(
-                        b1, b2, global_degree, atoms_to_remove)
+                    ats1, ats2, global_degree = self._get_predefined_active_sites(b1, b2, global_degree, atoms_to_remove)
                 else:
-                    ats1, ats2, global_degree = self._search_active_sites(
-                        b1, b2, global_degree, atoms_to_remove)
+                    ats1, ats2, global_degree = self._search_active_sites(b1, b2, global_degree, atoms_to_remove)
 
                 # End for at1, for at2 loops
                 if ats1 is not None and ats2 is not None:
                     # Selected proper active sites.
                     at_cross_bonds.append((ats1.atom_id, ats2.atom_id))
                     self.global_graph.add_edge(ats1.atom_id, ats2.atom_id)
+
+                    self.global_graph.nodes[ats1.atom_id]['cg_bead_id'] = b1
+                    self.global_graph.nodes[ats1.atom_id]['cg_res_id'] = n1['res_id']
+                    self.global_graph.nodes[ats2.atom_id]['cg_bead_id'] = b2
+                    self.global_graph.nodes[ats2.atom_id]['cg_res_id'] = n2['res_id']
+
                     global_degree[ats1.atom_id] += 1
                     global_degree[ats2.atom_id] += 1
                     # Look for charge to transfer.
@@ -861,11 +892,15 @@ class BackmapperSettings2:
                         b1, b2))
                     if self.allow_no_bonds:
                         print('We skip creation of AT bond between CG beads {}-{}'.format(b1, b2))
+                        with open('missing_cross_bonds.txt', 'a+') as missing_cross_f:
+                            missing_cross_f.write('{} - {}\n'.format(b1, b2))
                     else:
                         print('node 1: {} ats 1 {}'.format(n1, ats1))
                         print('node 2: {} ats 2 {}'.format(n2, ats2))
+                        with open('graph_error.pck', 'wb+') as outf:
+                            cPickle.dump(self.global_graph, outf, protocol=2)
                         raise RuntimeError('Something is really wrong!')
-            sys.stdout.write('{} %\r'.format(100.0*(progress_indc/progress_indc_total)))
+            sys.stdout.write('{} %\r'.format(100.0 * (progress_indc / progress_indc_total)))
             progress_indc += 1.0
 
         # Generate entries for AT cross bonds.
@@ -899,7 +934,7 @@ class BackmapperSettings2:
         at1, max_d1 = as1[0]
         at2, max_d2 = as2[0]
 
-        #for at1, max_d1 in self.cg_active_sites[b1]:
+        # for at1, max_d1 in self.cg_active_sites[b1]:
         #    for at6, max_d2 in self.cg_active_sites[b2]:
         b1_key = '{}:{}'.format(at1.chain_name, at1.name)
         b2_key = '{}:{}'.format(at2.chain_name, at2.name)
@@ -939,7 +974,7 @@ class BackmapperSettings2:
             if at1_deg < max_d1 and at2_deg < max_d2 and valid:
                 # Found correct pair of active sites. Remove the atoms that were
                 # connected to this atom if in settings the set of atoms to remove were defined.
-                ats1, ats2 = at1, at2   # Pair of selected atoms.
+                ats1, ats2 = at1, at2  # Pair of selected atoms.
                 atoms_to_remove.extend(tmp_atoms_to_remove)
                 for ai in tmp_atoms_to_remove:
                     self.global_graph.remove_node(ai)
@@ -960,8 +995,17 @@ class BackmapperSettings2:
     def _search_active_sites(self, b1, b2, global_degree, atoms_to_remove):
         """Look for correct active sites for CG bonds b1-b2."""
         ats1, ats2 = None, None
-        for at1, max_d1 in self.cg_active_sites[b1]:
-            for at2, max_d2 in self.cg_active_sites[b2]:
+        def _sort_active_sites(a, b):
+            at1_deg = global_degree[a[0].atom_id]
+            at2_deg = global_degree[b[0].atom_id]
+            if at1_deg > at2_deg:
+                return 1
+            elif at1_deg < at2_deg:
+                return -1
+            return 0
+
+        for at1, max_d1 in sorted(self.cg_active_sites[b1], _sort_active_sites):
+            for at2, max_d2 in sorted(self.cg_active_sites[b2], _sort_active_sites):
                 b1_key = '{}:{}'.format(at1.chain_name, at1.name)
                 b2_key = '{}:{}'.format(at2.chain_name, at2.name)
                 if self.restricted_cross_bond_patterns and ((b1_key, b2_key) in self.restricted_cross_bond_patterns or (at1.name, at2.name) in self.restricted_cross_bond_patterns):
@@ -1009,7 +1053,7 @@ class BackmapperSettings2:
                     if at1_deg < max_d1 and at2_deg < max_d2 and valid:
                         # Found correct pair of active sites. Remove the atoms that were
                         # connected to this atom if in settings the set of atoms to remove were defined.
-                        ats1, ats2 = at1, at2   # Pair of selected atoms.
+                        ats1, ats2 = at1, at2  # Pair of selected atoms.
                         atoms_to_remove.extend(tmp_atoms_to_remove)
                         for ai in tmp_atoms_to_remove:
                             self.global_graph.remove_node(ai)
@@ -1017,7 +1061,8 @@ class BackmapperSettings2:
                         break
                     else:
                         valid = False
-                        print('{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
+                        print(
+                        '{b1}({b1id})-{b2}({b2id}) deg1:{deg1} < {max_d1} deg2:{deg2} < {max_d2} valid: {valid}'.format(
                             deg1=at1_deg, deg2=at2_deg, b1=b1_key, b2=b2_key, max_d1=max_d1, max_d2=max_d2, valid=valid,
                             b1id=self.cg_new_id_old[b1], b2id=self.cg_new_id_old[b2]
                         ))
@@ -1080,7 +1125,7 @@ class BackmapperSettings2:
 
                 triplet_defined = triplet in self.hyb_topology.new_data[angle_key]
                 reverse_triplet_defined = (
-                    tuple(reversed(triplet)) in self.hyb_topology.new_data[angle_key])
+                        tuple(reversed(triplet)) in self.hyb_topology.new_data[angle_key])
                 # Here the exception can be raised with missing definition
                 if not (triplet_defined or reverse_triplet_defined):
                     param = _get_params(
@@ -1101,7 +1146,7 @@ class BackmapperSettings2:
                     for x in map(self.global_graph.node.get, quadruplet)]
                 s_keys = [x['name'] for x in map(self.global_graph.node.get, quadruplet)]
                 if not (quadruplet in self.hyb_topology.new_data[dihedral_key] or
-                            tuple(reversed(quadruplet)) in self.hyb_topology.new_data[dihedral_key]):
+                        tuple(reversed(quadruplet)) in self.hyb_topology.new_data[dihedral_key]):
                     param = _get_params(
                         self.dihedral_params,
                         [(n1_key, n2_key, n3_key, n4_key), s_keys],
@@ -1144,7 +1189,8 @@ class BackmapperSettings2:
         bonds = [b for b in self.hyb_topology.bonds.keys() if b[0] in self.cg2atom and b[1] in self.cg2atom]
         for k in self.hyb_topology.new_data:
             if 'bonds' in k:
-                bonds.extend([b for b in self.hyb_topology.new_data[k] if b[0] in self.cg2atom and b[1] in self.cg2atom])
+                bonds.extend(
+                    [b for b in self.hyb_topology.new_data[k] if b[0] in self.cg2atom and b[1] in self.cg2atom])
         cg_g.add_edges_from(bonds)
 
         print('Generating exclusion lists AT, nrexcl={}'.format(self.hyb_topology.moleculetype['excl_at']))
