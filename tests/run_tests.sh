@@ -23,7 +23,7 @@ done
 
 # Run Python TestCases
 cd testsuit
-python test_preapre_files.py
+python2 test_preapre_files.py
 RET="$?"
 cd ..
 exit $RET

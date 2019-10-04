@@ -510,7 +510,6 @@ class BackmapperSettings2:
                         'from_atom': transfer_from.split(':'),
                         'when_to_atom': transfer_to_map}
                     transfer_to = ct.attrib['when_to_atom'].split(',')
-                    print transfer_to
                     for tt in transfer_to:
                         tt_to_on, tt_to = tt.split('#')
                         transfer_to_map[tt_to_on] = tt_to
