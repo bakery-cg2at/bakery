@@ -16,7 +16,7 @@ Structure:
 Requirements:
 
  - `networkx >= 2.0`
- - modified `espressopp` - https://github.com/MrTheodor/espressopp/tree/Adress-newdd-rebased
+ - modified `espressopp` - https://github.com/bakery-cg2at/espressopp
  - `numpy`
 
 If you like to use the method in your work, please cite following materials:
