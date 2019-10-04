@@ -1,0 +1,276 @@
+<cg_molecule>
+<name>HEX</name>
+<ident>HEX</ident>
+<topology>
+<cg_beads>
+    <cg_bead>
+        <name>PA1</name>
+        <type>PA</type>
+        <mapping>PA</mapping>
+        <beads>1:HEX:PA1</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PL1</name>
+        <type>PL</type>
+        <mapping>PL</mapping>
+        <beads>1:HEX:PL1</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>RB1</name>
+        <type>RB</type>
+        <mapping>RB</mapping>
+        <beads>1:HEX:RB1</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>DA2</name>
+        <type>DA</type>
+        <mapping>DA</mapping>
+        <beads>1:HEX:DA2</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PL2</name>
+        <type>PL</type>
+        <mapping>PL</mapping>
+        <beads>1:HEX:PL2</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>RB2</name>
+        <type>RB</type>
+        <mapping>RB</mapping>
+        <beads>1:HEX:RB2</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>RA3</name>
+        <type>RA</type>
+        <mapping>RA</mapping>
+        <beads>1:HEX:RA3</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PL3</name>
+        <type>PL</type>
+        <mapping>PL</mapping>
+        <beads>1:HEX:PL3</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>RB3</name>
+        <type>RB</type>
+        <mapping>RB</mapping>
+        <beads>1:HEX:RB3</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>DA4</name>
+        <type>DA</type>
+        <mapping>DA</mapping>
+        <beads>1:HEX:DA4</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PL4</name>
+        <type>PL</type>
+        <mapping>PL</mapping>
+        <beads>1:HEX:PL4</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PB4</name>
+        <type>PB</type>
+        <mapping>PB</mapping>
+        <beads>1:HEX:PB4</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>RA5</name>
+        <type>RA</type>
+        <mapping>RA</mapping>
+        <beads>1:HEX:RA5</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PL5</name>
+        <type>PL</type>
+        <mapping>PL</mapping>
+        <beads>1:HEX:PL5</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PB5</name>
+        <type>PB</type>
+        <mapping>PB</mapping>
+        <beads>1:HEX:PB5</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>DA6</name>
+        <type>DA</type>
+        <mapping>DA</mapping>
+        <beads>1:HEX:DA6</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PL6</name>
+        <type>PL</type>
+        <mapping>PL</mapping>
+        <beads>1:HEX:PL6</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>PB6</name>
+        <type>PB</type>
+        <mapping>PB</mapping>
+        <beads>1:HEX:PB6</beads>
+    </cg_bead>
+</cg_beads>
+<cg_bonded>
+    <bond>
+        <name>b1</name>
+        <beads>
+        PA1 PL1
+        RA3 PL3
+        RA5 PL5
+        </beads>
+    </bond>
+    <bond>
+        <name>b2</name>
+        <beads>
+        DA2 PL2
+        DA4 PL4
+        DA6 PL6
+        </beads>
+    </bond>
+    <bond>
+        <name>b3</name>
+        <beads>
+        PL1 RB1
+        PL2 RB2
+        PL3 RB3
+        </beads>
+    </bond>
+    <bond>
+        <name>b4</name>
+        <beads>
+        PL4 PB4
+        PL5 PB5
+        PL6 PB6
+        </beads>
+    </bond>
+    <bond>
+        <name>b5</name>
+        <beads>
+        RB1 DA2
+        </beads>
+    </bond>
+    <bond>
+        <name>b6</name>
+        <beads>
+        RB2 RA3
+        RB3 RA5
+        </beads>
+    </bond>
+    <bond>
+        <name>b7</name>
+        <beads>
+        RA3 DA4
+        RA5 DA6
+        </beads>
+    </bond>
+    <angle>
+        <name>a1</name>
+        <beads>
+        PA1 PL1 RB1
+        RA3 PL3 RB3
+        </beads>
+    </angle>
+    <angle>
+        <name>a2</name>
+        <beads>
+        DA2 PL2 RB2
+        </beads>
+    </angle>
+    <angle>
+        <name>a3</name>
+        <beads>
+        DA4 PL4 PB4
+        DA6 PL6 PB6
+        </beads>
+    </angle>
+    <angle>
+        <name>a4</name>
+        <beads>
+        RA5 PL5 PB5
+        </beads>
+    </angle>
+    <angle>
+        <name>a5</name>
+        <beads>
+        RB1 DA2 PL2
+        </beads>
+    </angle>
+    <angle>
+        <name>a6</name>
+        <beads>
+        RB2 RA3 PL3
+        RB3 RA5 PL5
+        </beads>
+    </angle>
+    <angle>
+        <name>a7</name>
+        <beads>
+        RB2 RA3 DA4
+        RB3 RA5 DA6
+        </beads>
+    </angle>
+    <angle>
+        <name>a8</name>
+        <beads>
+        RA3 DA4 PL4
+        RA5 DA6 PL6
+        </beads>
+    </angle>
+    <angle>
+        <name>a9</name>
+        <beads>
+        DA2 RB1 PL1
+        </beads>
+    </angle>
+    <angle>
+        <name>a10</name>
+        <beads>
+        RA3 RB2 PL2
+        RA5 RB3 PL3
+        </beads>
+    </angle>
+    <angle>
+        <name>a11</name>
+        <beads>
+        DA4 RA3 RB2
+        DA6 RA5 RB3
+        </beads>
+    </angle>
+    <angle>
+        <name>a12</name>
+        <beads>
+        DA4 RA3 PL3
+        DA6 RA5 PL5
+        </beads>
+    </angle>
+</cg_bonded>
+</topology>
+<maps>
+    <map>
+        <name>PA</name>
+        <weights>27</weights>
+    </map>
+    <map>
+        <name>RA</name>
+        <weights>27</weights>
+    </map>
+    <map>
+        <name>PL</name>
+        <weights>76</weights>
+    </map>
+    <map>
+        <name>RB</name>
+        <weights>14</weights>
+    </map>
+    <map>
+        <name>DA</name>
+        <weights>62</weights>
+    </map>
+    <map>
+        <name>PB</name>
+        <weights>49</weights>
+    </map>
+</maps>
+</cg_molecule>

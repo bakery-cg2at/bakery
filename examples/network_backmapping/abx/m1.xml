@@ -1,0 +1,60 @@
+<cg_molecule>
+<name>CMS</name>
+<ident>CMS</ident>
+<topology>
+<cg_beads>
+    <cg_bead>
+        <name>MA</name>
+        <type>MA</type>
+        <mapping>MA</mapping>
+        <beads>1:CMS:MEA 1:CMS:MEB</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>ML</name>
+        <type>ML</type>
+        <mapping>ML</mapping>
+        <beads>1:CMS:CB1 1:CMS:CB2 1:CMS:CB3 1:CMS:CB4 1:CMS:CB5 1:CMS:CB6 1:CMS:HB2 1:CMS:HB3 1:CMS:HB5 1:CMS:HB6</beads>
+    </cg_bead>
+    <cg_bead>
+        <name>MB</name>
+        <type>MB</type>
+        <mapping>MB</mapping>
+        <beads>1:CMS:CLB 1:CMS:CMB</beads>
+    </cg_bead>
+</cg_beads>
+<cg_bonded>
+    <bond>
+        <name>b1</name>
+        <beads>
+        MA ML
+        </beads>
+    </bond>
+    <bond>
+        <name>b2</name>
+        <beads>
+        ML MB
+        </beads>
+    </bond>
+    <angle>
+        <name>a1</name>
+        <beads>
+        MA ML MB
+        </beads>
+    </angle>
+</cg_bonded>
+</topology>
+<maps>
+    <map>
+        <name>MA</name>
+        <weights>14 13</weights>
+    </map>
+    <map>
+        <name>ML</name>
+        <weights>12 12 12 12 12 12 1 1 1 1</weights>
+    </map>
+    <map>
+        <name>MB</name>
+        <weights>35 14</weights>
+    </map>
+</maps>
+</cg_molecule>

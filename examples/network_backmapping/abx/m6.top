@@ -1,0 +1,13 @@
+; Include forcefield parameters
+#include "/apps/leuven/thinking/2014a/software/GROMACS/5.0.4-intel-2014a-hybrid/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+#include "m6.itp"
+#include "chl.itp"
+
+[ system ]
+; Name
+M6
+
+[ molecules ]
+; Compound        #mols
+M6                167
+CHL               3500

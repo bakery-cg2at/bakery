@@ -1,0 +1,197 @@
+<settings>
+    <cg_molecule equilibrate_charges="1">
+        <name>CMS</name>
+        <ident>CMS</ident>
+        <source_coordinate><file molecule_degree="*">cms.gro</file></source_coordinate>
+        <source_topology><file molecule_degree="*">cms.itp</file></source_topology>
+        <cg_bead>
+            <name>MA</name>
+            <beads>
+                1:CMS:MEA 1:CMS:MEB
+            </beads>
+        </cg_bead>
+        <cg_bead>
+            <name>ML</name>
+        <beads>1:CMS:CB1 1:CMS:CB2 1:CMS:CB3 1:CMS:CB4 1:CMS:CB5 1:CMS:CB6 1:CMS:HB2 1:CMS:HB3 1:CMS:HB5 1:CMS:HB6</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>MB</name>
+            <beads>
+                1:CMS:CLB 1:CMS:CMB
+            </beads>
+        </cg_bead>
+    </cg_molecule>
+    <cg_molecule>
+        <name>FOU</name>
+        <ident>FOU</ident>
+        <source_coordinate><file molecule_degree="1">fou.gro</file></source_coordinate>
+        <source_topology><file molecule_degree="1">fou.itp</file></source_topology>
+        <cg_bead>
+            <name>PA1</name>
+            <type>PA</type>
+            <beads>:CMS:MEA 1:CMS:MEB</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>PL1</name>
+            <type>PL</type>
+            <beads>1:CMS:CB1 1:CMS:CB2 1:CMS:CB3 1:CMS:CB4 1:CMS:CB5 1:CMS:CB6 1:CMS:HB2 1:CMS:HB3 1:CMS:HB5 1:CMS:HB6</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>RB1</name>
+            <type>RB</type>
+            <beads degree="2" active_site="CMS:CMB:2">1:CMS:CMB</beads>
+        </cg_bead>
+    </cg_molecule>
+    <cg_molecule>
+        <name>LCU</name>
+        <ident>LCU</ident>
+        <source_coordinate><file molecule_degree="2">lcu.gro</file></source_coordinate>
+        <source_topology><file molecule_degree="2">lcu.itp</file></source_topology>
+        <cg_bead>
+            <name>DA2</name>
+            <type>DA</type>
+            <beads degree="2" active_site="CMS:MEA:2">2:CMS:MEA 2:CMS:MEB 2:CMS:CLE</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>PL2</name>
+            <type>PL</type>
+            <beads>2:CMS:CB1 2:CMS:CB2 2:CMS:CB3 2:CMS:CB4 2:CMS:CB5 2:CMS:CB6 2:CMS:HB2 2:CMS:HB3 2:CMS:HB5 2:CMS:HB6</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>RB2</name>
+            <type>RB</type>
+            <beads degree="2" active_site="CMS:CMB:2">2:CMS:CMB</beads>
+        </cg_bead>
+    </cg_molecule>
+    <cg_molecule>
+        <name>TEU</name>
+        <ident>TEU</ident>
+        <source_coordinate><file molecule_degree="1">teu.gro</file></source_coordinate>
+        <source_topology><file molecule_degree="1">teu.itp</file></source_topology>
+        <cg_bead>
+            <name>DA4</name>
+            <type>DA</type>
+            <beads degree="2" active_site="CMS:MEA:2">4:CMS:MEA 4:CMS:MEB 4:CMS:CLE</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>PL4</name>
+            <type>PL</type>
+            <beads>4:CMS:CB1 4:CMS:CB2 4:CMS:CB3 4:CMS:CB4 4:CMS:CB5 4:CMS:CB6 4:CMS:HB2 4:CMS:HB3 4:CMS:HB5 4:CMS:HB6</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>PB4</name>
+            <type>PB</type>
+            <beads>4:CMS:CMB 4:CMS:CLB</beads>
+        </cg_bead>
+    </cg_molecule>
+    <cg_molecule>
+        <name>DEU</name>
+        <ident>DEU</ident>
+        <source_coordinate><file molecule_degree="3">deu.gro</file></source_coordinate>
+        <source_topology><file molecule_degree="3">deu.itp</file></source_topology>
+        <cg_bead>
+            <name>RA3</name>
+            <type>RA</type>
+            <beads degree="3" active_site="CMS:MEA:2 CMS:MEB:3">3:CMS:MEA 3:CMS:MEB</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>PL3</name>
+            <type>PL</type>
+            <beads>3:CMS:CB1 3:CMS:CB2 3:CMS:CB3 3:CMS:CB4 3:CMS:CB5 3:CMS:CB6 3:CMS:HB2 3:CMS:HB3 3:CMS:HB5 3:CMS:HB6</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>RB3</name>
+            <type>RB</type>
+            <beads degree="2" active_site="CMS:CMB:2">3:CMS:CMB</beads>
+        </cg_bead>
+    </cg_molecule>
+    <cg_molecule>
+        <name>LEU</name>
+        <ident>LEU</ident>
+        <source_coordinate><file molecule_degree="2">leu.gro</file></source_coordinate>
+        <source_topology><file molecule_degree="2">leu.itp</file></source_topology>
+        <cg_bead>
+            <name>RA5</name>
+            <type>RA</type>
+            <beads degree="3" active_site="CMS:MEA:2 CMS:MEB:3">5:CMS:MEA 5:CMS:MEB</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>PL5</name>
+            <type>PL</type>
+            <beads>5:CMS:CB1 5:CMS:CB2 5:CMS:CB3 5:CMS:CB4 5:CMS:CB5 5:CMS:CB6 5:CMS:HB2 5:CMS:HB3 5:CMS:HB5 5:CMS:HB6</beads>
+        </cg_bead>
+        <cg_bead>
+            <name>PB5</name>
+            <type>PB</type>
+            <beads>5:CMS:CMB 5:CMS:CLB</beads>
+        </cg_bead>
+    </cg_molecule>
+    <cg_configuration>
+        <coordinate>cg_conf.gro</coordinate>
+        <topology>cg_topol.top</topology>
+        <predefined_active_sites>predefined_active_sites.txt</predefined_active_sites>
+    </cg_configuration>
+
+    <hybrid_configuration>
+        <file>hyb_conf.gro</file>
+    </hybrid_configuration>
+
+    <hybrid_topology>
+        <file>hyb_topol.top</file>
+        <bonds params=" 2 0.153 7150000.0; AT MEA-MEB (C-C) bonds">
+            MEA MEB
+        </bonds>
+        <bonds params=" 2 0.139 8660000.0; AT MEA-CMB (C-CH2) bonds">
+            MEA CMB
+        </bonds>
+
+        <angles params=" 2 109.5 520.0 ; AT (C-C-C) angle">
+            MEA MEB MEA
+            MEB MEA MEB
+            MEA CMB CB4
+            CMB MEA MEB
+            MEA MEB CB1
+        </angles>
+
+        <dihedrals params=" 1 0.0 5.9 3 ; AT dihedrals">
+            MEB MEA MEB MEA
+            CMB MEA MEB CB1
+            MEA MEB MEA CMB
+            MEB MEA CMB CB4
+            MEB MEA MEB CB1
+        </dihedrals>
+
+        <dihedrals params=" 1 180.0 5.9 2 ; AT dihedrals">
+            MEA MEB CB1 CB2
+        </dihedrals>
+
+        <dihedrals params=" 1 0.0 0.4 2 ; AT dihedrals">
+            MEA MEB CB1 CB6
+        </dihedrals>
+
+        <dihedrals params=" 1 0.0 1.0 6 ; AT dihedrals">
+            MEA CMB CB4 CB3
+            MEA CMB CB4 CB5
+        </dihedrals>
+
+        <restricted_cross_bond_patterns>
+            MEA-MEA
+            MEB-MEB
+            CMB-CMB
+            MEB-CMB
+            CMB-MEB
+        </restricted_cross_bond_patterns>
+
+
+        <molecule_type>
+            <name>HYB</name>
+            <exclusion>3</exclusion>
+        </molecule_type>
+        <include>
+                "/apps/leuven/ivybridge/2018a/software/GROMACS/2018.4-foss-2018a-PLUMED-2.5.0/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+                ;"/usr/share/gromacs/top/gromos53a6.ff/forcefield.itp"
+                "./cg_ffnb.itp"
+        </include>
+        <system>HYB</system>
+    </hybrid_topology>
+</settings>

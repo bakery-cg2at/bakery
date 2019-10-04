@@ -1,0 +1,8 @@
+module purge
+bash copy_reaction_files.sh $1
+module load 2018a/lab-tools/1.0
+module load Python/2.7.14-intel-2018a 
+bash prepare_files_for_backmapping.sh $1
+module remove 2018a/lab-tools
+module load 2018a/bakery/2.0
+bash prepare_hybrid.sh $1
