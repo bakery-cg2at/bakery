@@ -100,7 +100,7 @@ class CGFragment:
                         '\nPlease check your coordinate file {}. Very likely the name of molecules ({}) does not cooresponds'
                         ' to the names defined in the settings file and the topology file'
                         ' ({}).'
-                        ).format(
+                    ).format(
                         self.coordinate.file_name, fragment_name, self.topology.chains.keys()[0]))
             logger.debug(80 * '!')
             raise RuntimeError('Wrong fragment')
@@ -393,7 +393,7 @@ class BackmapperSettings2:
                 cg_mol_source_topologies[(mol_degree, mol_when)] = file_name
 
             if len(cg_mol_source_topologies) != len(r.find('source_topology').findall('file')):
-                raise RuntimeError('The degree atritbute in source_topology.file tag has to be unique')
+                raise RuntimeError('The degree attribute in source_topology.file tag has to be unique')
 
             if not cg_mol_source_topologies:
                 cg_mol_source_topologies[('*', '*')] = r.find('source_topology').text
@@ -406,14 +406,12 @@ class BackmapperSettings2:
                 cg_mol_source_coordinate[(mol_degree, mol_when)] = file_name
 
             if len(cg_mol_source_coordinate) != len(r.find('source_coordinate').findall('file')):
-                raise RuntimeError('The degree atritbute in source_coordinate.file tag has to be unique')
+                raise RuntimeError('The degree attribute in source_coordinate.file tag has to be unique')
             if not cg_mol_source_coordinate:
                 cg_mol_source_coordinate[('*', '*')] = r.find('source_coordinate').text
 
-            if not all(map(lambda x: x[0] == x[1], zip(cg_mol_source_coordinate, cg_mol_source_topologies))):
+            if not all(map(lambda z: z[0] == z[1], zip(cg_mol_source_coordinate, cg_mol_source_topologies))):
                 raise RuntimeError('The set of degree for source_coordinate and source_topology has to be the same')
-
-            related_bead_names = [x[1] for x in cg_mol_source_coordinate]
 
             for mol_deg_bead_name in cg_mol_source_coordinate:
                 mol_deg, related_bead_name = mol_deg_bead_name
@@ -434,12 +432,16 @@ class BackmapperSettings2:
                 # Generate the beads.
                 for cg_bead in r.findall('cg_bead'):
                     name = cg_bead.find('name').text  # bead name
+
+                    if name != related_bead_name and related_bead_name != "*":
+                        continue
+
                     self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name] = {}
                     for beads in cg_bead.findall('beads'):
                         degree = beads.attrib.get('degree', '*')
                         mol_degrees = beads.attrib.get('molecule_degree')
-                        # if mol_degrees and mol_deg not in mol_degrees.split(','):
-                        #    continue
+                        if mol_degrees and mol_deg not in map(str.strip, mol_degrees.split(',')):
+                           continue
                         active_sites = beads.attrib.get('active_site')
                         as_remove = {}
                         if active_sites:
@@ -477,8 +479,14 @@ class BackmapperSettings2:
                                     'Number of entries in type_map {} does not match number of beads {}'.format(
                                         len(type_map), len(bead_list)))
 
-                        cg_fragment = CGFragment(cg_molecule, bead_list, active_sites, charge_map, as_remove,
-                                                 equilibrate_charges, type_map)
+                        cg_fragment = CGFragment(
+                            cg_molecule,
+                            bead_list,
+                            active_sites,
+                            charge_map,
+                            as_remove,
+                            equilibrate_charges,
+                            type_map)
                         try:
                             self.fragments[(mol_deg, cg_molecule.name, related_bead_name)][name][degree] = cg_fragment
                         except KeyError as ex:
@@ -546,8 +554,8 @@ class BackmapperSettings2:
             cg_nodes = residue_graph.node[res_id]['cg_nodes']
             residue_degree = residue_graph.node[res_id]['degree']
             residue_name = residue_graph.node[res_id]['chain_name']
-            possible_fragments = [x for x in self.fragments.keys()
-                                  if x[1] == residue_name and (x[0] == '*' or x[0] == residue_degree)]
+            possible_fragments = [
+                x for x in self.fragments.keys() if x[1] == residue_name and (x[0] == '*' or x[0] == residue_degree)]
 
             selected_fragment = None
             wrong_cg_nodes = []
@@ -559,8 +567,7 @@ class BackmapperSettings2:
                     cg_node = self.cg_graph.node[cg_id]
                     if str(cg_node['degree']) not in f[cg_node['name']] and '*' not in f[cg_node['name']]:
                         selected_fragment = None
-                        wrong_cg_nodes.append(
-                            (cg_node, f[cg_node['name']]))
+                        wrong_cg_nodes.append((cg_node, f[cg_node['name']]))
                 if selected_fragment is not None:
                     break
             if selected_fragment is None:
@@ -1015,7 +1022,7 @@ class BackmapperSettings2:
                 b1_key = '{}:{}'.format(at1.chain_name, at1.name)
                 b2_key = '{}:{}'.format(at2.chain_name, at2.name)
                 if self.restricted_cross_bond_patterns and ((b1_key, b2_key) in self.restricted_cross_bond_patterns or (
-                at1.name, at2.name) in self.restricted_cross_bond_patterns):
+                        at1.name, at2.name) in self.restricted_cross_bond_patterns):
                     logger.info('Bond {}-{} not used due to the restriction'.format(b1_key, b2_key))
                     continue
 
