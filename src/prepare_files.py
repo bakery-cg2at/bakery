@@ -19,7 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import argparse
+import logging
+
 import structures
+from logger import logger
 
 __doc__ = 'Prepare step of bakery'
 
@@ -29,6 +32,7 @@ def _args():
         description='Prepares hybrid coordinate and topology files.',
         add_help=True)
 
+    parser.add_argument('--verbose', action='store_true', default=False)
     parser.add_argument('--options', help='XML options file', required=True)
     parser.add_argument('--allow-no-bonds', help='Allow to skip AT bonds', action='store_true', dest='allow_no_bonds')
     parser.add_argument('--generate-only-graph', help='Generate only NX graph', action='store_true', dest='generate_only_graph')
@@ -38,6 +42,12 @@ def _args():
 
 def main():
     args = _args().parse_args()
+
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.ERROR)
+
     bck_settings = structures.BackmapperSettings2(args.options, args.allow_no_bonds, args.generate_only_graph)
 
     bck_settings.prepare_hybrid()

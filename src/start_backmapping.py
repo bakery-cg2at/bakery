@@ -16,6 +16,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 
 import espressopp  # NOQA
 import math  # NOQA
@@ -32,6 +33,8 @@ import tools_backmapping
 import tools as general_tools
 
 from app_args import _args_backmapping as _args
+
+from logger import logger
 
 # GROMACS units, kJ/mol K
 kb = 0.0083144621
@@ -561,6 +564,12 @@ def main(args):  # NOQA
 
 if __name__ == '__main__':
     args = _args().parse_args()
+
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.ERROR)
+
     if args.debug:
         import ipdb
         with ipdb.launch_ipdb_on_exception():

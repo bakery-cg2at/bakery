@@ -1,1 +1,6 @@
 testbed
+*.pyc
+.idea
+*.pck
+tests/**/*.dat
+_*

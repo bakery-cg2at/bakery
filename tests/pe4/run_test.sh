@@ -7,7 +7,7 @@
 #
 
 
-python ../../src/prepare_files.py --options pe4_settings.xml
+python ../../src/prepare_files.py --options pe4_settings.xml --verbose
 
 # Compare files and check if they are okey
 diff -q ref_hyb_topol.top hyb_topol.top

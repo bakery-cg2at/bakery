@@ -26,9 +26,10 @@ import os
 import numpy
 import networkx
 
-__doc__ = "Set of I/O classes and functions."""
+from logger import logger
+from logger import logger
 
-logger = logging.getLogger(__name__)
+__doc__ = "Set of I/O classes and functions."""
 
 Atom = collections.namedtuple(
     'Atom', [
@@ -571,7 +572,7 @@ class GROMACSTopologyFile(TopologyFile):
         """Based on the molecules section, replicate data of the topology."""
         molecules = int(self.molecules['mol'])
         if molecules > 1:
-            print('Replicate topology to {} molecules'.format(molecules))
+            logger.info('Replicate topology to {} molecules'.format(molecules))
         atoms_per_molecule = len(self.atoms)
         atom_ids_to_replicate = sorted(self.atoms)
         for molidx in range(2, molecules+1):
@@ -707,9 +708,9 @@ class GROMACSTopologyFile(TopologyFile):
                     section_name = 'improper_dihedrals'
                 current_parser = self.parsers.get(section_name)
                 if current_parser is not None:
-                    print('{}: Reading section {}'.format(self.file_name, section_name))
+                    logger.info('{}: Reading section {}'.format(self.file_name, section_name))
                 else:
-                    print('Parser for section {} not defined'.format(section_name))
+                    logger.error('Parser for section {} not defined'.format(section_name))
                 visited_sections.add(previous_section)
             else:
                 if current_parser is not None and section_name not in visited_sections:
@@ -779,7 +780,7 @@ class GROMACSTopologyFile(TopologyFile):
                     skip_lines = True
                     continue
                 new_data.append(line)
-                print('{}: Writing section {}'.format(filename, current_section))
+                logger.info('{}: Writing section {}'.format(filename, current_section))
                 skip_lines = False
             elif tmp_line.startswith(';') or tmp_line.startswith('#'):
                 new_data.append(line)
@@ -1120,11 +1121,11 @@ class LammpsReader(object):
                     continue
                 section_line = line.split('#')[0].strip()
                 if section_line in self.data_parsers:
-                    print('{}: Reading section {}'.format(file_name, line))
+                    logger.info('{}: Reading section {}'.format(file_name, line))
                     self.previous_section = self.current_section
                     self.current_section = section_line
                 elif 'Coeff' in section_line:
-                    print('{}: Reading coefficient section {}'.format(file_name, line))
+                    logger.info('{}: Reading coefficient section {}'.format(file_name, line))
                     self.previous_section = self.current_section
                     self.current_section = 'coeffs'
                     self._section_line = section_line
@@ -1147,7 +1148,7 @@ class LammpsReader(object):
                     continue
                 if '_style' in line:
                     sp_line = line.split()
-                    print('Reads  {}'.format(sp_line[0]))
+                    logger.info('Reads  {}'.format(sp_line[0]))
                     self.force_field[sp_line[0]] = sp_line[1:]
                 elif 'bond_coeff' in line or 'angle_coeff' in line or 'dihedral_coeff' in line:
                     sp_line = line.split()
@@ -1169,7 +1170,7 @@ class LammpsReader(object):
                 elif 'read_data' in line:
                     sp_line = line.split()
                     data_file = sp_line[1].strip()
-                    print('Reads data file: {}'.format(data_file))
+                    logger.info('Reads data file: {}'.format(data_file))
                     self.read_data(data_file)
 
     def update_atoms(self, file_name):
@@ -1188,7 +1189,7 @@ class LammpsReader(object):
                     self.previous_section = self.current_section
                     self.current_section = section_line
                     if section_line == 'Atoms':
-                        print('{}: Found "Atoms" section, updating atoms'.format(file_name))
+                        logger.info('{}: Found "Atoms" section, updating atoms'.format(file_name))
                 elif self.current_section is not None and self.current_section == 'Atoms':
                     self._read_atom(line, update=True)
                 else:

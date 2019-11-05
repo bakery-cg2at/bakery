@@ -33,6 +33,7 @@ def _args_backmapping():
         description='Starts MD simulation and run backmapping',
         fromfile_prefix_chars='@')
     parser.add_argument('--debug', default=False, action='store_true')
+    parser.add_argument('--verbose', default=False, action='store_true')
     parser.add_argument('--conf', required=True, help='Coordinate file')
     parser.add_argument('--top', '--topology', required=True, help='Topology file',
                         dest='top')
@@ -130,5 +131,7 @@ def _args_backmapping():
     em_group.add_argument('--em_gamma', help='Gamma parameter for force damping', type=float, default=0.0001)
     em_group.add_argument('--em_ftol', help='Force tolerance', type=float, default=10.0)
     em_group.add_argument('--em_max_d', help='Max displacement x box dimension', default=0.001, type=float)
+
+
 
     return parser
