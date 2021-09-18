@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import tools
+from . import tools
 
 __doc__ = "Helper functions for processing GROMACS input files."
 
@@ -43,7 +43,7 @@ def generate_cg_bonded_terms(settings, cg_graph, output_topology, plain=False):
         for k in ff[mol]:
             k0 = k[:-1]
             top_term = settings.cg_molecules[mol].molecule_topology.get(k0, {})
-            for b, b_def in top_term.iteritems():
+            for b, b_def in top_term.items():
                 for l in b_def['list']:
                     ff[mol][k][tuple(l)] = b_def['params'].split()
                     ff[mol][k][tuple(l)].append(b)
@@ -55,7 +55,7 @@ def generate_cg_bonded_terms(settings, cg_graph, output_topology, plain=False):
             key = (n1['name'], n2['name'])
             bond_params = ff[n1['chain_name']]['bonds'].get(
                 key, ff[n1['chain_name']]['bonds'].get((n2['name'], n1['name'])))
-            k_new = map(output_topology.cg_old_new_id.get, (b1, b2))
+            k_new = list(map(output_topology.cg_old_new_id.get, (b1, b2)))
             assert None not in k_new
             if (tuple(k_new) not in output_topology.new_data[bond_label] and
                     (k_new[1], k_new[0]) not in output_topology.new_data[bond_label]):
@@ -76,10 +76,10 @@ def generate_cg_bonded_terms(settings, cg_graph, output_topology, plain=False):
             # Generates angles.
             if angle_params:
                 triplets = {
-                    tuple(map(lambda x: output_topology.atoms[x].name, z)): tuple(z)
+                    tuple([output_topology.atoms[x].name for x in z]): tuple(z)
                     for z in tools.gen_bonded_tuples(new_g, 3, (b1, b2))
                 }
-                for tr, tr_ids in triplets.iteritems():
+                for tr, tr_ids in triplets.items():
                     a_params = angle_params.get(tr, angle_params.get(tuple(reversed(tr))))
                     if (a_params and tr_ids not in output_topology.new_data[ang_label] and
                             tuple(reversed(tr_ids)) not in output_topology.new_data[ang_label]):
@@ -87,10 +87,10 @@ def generate_cg_bonded_terms(settings, cg_graph, output_topology, plain=False):
             # Generates dihedrals.
             if dihedral_params or pairs_params:
                 quadruplets = {
-                    tuple(map(lambda x: output_topology.atoms[x].name, z)): tuple(z)
+                    tuple([output_topology.atoms[x].name for x in z]): tuple(z)
                     for z in tools.gen_bonded_tuples(new_g, 4, (b1, b2))
                 }
-                for q, q_ids in quadruplets.iteritems():
+                for q, q_ids in quadruplets.items():
                     d_params = dihedral_params.get(q, dihedral_params.get(tuple(reversed(q))))
                     p_params = pairs_params.get((q[0], q[3]), pairs_params.get((q[3], q[0])))
                     rq_ids = tuple(reversed(q_ids))

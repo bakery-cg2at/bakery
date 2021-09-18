@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import collections
 import copy
-import files_io
-import tools
+from . import files_io
+from . import tools
 import xml.etree.ElementTree as etree
 
 import datetime
@@ -33,9 +33,9 @@ import sys
 import os
 import warnings
 
-import cPickle
+import pickle
 
-from logger import logger
+from .logger import logger
 
 __doc__ = "Data structures."""
 
@@ -78,14 +78,14 @@ class CGFragment:
         if cg_molecule.fragment_name:
             fragment_name = cg_molecule.fragment_name
         else:
-            if len(self.coordinate.chains.values()) > 1:
+            if len(list(self.coordinate.chains.values())) > 1:
                 raise RuntimeError('Please specify fragment_name for {} as it contains more than one chain type'.format(
                     cg_molecule.name))
-            fragment_name = self.coordinate.chains.keys()[0]
+            fragment_name = list(self.coordinate.chains.keys())[0]
             fragment_from_coordinate = True
         chains = self.coordinate.chains[fragment_name]
         # Select random chain from the ensemble of chains.
-        atoms = chains[random.sample(chains.keys(), 1)[0]]
+        atoms = chains[random.sample(list(chains.keys()), 1)[0]]
         self.atomparams = {}
         if fragment_name not in self.topology.chain_atom_names:
             logger.debug(80 * '!')
@@ -101,10 +101,10 @@ class CGFragment:
                         ' to the names defined in the settings file and the topology file'
                         ' ({}).'
                         ).format(
-                        self.coordinate.file_name, fragment_name, self.topology.chains.keys()[0]))
+                        self.coordinate.file_name, fragment_name, list(self.topology.chains.keys())[0]))
             logger.debug(80 * '!')
             raise RuntimeError('Wrong fragment')
-        for k, v in self.topology.chain_atom_names[fragment_name].items():
+        for k, v in list(self.topology.chain_atom_names[fragment_name].items()):
             self.atomparams[k] = v[0]
 
         self.active_sites = {}
@@ -276,7 +276,7 @@ class BackmapperSettings2:
 
         self.hyb_topology.atomtypes = {}
         # Change atomtypes to 'V' for CG.
-        for k, d in self.cg_topology.atomtypes.items():
+        for k, d in list(self.cg_topology.atomtypes.items()):
             d['type'] = 'V'
             self.hyb_topology.atomtypes[k] = d
 
@@ -336,7 +336,7 @@ class BackmapperSettings2:
             bead_list = bond_term.text.strip().split()
             if len(bead_list) % 2 != 0:
                 raise RuntimeError('Wrong pairs in <bonds> section, found {}'.format(bead_list))
-            pair_list = zip(bead_list[::2], bead_list[1::2])
+            pair_list = list(zip(bead_list[::2], bead_list[1::2]))
             for p1, p2 in pair_list:
                 if (p1, p2) in self.bond_params:
                     raise RuntimeError('Parameters for pair: {} alread defined {}'.format((p1, p2), params))
@@ -349,7 +349,7 @@ class BackmapperSettings2:
             bead_list = angle_term.text.strip().split()
             if len(bead_list) % 3 != 0:
                 raise RuntimeError('Wrong triplets in <angles> section, found {}'.format(bead_list))
-            for idx in xrange(0, len(bead_list), 3):
+            for idx in range(0, len(bead_list), 3):
                 p1, p2, p3 = bead_list[idx], bead_list[idx + 1], bead_list[idx + 2]
                 if (p1, p2, p3) in self.angle_params:
                     raise RuntimeError('Parameters for triplet: {} already defined {}'.format((p1, p2, p3), params))
@@ -364,7 +364,7 @@ class BackmapperSettings2:
             bead_list = dihedral_term.text.strip().split()
             if len(bead_list) % 4 != 0:
                 raise RuntimeError('Wrong quadruplets in <dihedrals> section, found {}'.format(bead_list))
-            for idx in xrange(0, len(bead_list), 4):
+            for idx in range(0, len(bead_list), 4):
                 p1, p2, p3, p4 = bead_list[idx], bead_list[idx + 1], bead_list[idx + 2], bead_list[idx + 3]
                 if (p1, p2, p3, p4) in self.dihedral_params:
                     raise RuntimeError('Parameters for triplet: {} already defined {}'.format((p1, p2, p3, p4), params))
@@ -410,7 +410,7 @@ class BackmapperSettings2:
             if not cg_mol_source_coordinate:
                 cg_mol_source_coordinate[('*', '*')] = r.find('source_coordinate').text
 
-            if not all(map(lambda x: x[0] == x[1], zip(cg_mol_source_coordinate, cg_mol_source_topologies))):
+            if not all([x[0] == x[1] for x in zip(cg_mol_source_coordinate, cg_mol_source_topologies)]):
                 raise RuntimeError('The set of degree for source_coordinate and source_topology has to be the same')
 
             related_bead_names = [x[1] for x in cg_mol_source_coordinate]
@@ -443,7 +443,7 @@ class BackmapperSettings2:
                         active_sites = beads.attrib.get('active_site')
                         as_remove = {}
                         if active_sites:
-                            active_sites = map(str.strip, active_sites.split())
+                            active_sites = list(map(str.strip, active_sites.split()))
                             tmp_as = [':'.join(x.split(':')[:2]) for x in active_sites]
                             # Remove with active sites. So whenever the active site will be used then this list
                             # of atoms will be removed.
@@ -457,7 +457,7 @@ class BackmapperSettings2:
                                 beads_to_remove = asr.text
                                 if not beads_to_remove:
                                     raise RuntimeError('No beads to remove in active_site {}'.format(as_name))
-                                as_remove[as_name] = map(str.strip, asr.text.split())
+                                as_remove[as_name] = list(map(str.strip, asr.text.split()))
                         bead_list = beads.text.split()
 
                         cm = beads.find('charge_map')
@@ -485,12 +485,12 @@ class BackmapperSettings2:
                             continue
 
             logger.debug('Found following fragment definitions')
-            for k, v in self.fragments.items():
+            for k, v in list(self.fragments.items()):
                 logger.debug('==== {} ===='.format(k))
-                for kk, vv in v.items():
+                for kk, vv in list(v.items()):
                     if kk == 'cg_molecule':
                         continue
-                    logger.debug('++ {} degs={}'.format(kk, vv.keys()))
+                    logger.debug('++ {} degs={}'.format(kk, list(vv.keys())))
 
             # Read charge transfer.
             # <charge_transfer on="IPD:N1:2" from="IPD:H8" to="EPO:C23#H25,EPO:C41#H66,HDD:C21#H43,HDD:C32#H44" />
@@ -534,7 +534,7 @@ class BackmapperSettings2:
             residue_graph.node[res_id]['cg_nodes'].append(cg_id)
 
         for cg_bonds in self.cg_graph.edges():
-            cg_nodes = map(self.cg_graph.node.get, cg_bonds)
+            cg_nodes = list(map(self.cg_graph.node.get, cg_bonds))
             if cg_nodes[0]['res_id'] != cg_nodes[1]['res_id']:  # Ignore self-loops
                 residue_graph.add_edge(cg_nodes[0]['res_id'], cg_nodes[1]['res_id'])
 
@@ -546,7 +546,7 @@ class BackmapperSettings2:
             cg_nodes = residue_graph.node[res_id]['cg_nodes']
             residue_degree = residue_graph.node[res_id]['degree']
             residue_name = residue_graph.node[res_id]['chain_name']
-            possible_fragments = [x for x in self.fragments.keys()
+            possible_fragments = [x for x in list(self.fragments.keys())
                                   if x[1] == residue_name and (x[0] == '*' or x[0] == residue_degree)]
 
             selected_fragment = None
@@ -711,8 +711,8 @@ class BackmapperSettings2:
         out_cross_dihedrals = 'cross_dihedrals_{}'.format(self.hyb_topology.file_name.replace('.top', '.dat'))
         with open(out_cross_bonds, 'w') as outbond:
             outl = []
-            for k, p in self.at_cross_bonds.items():
-                new_k = map(at_topol.old2new_ids.get, k)
+            for k, p in list(self.at_cross_bonds.items()):
+                new_k = list(map(at_topol.old2new_ids.get, k))
                 if p.typeid:
                     outl.append([int(p.typeid)] + new_k)
             outl.sort(key=lambda x: x[0])
@@ -721,8 +721,8 @@ class BackmapperSettings2:
 
         with open(out_cross_angles, 'w') as outbond:
             outl = []
-            for k, p in self.at_cross_angles.items():
-                new_k = map(at_topol.old2new_ids.get, k)
+            for k, p in list(self.at_cross_angles.items()):
+                new_k = list(map(at_topol.old2new_ids.get, k))
                 if p.typeid:
                     outl.append([int(p.typeid)] + new_k)
             outl.sort(key=lambda x: x[0])
@@ -731,8 +731,8 @@ class BackmapperSettings2:
 
         with open(out_cross_dihedrals, 'w') as outbond:
             outl = []
-            for k, p in self.at_cross_dihedrals.items():
-                new_k = map(at_topol.old2new_ids.get, k)
+            for k, p in list(self.at_cross_dihedrals.items()):
+                new_k = list(map(at_topol.old2new_ids.get, k))
                 if p.typeid:
                     outl.append([int(p.typeid)] + new_k)
             outl.sort(key=lambda x: x[0])
@@ -748,7 +748,7 @@ class BackmapperSettings2:
         def generate_cg_b_list(old_list):
             if not old_list:
                 return {}
-            return {tuple((map(self.cg_old_new_id.get, k))): v + [' ; cg_bonded'] for k, v in old_list.items()}
+            return {tuple((list(map(self.cg_old_new_id.get, k)))): v + [' ; cg_bonded'] for k, v in list(old_list.items())}
 
         def generate_at_b_list(at):
             """Generates atomistic list of bonds"""
@@ -761,14 +761,14 @@ class BackmapperSettings2:
                 (2, topology.pairs, 'pairs')
             ]
             for ternary, top_list, output_name in bonded_lists:
-                for p, params in top_list.items():
+                for p, params in list(top_list.items()):
                     old2new_id = self.mol_atomid_map[at.chain_name][at.chain_idx]
                     new_tuple = tuple(map(old2new_id.get, p))
 
                     # Skip the terms that involves the missing atoms. The atoms can be missing because of
                     # the degree dependent atomistic fragments.
                     if None not in new_tuple and at.atom_id in new_tuple:  # correct pair
-                        cg_beads = map(self.atom2cg.get, new_tuple)
+                        cg_beads = list(map(self.atom2cg.get, new_tuple))
                         if cg_beads.count(cg_beads[0]) == len(cg_beads):  # Atoms in the same CG bead
                             out_name = output_name
                         else:
@@ -789,9 +789,9 @@ class BackmapperSettings2:
         for atid in self.atom_ids:
             generate_at_b_list(self.hyb_topology.atoms[atid])
 
-        for (b1, b2), params in self.hyb_topology.new_data['{}bonds'.format(self.cross_prefix)].items():
+        for (b1, b2), params in list(self.hyb_topology.new_data['{}bonds'.format(self.cross_prefix)].items()):
             self.global_graph.add_edge(b1, b2)
-        for (b1, b2), params in self.hyb_topology.new_data['bonds'].items():
+        for (b1, b2), params in list(self.hyb_topology.new_data['bonds'].items()):
             self.global_graph.add_edge(b1, b2)
 
         # Generate list of CG bonds that are not defined at AT level
@@ -814,7 +814,7 @@ class BackmapperSettings2:
         logger.info('Generating atomistic cross-bonds between coarse-grained beads; It will take a while...')
 
         with open('graph_before_cross_bonds.pck', 'wb+') as outf:
-            cPickle.dump(self.global_graph, outf, protocol=2)
+            pickle.dump(self.global_graph, outf, protocol=2)
         logger.info('Saved graph before cross-bonds in graph_before_cross_bonds.pck')
 
         if self.generate_only_graph:
@@ -899,7 +899,7 @@ class BackmapperSettings2:
                         logger.error('node 1: {} ats 1 {}'.format(n1, ats1))
                         logger.error('node 2: {} ats 2 {}'.format(n2, ats2))
                         with open('graph_error.pck', 'wb+') as outf:
-                            cPickle.dump(self.global_graph, outf, protocol=2)
+                            pickle.dump(self.global_graph, outf, protocol=2)
                         raise RuntimeError('Something is really wrong!')
             sys.stdout.write('{} %\r'.format(100.0 * (progress_indc / progress_indc_total)))
             progress_indc += 1.0
@@ -1187,7 +1187,7 @@ class BackmapperSettings2:
         at_g = networkx.Graph()
         cg_g = networkx.Graph()
 
-        bonds = [b for b in self.hyb_topology.bonds.keys()
+        bonds = [b for b in list(self.hyb_topology.bonds.keys())
                  if b[0] in self.atom_ids and b[1] in self.atom_ids]
         for k in self.hyb_topology.new_data:
             if 'bonds' in k:
@@ -1195,7 +1195,7 @@ class BackmapperSettings2:
                               if b[0] in self.atom_ids and b[1] in self.atom_ids])
         at_g.add_edges_from(bonds)
 
-        bonds = [b for b in self.hyb_topology.bonds.keys() if b[0] in self.cg2atom and b[1] in self.cg2atom]
+        bonds = [b for b in list(self.hyb_topology.bonds.keys()) if b[0] in self.cg2atom and b[1] in self.cg2atom]
         for k in self.hyb_topology.new_data:
             if 'bonds' in k:
                 bonds.extend(
@@ -1205,15 +1205,15 @@ class BackmapperSettings2:
         logger.info('Generating exclusion lists AT, nrexcl={}'.format(self.hyb_topology.moleculetype['excl_at']))
         paths = dict(networkx.all_pairs_shortest_path(at_g, int(self.hyb_topology.moleculetype['excl_at'])))
         exclusions = set()
-        for l in paths.values():
-            for p in l.values():
+        for l in list(paths.values()):
+            for p in list(l.values()):
                 if len(p) > 1:
                     exclusions.add(tuple(sorted([p[0], p[-1]])))
 
         logger.info('Generating exclusion lists CG, nrexcl={}'.format(self.hyb_topology.moleculetype['excl_cg']))
         paths = dict(networkx.all_pairs_shortest_path(cg_g, int(self.hyb_topology.moleculetype['excl_cg'])))
-        for l in paths.values():
-            for p in l.values():
+        for l in list(paths.values()):
+            for p in list(l.values()):
                 if len(p) > 1:
                     exclusions.add(tuple(sorted([p[0], p[-1]])))
 

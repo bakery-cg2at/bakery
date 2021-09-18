@@ -195,9 +195,9 @@ def PostProcessFileBuffer(filebuffer, defines):
 
 
 def FindType(proposedtype, typelist):
-    type_list=[typeid for (typeid,atype) in typelist.iteritems() if atype==proposedtype ]
+    type_list=[typeid for (typeid,atype) in typelist.items() if atype==proposedtype ]
     if len(type_list)>1:
-        print "Error: duplicate type definitons", proposedtype.parameters
+        print("Error: duplicate type definitons", proposedtype.parameters)
         exit()
     elif len(type_list)==0:
         return None
@@ -220,12 +220,12 @@ class InteractionType:
         self.parameters=parameters
     def __eq__(self,other):
         # interaction types are defined to be equal if all parameters are equal
-        for k, v in self.parameters.iteritems():
+        for k, v in self.parameters.items():
             if k not in other.parameters: return False
             if other.parameters[k]!=v: return False
         return True
     def createEspressoInteraction(self, system, fpl, is_cg=None):
-        print "WARNING: could not set up interaction for", self.parameters, ": Espresso potential not implemented"
+        print("WARNING: could not set up interaction for", self.parameters, ": Espresso potential not implemented")
         return None
     def automaticExclusion(self):
         #overwrite in derrived class if the particular interaction is automatically excluded
@@ -236,7 +236,7 @@ class HarmonicBondedInteractionType(InteractionType):
         # interaction specific stuff here
         # spring constant kb is half the gromacs spring constant
         pot = espressopp.interaction.Harmonic(self.parameters['kb']/2.0, self.parameters['b0'])
-        print 'setting harmonic bond k=', self.parameters['kb']/2.0, 'b0=', self.parameters['b0']
+        print('setting harmonic bond k=', self.parameters['kb']/2.0, 'b0=', self.parameters['b0'])
         if is_cg is not None:
             return espressopp.interaction.FixedPairListAdressHarmonic(system, fpl, pot, is_cg)
         else:
@@ -274,7 +274,7 @@ class HarmonicAngleInteractionType(InteractionType):
         # spring constant kb is half the gromacs spring constant. Also convert deg to rad
         K = self.parameters['k'] / 2.0
         theta0 = self.parameters['theta']*math.pi/180.0
-        print 'setting angular harmonic k=', K, 'theta=', theta0
+        print('setting angular harmonic k=', K, 'theta=', theta0)
         pot = espressopp.interaction.AngularHarmonic(K=K, theta0=theta0)
         if is_cg is not None:
             return espressopp.interaction.FixedTripleListAdressAngularHarmonic(system, fpl, pot, is_cg)
@@ -289,7 +289,7 @@ class TabulatedBondInteractionType(InteractionType):
         fe = fg.split(".")[0]+".pot" # name of espressopp file
         if not os.path.exists(fe):
             convertTable(fg, fe)
-        print('Tabulated bond: {}'.format(fe))
+        print(('Tabulated bond: {}'.format(fe)))
         potTab = espressopp.interaction.Tabulated(itype=spline, filename=fe)
         if is_cg is not None:
             return espressopp.interaction.FixedPairListAdressTabulated(system, fpl, potTab, is_cg)
@@ -305,7 +305,7 @@ class TabulatedAngleInteractionType(InteractionType):
         fe = fg.split(".")[0]+".pot" # name of espressopp file
         if not os.path.exists(fe):
             convertTable(fg, fe)
-        print('Tabulated angular: {}'.format(fe))
+        print(('Tabulated angular: {}'.format(fe)))
         potTab = espressopp.interaction.TabulatedAngular(itype=spline, filename=fe)
         if is_cg is not None:
             return espressopp.interaction.FixedTripleListAdressTabulatedAngular(system, fpl, potTab, is_cg)
@@ -319,7 +319,7 @@ class TabulatedDihedralInteractionType(InteractionType):
         fe = fg.split(".")[0]+".pot" # name of espressopp file
         if not os.path.exists(fe):
             convertTable(fg, fe)
-        print('Tabulated dihedral: {}'.format(fe))
+        print(('Tabulated dihedral: {}'.format(fe)))
         potTab = espressopp.interaction.TabulatedDihedral(itype=spline, filename=fe)
         if is_cg is not None:
             return espressopp.interaction.FixedQuadrupleListAdressTabulatedDihedral(system, fpl, potTab, is_cg)
@@ -328,7 +328,7 @@ class TabulatedDihedralInteractionType(InteractionType):
 
 class RyckaertBellemansDihedralInteractionType(InteractionType):
     def createEspressoInteraction(self, system, fpl, is_cg=None):
-        print('RyckaertBellemans: {}'.format(self.parameters))
+        print(('RyckaertBellemans: {}'.format(self.parameters)))
         pot = espressopp.interaction.DihedralRB(**self.parameters)
         if is_cg is not None:
             return espressopp.interaction.FixedQuadrupleListAdressDihedralRB(system, fpl, pot, is_cg)
@@ -339,8 +339,8 @@ class RyckaertBellemansDihedralInteractionType(InteractionType):
 class HarmonicNCosDihedralInteractionType(InteractionType):
     def createEspressoInteraction(self, system, fpl, is_cg=None):
         theta0 = self.parameters['theta0'] * math.pi/180.0
-        print('HarmonicNCosDihedral, theta0: {}, k:{}, n: {}'.format(
-            theta0, self.parameters['k'], self.parameters['n']))
+        print(('HarmonicNCosDihedral, theta0: {}, k:{}, n: {}'.format(
+            theta0, self.parameters['k'], self.parameters['n'])))
         pot = espressopp.interaction.DihedralHarmonicNCos(
             K=self.parameters['k'], phi0=theta0, multiplicity=self.parameters['n'])
         if is_cg is not None:
@@ -371,8 +371,8 @@ def ParseBondTypeParam(line):
     elif btype == "9":
         p=TabulatedBondInteractionType({"tablenr":int(float(tmp[3])), "k":float(tmp[4])})
     else:
-        print "Unsupported bond type", tmp[2], "in line:"
-        print line
+        print("Unsupported bond type", tmp[2], "in line:")
+        print(line)
         exit()
     return p
 
@@ -388,8 +388,8 @@ def ParseAngleTypeParam(line):
     elif type == 8:
         p=TabulatedAngleInteractionType({"tablenr":int(float(tmp[4])),"k":float(tmp[5])})
     else:
-        print "Unsupported angle type", type, "in line:"
-        print line
+        print("Unsupported angle type", type, "in line:")
+        print(line)
         exit()
     return p
 
@@ -411,15 +411,15 @@ def ParseDihedralTypeParam(line):
     if type == 8:
         p=TabulatedDihedralInteractionType({"tablenr":int(float(tmp[5])), "k":float(tmp[6])})
     elif type == 3:
-        tmp[5:11] = map(float, tmp[5:11])
+        tmp[5:11] = list(map(float, tmp[5:11]))
         p = RyckaertBellemansDihedralInteractionType({'K0': tmp[5], 'K1': tmp[6], 'K2': tmp[7], 'K3': tmp[8], 'K4': tmp[9], 'K5': tmp[10]})
     elif type == 1:
         p = HarmonicNCosDihedralInteractionType({'theta0': float(tmp[5]), 'k': float(tmp[6]), 'n': int(tmp[7])})
     elif type == 2:
         p = HarmonicDihedralInteractionType({'theta0': float(tmp[0]), 'k': float(tmp[1])})
     else:
-        print "Unsupported dihedral type", type, "in line:"
-        print line
+        print("Unsupported dihedral type", type, "in line:")
+        print(line)
         return False
     return p
 
@@ -437,7 +437,7 @@ class Node():
 def FindNodeById(id, nodes):
     list=[n for n in nodes if n.id==id ]
     if len(list)>1:
-        print "Error: duplicate nodes", id
+        print("Error: duplicate nodes", id)
         exit()
     elif len(list)==0:
         return None

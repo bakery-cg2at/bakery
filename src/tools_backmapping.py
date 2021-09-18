@@ -6,9 +6,9 @@
 #
 
 import espressopp
-import tools_sim as tools
-import gromacs_topology
-import cPickle
+from . import tools_sim as tools
+from . import gromacs_topology
+import pickle
 
 
 def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups):
@@ -16,8 +16,8 @@ def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids,
                        if p[0] in at_particle_ids and p[1] in at_particle_ids]
     exclusionlistCG = [p for p in input_conf.exclusions
                        if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
-    print('Excluded pairs for LJ interaction (AT): {}'.format(len(exclusionlistAT)))
-    print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
+    print(('Excluded pairs for LJ interaction (AT): {}'.format(len(exclusionlistAT))))
+    print(('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG))))
     verletlistAT = espressopp.VerletListHybridAT(
         system, cutoff=args.lj_cutoff, exclusionlist=exclusionlistAT)
 
@@ -113,7 +113,7 @@ def setupFirstPhase(system, args, input_conf, at_particle_ids, cg_particle_ids):
 
     exclusionlistCG = [p for p in input_conf.exclusions
                        if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
-    print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
+    print(('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG))))
 
     verletlistCG = espressopp.VerletListHybridCG(
         system,
@@ -160,10 +160,10 @@ def setupSecondPhase(system, args, input_conf, at_particle_ids, cg_particle_ids)
                        if p[0] in at_particle_ids and p[1] in at_particle_ids]
     exclusionlistCG = [p for p in input_conf.exclusions
                        if p[0] in cg_particle_ids and p[1] in cg_particle_ids]
-    print('Number of CG particles: {}'.format(len(cg_particle_ids)))
-    print('Number of AT particles: {}'.format(len(at_particle_ids)))
-    print('Excluded pairs for LJ interaction (AT): {}'.format(len(exclusionlistAT)))
-    print('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG)))
+    print(('Number of CG particles: {}'.format(len(cg_particle_ids))))
+    print(('Number of AT particles: {}'.format(len(at_particle_ids))))
+    print(('Excluded pairs for LJ interaction (AT): {}'.format(len(exclusionlistAT))))
+    print(('Excluded pairs for LJ interaction (CG): {}'.format(len(exclusionlistCG))))
     verletlistAT = espressopp.VerletListHybridAT(
         system, cutoff=args.lj_cutoff, exclusionlist=exclusionlistAT)
 

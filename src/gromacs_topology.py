@@ -27,7 +27,7 @@ import enum
 
 from collections import namedtuple, defaultdict
 import espressopp
-from topology_helper import *
+from .topology_helper import *
 
 __doc__ = """This Python module allows one to use GROMACS data files as the
 input to an ESPResSo++ simulation, set interactions for given
@@ -109,7 +109,7 @@ def read(top_file="", doRegularExcl=True, defines=None):
         FillFileBuffer(top_file, fb, defines=defines)
         f = PostProcessFileBuffer(fb, defines)
 
-        print "Reading top file: " + top_file
+        print("Reading top file: " + top_file)
         line = ''
         a, p = 0, 0
         bondtypecount, angletypecount, dihedraltypecount = 0, 0, 0
@@ -174,11 +174,11 @@ def read(top_file="", doRegularExcl=True, defines=None):
             if '[' in line:
                 section = line.replace('[', '').replace(']', '').strip()
                 previous_section = current_section
-                print('Reading new section {} (previous: {})'.format(section, previous_section))
+                print(('Reading new section {} (previous: {})'.format(section, previous_section)))
                 try:
                     current_section = Section(section)
                 except ValueError as ex:
-                    print('Section {} not found - skipping ({})'.format(section, ex))
+                    print(('Section {} not found - skipping ({})'.format(section, ex)))
                     current_section = None
 
                 if previous_section == Section.AtomTypes:
@@ -230,7 +230,7 @@ def read(top_file="", doRegularExcl=True, defines=None):
                         'eps': float(fields[7])
                     }
                 else:
-                    print('AA other: {}'.format(fields))
+                    print(('AA other: {}'.format(fields)))
                     tmpprop = {
                         "atnum": fields[0],
                         "mass": float(fields[1]),
@@ -298,7 +298,7 @@ def read(top_file="", doRegularExcl=True, defines=None):
                 i, j, k = tmp[:3]
                 p = ParseAngleTypeParam(line)
                 if p is False:
-                    print('Skip angle line: {}'.format(line))
+                    print(('Skip angle line: {}'.format(line)))
 
                 atypeid = FindType(p, angletypeparams)
                 if atypeid == None:
@@ -318,12 +318,12 @@ def read(top_file="", doRegularExcl=True, defines=None):
                 try:
                     int(tmp[4])
                 except ValueError:
-                    print('Invalid dihedral type {}'.format(tmp))
+                    print(('Invalid dihedral type {}'.format(tmp)))
                     continue
                 i, j, k, l = tmp[:4]
                 p = ParseDihedralTypeParam(line)
                 if p is False:
-                    print('Skip dihedral line: {}'.format(line))
+                    print(('Skip dihedral line: {}'.format(line)))
                     continue
 
                 dtypeid = FindType(p, dihedraltypeparams)
@@ -358,7 +358,7 @@ def read(top_file="", doRegularExcl=True, defines=None):
         f.seek(0)  # Now we search for bonds, angles definitions and start from the beginning of the file buffer
 
         for mol in molecules:
-            print('Preparing molecule {name}... ({count})'.format(**mol))
+            print(('Preparing molecule {name}... ({count})'.format(**mol)))
 
             # find and store number of molecules
             num_molecule_copies = mol['count']
@@ -398,30 +398,30 @@ def read(top_file="", doRegularExcl=True, defines=None):
 
     # Update typeparams
     use_keys = [s[0] for s in bonds]
-    bondtypeparams = {k: v for k, v in bondtypeparams.iteritems() if k in use_keys}
+    bondtypeparams = {k: v for k, v in bondtypeparams.items() if k in use_keys}
     use_keys = [s[0] for s in angles]
-    angletypeparams = {k: v for k, v in angletypeparams.iteritems() if k in use_keys}
+    angletypeparams = {k: v for k, v in angletypeparams.items() if k in use_keys}
     use_keys = [s[0] for s in dihedrals]
-    dihedraltypeparams = {k: v for k, v in dihedraltypeparams.iteritems() if k in use_keys}
+    dihedraltypeparams = {k: v for k, v in dihedraltypeparams.items() if k in use_keys}
 
     # The data is packed into a touple, unpackvars contains a string which
     # tells the user which kind of data was read.
 
-    print 'Found default values', defaults
-    print 'Found {} types'.format(len(types))
-    print 'Found {} nonbonded_pairs'.format(len(use_nonbond_params))
-    print 'Found {} masses'.format(len(masses))
-    print 'Found {} charges'.format(len(charges))
-    print 'Found {} atom type parameters'.format(len(use_atomtypeparams))
-    print 'Found {} bonds'.format(len(bonds))
-    print 'Found {} bond type parameters'.format(len(bondtypeparams))
-    print 'Found {} angles'.format(len(angles))
-    print 'Found {} angle type parameters'.format(len(angletypeparams))
-    print 'Found {} dihedrals'.format(len(dihedrals))
-    print 'Found {} dihedral type parameters'.format(len(dihedraltypeparams))
-    print 'Found {} 1-4 pair type parameters'.format(len(use_pairtypeparams))
-    print 'Found {} 1-4 pairs'.format(len(pairs_1_4))
-    print 'Found {} bond exclusions'.format(len(exclusions))
+    print('Found default values', defaults)
+    print('Found {} types'.format(len(types)))
+    print('Found {} nonbonded_pairs'.format(len(use_nonbond_params)))
+    print('Found {} masses'.format(len(masses)))
+    print('Found {} charges'.format(len(charges)))
+    print('Found {} atom type parameters'.format(len(use_atomtypeparams)))
+    print('Found {} bonds'.format(len(bonds)))
+    print('Found {} bond type parameters'.format(len(bondtypeparams)))
+    print('Found {} angles'.format(len(angles)))
+    print('Found {} angle type parameters'.format(len(angletypeparams)))
+    print('Found {} dihedrals'.format(len(dihedrals)))
+    print('Found {} dihedral type parameters'.format(len(dihedraltypeparams)))
+    print('Found {} 1-4 pair type parameters'.format(len(use_pairtypeparams)))
+    print('Found {} 1-4 pairs'.format(len(pairs_1_4)))
+    print('Found {} bond exclusions'.format(len(exclusions)))
 
     gromacs_system = GromacsSystem(
         defaults, types, masses, charges, res_ids, use_atomtypeparams,
@@ -509,23 +509,23 @@ def storeAtoms(f, defaults, types, atomtypes,
 
     # Convert to sigma/epsilon
     if combinationrule == 1:
-        for k, v in use_atomtypeparams.iteritems():
+        for k, v in use_atomtypeparams.items():
             c6, c12 = float(v['sig']), float(v['eps'])
             sig, eps = convertc6c12(c6, c12)
-            print '{}, Convert C6({}), C12({}) to sig({}), eps({})'.format(
-                k, c6, c12, sig, eps)
+            print('{}, Convert C6({}), C12({}) to sig({}), eps({})'.format(
+                k, c6, c12, sig, eps))
             use_atomtypeparams[k]['sig'] = sig
             use_atomtypeparams[k]['eps'] = eps
 
     # Prepare nonbonded params to contains only that store in atomtypes
-    for k, v in nonbondedparams.iteritems():
+    for k, v in nonbondedparams.items():
         if k[0] in use_atomtypeparams and k[1] in use_atomtypeparams:
             use_nonbond_params.update({k: v})
             if combinationrule == 1:
                 c6, c12 = float(v['sig']), float(v['eps'])
                 sig, eps = convertc6c12(c6, c12)
-                print '{}, Convert C6({}), C12({}) to sig({}), eps({})'.format(
-                    k, c6, c12, sig, eps)
+                print('{}, Convert C6({}), C12({}) to sig({}), eps({})'.format(
+                    k, c6, c12, sig, eps))
                 use_nonbond_params[k]['sig'] = sig
                 use_nonbond_params[k]['eps'] = eps
 
@@ -547,7 +547,7 @@ def storePairs(f, defaults, types, pairtypeparams,
     pairs_tmp = []
     pos = f.tell()
     fudgeLJ = float(defaults.get('fudgeLJ', 1.0))
-    print('Using fudgeLJ: {}'.format(fudgeLJ))
+    print(('Using fudgeLJ: {}'.format(fudgeLJ)))
     combinationrule = defaults['combinationrule']
     types_pairtypeid = {}
 
@@ -602,8 +602,8 @@ def storePairs(f, defaults, types, pairtypeparams,
                     pairs_tmp.append((pid1, pid2, pairtypeid, cross_pairs))
                 else:  # Params provided
                     if int(tmp[2]) != 1:
-                        print('Warning! Supported only pair with type 1, given: {}'.format(
-                            tmp[2]))
+                        print(('Warning! Supported only pair with type 1, given: {}'.format(
+                            tmp[2])))
                         line = f.readline()
                         line = line.split(';')[0]
                         continue
@@ -668,7 +668,7 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
             if in_section:
                 tmp = line.split(';')[0].split()
                 lookup = len(tmp) <= 3
-                pid1, pid2 = map(int, tmp[0:2])
+                pid1, pid2 = list(map(int, tmp[0:2]))
                 if lookup:
                     t1, t2 = types[pid1 - 1], types[pid2 - 1]
                     if t1 > t2:
@@ -680,8 +680,8 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
                         try:
                             bdtypeid = bondtypes[t1][t2]
                         except KeyError as ex:
-                            print('Bond types for {}-{} ({}-{}) not found'.format(
-                                pid1, pid2, t1, t2))
+                            print(('Bond types for {}-{} ({}-{}) not found'.format(
+                                pid1, pid2, t1, t2)))
                             print('Check your force-field or topology file.')
                             raise ex
                 else:
@@ -714,11 +714,11 @@ def storeBonds(f, types, bondtypes, bondtypeparams, bonds, num_atoms_molecule, \
 
 
 def storeExclusions(exclusions, nrexcl, bonds):
-    print('Processing exclusion lists for nrexcl={}'.format(nrexcl))
+    print(('Processing exclusion lists for nrexcl={}'.format(nrexcl)))
     if nrexcl > 3:
         raise RuntimeError('Currently nrexcl > 3 is not supported')
 
-    bond_list = [x for p in bonds.values() for x in p]
+    bond_list = [x for p in list(bonds.values()) for x in p]
 
     exclusions = GenerateRegularExclusions(bond_list, nrexcl, exclusions)
 
@@ -754,7 +754,7 @@ def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecul
             if in_section:
                 tmp = line.split(';')[0].split()
                 lookup = len(tmp) <= 4
-                pid1, pid2, pid3 = map(int, tmp[0:3])
+                pid1, pid2, pid3 = list(map(int, tmp[0:3]))
                 if lookup:
                     t1, t2, t3 = types[pid1 - 1], types[pid2 - 1], types[pid3 - 1]
                     if t1 not in angletypes and t3 not in angletypes:
@@ -768,8 +768,8 @@ def storeAngles(f, types, angletypes, angletypeparams, angles, num_atoms_molecul
                         try:
                             typeid = angletypes[t1][t2][t3]
                         except KeyError as ex:
-                            print('Cannot find params for angle {}-{}-{} (type: {}-{}-{})'.format(
-                                pid1, pid2, pid3, t1, t2, t3))
+                            print(('Cannot find params for angle {}-{}-{} (type: {}-{}-{})'.format(
+                                pid1, pid2, pid3, t1, t2, t3)))
                 else:
                     # Checks if we need to make new type.
                     temptype = ParseAngleTypeParam(line)
@@ -852,7 +852,7 @@ def storeDihedrals(f, types, dihedraltypes, dihedraltypeparams, dihedrals,
                     continue
                 tmp = line.split(';')[0].split()
                 lookup = len(tmp) <= 5
-                pid1, pid2, pid3, pid4 = map(int, tmp[0:4])
+                pid1, pid2, pid3, pid4 = list(map(int, tmp[0:4]))
                 if lookup:
                     t1, t2, t3, t4 = (types[x - 1] for x in map(int, tmp[0:4]))
                     try:
@@ -867,9 +867,9 @@ def storeDihedrals(f, types, dihedraltypes, dihedraltypeparams, dihedrals,
                         try:
                             dihtypeid = check_type(t1, t2, t3, t4)
                         except KeyError as ex:
-                            print(('Dihedral\n\t- {}\nnot found.'
-                                   'Please define parameters in topology file').format(line))
-                            print('{} {} {} {}'.format(t1, t2, t3, t4))
+                            print((('Dihedral\n\t- {}\nnot found.'
+                                   'Please define parameters in topology file').format(line)))
+                            print(('{} {} {} {}'.format(t1, t2, t3, t4)))
                             raise ex
                 else:
                     # check if we need to make new type
@@ -941,7 +941,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, use_adress
 
 def setBondedInteractions(system, bonds, bondtypeparams, ftpl=None):
     ret_list = {}
-    for (bid, _), bondlist in bonds.iteritems():
+    for (bid, _), bondlist in bonds.items():
         if ftpl:
             fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
         else:
@@ -956,7 +956,7 @@ def setBondedInteractions(system, bonds, bondtypeparams, ftpl=None):
 
 def setPairInteractions(system, pairs, pairtypeparams, cutoff, ftpl=None):
     ret_list = {}
-    for (pid, _), pair_list in pairs.iteritems():
+    for (pid, _), pair_list in pairs.items():
         if ftpl:
             fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
         else:
@@ -964,7 +964,7 @@ def setPairInteractions(system, pairs, pairtypeparams, cutoff, ftpl=None):
         params = pairtypeparams[pid]
         if params['sig'] > 0.0 and params['eps'] > 0.0:
             fpl.addBonds(pair_list)
-            print 'Pair interaction', params, ' num pairs:', len(pair_list)
+            print('Pair interaction', params, ' num pairs:', len(pair_list))
             interaction = espressopp.interaction.FixedPairListLennardJones(
                 system,
                 fpl,
@@ -981,7 +981,7 @@ def setPairInteractions(system, pairs, pairtypeparams, cutoff, ftpl=None):
 def setAngleInteractions(system, angles, angletypeparams, ftpl=None):
     ret_list = {}
 
-    for (aid, _), anglelist in angles.iteritems():
+    for (aid, _), anglelist in angles.items():
         if ftpl:
             fpl = espressopp.FixedTripleListAdress(system.storage, ftpl)
         else:
@@ -997,7 +997,7 @@ def setAngleInteractions(system, angles, angletypeparams, ftpl=None):
 def setDihedralInteractions(system, dihedrals, dihedraltypeparams, ftpl=None):
     ret_list = {}
 
-    for (did, _), dihedrallist in dihedrals.iteritems():
+    for (did, _), dihedrallist in dihedrals.items():
         if ftpl:
             fpl = espressopp.FixedQuadrupleListAdress(system.storage, ftpl)
         else:
@@ -1027,25 +1027,25 @@ def setLennardJonesInteractions(system, defaults, atomtypeparams, verletlist, cu
         nonbonded_params = {}
 
     combinationrule = int(defaults['combinationrule'])
-    print "Setting up Lennard-Jones interactions"
+    print("Setting up Lennard-Jones interactions")
 
     type_pairs = sorted({
                             tuple(sorted([type_1, type_2]))
-                            for type_1, pi in atomtypeparams.iteritems()
-                            for type_2, pj in atomtypeparams.iteritems()
+                            for type_1, pi in atomtypeparams.items()
+                            for type_2, pj in atomtypeparams.items()
                             if ((pi['atnum'] not in table_groups and pj['atnum'] not in table_groups) and \
                                 (pi.get('atname') not in table_groups and pj.get('atname') not in table_groups))
                             })
-    print('Number of pairs: {}'.format(len(type_pairs)))
+    print(('Number of pairs: {}'.format(len(type_pairs))))
     for type_1, type_2 in type_pairs:
         pi = atomtypeparams[type_1]
         pj = atomtypeparams[type_2]
         if pi['particletype'] == 'V' or pj['particletype'] == 'V':
-            print('Skip {}-{}'.format(type_1, type_2))
+            print(('Skip {}-{}'.format(type_1, type_2)))
             continue
         param = nonbonded_params.get((type_1, type_2))
         if param:
-            print 'Using defined non-bonded cross params', param
+            print('Using defined non-bonded cross params', param)
             sig, eps = param['sig'], param['eps']
         else:
             sig_1, eps_1 = float(pi['sig']), float(pi['eps'])
@@ -1057,7 +1057,7 @@ def setLennardJonesInteractions(system, defaults, atomtypeparams, verletlist, cu
                 sig = (sig_1 * sig_2) ** (1.0 / 2.0)
                 eps = (eps_1 * eps_2) ** (1.0 / 2.0)
         if sig > 0.0 and eps > 0.0:
-            print "Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps", eps, "cutoff", cutoff
+            print("Setting LJ interaction for", type_1, type_2, "to sig ", sig, "eps", eps, "cutoff", cutoff)
             ljpot = espressopp.interaction.LennardJones(epsilon=eps, sigma=sig, shift='auto', cutoff=cutoff)
             if ftpl:
                 interaction.setPotentialAT(type1=type_1, type2=type_2, potential=ljpot)
@@ -1075,13 +1075,13 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
     pref = 138.935485  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2
     type_pairs = sorted({
                             tuple(sorted([type_1, type_2]))
-                            for type_1, pi in atomtypeparams.iteritems()
-                            for type_2, pj in atomtypeparams.iteritems()
+                            for type_1, pi in atomtypeparams.items()
+                            for type_2, pj in atomtypeparams.items()
                             if (#(pi.get('charge', 0.0) != 0.0 and pj.get('charge', 0.0) != 0.0) and \
                                 (pi['particletype'] != 'V' and pj['particletype'] != 'V'))
                             })
 
-    print('Number of coulombic pairs: {}'.format(len(type_pairs)))
+    print(('Number of coulombic pairs: {}'.format(len(type_pairs))))
     if type_pairs:
         if pot is None:
             pot = espressopp.interaction.ReactionFieldGeneralized(
@@ -1101,7 +1101,7 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
             setPotential_fn = interaction.setPotential
 
         for type_1, type_2 in type_pairs:
-            print('Set coulomb interaction: {}-{}'.format(type_1, type_2))
+            print(('Set coulomb interaction: {}-{}'.format(type_1, type_2)))
             setPotential_fn(type1=type_1, type2=type_2, potential=pot)
         return interaction
     else:
@@ -1110,8 +1110,8 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
 
 def setCoulombInteractionsProtein(system, verletlist, rc, types, epsilon1, epsilonprot, epsilonwat, kappa, otype, htype,
                                   hadress=False, adress=False, ftpl=None):
-    print "# Setting up Coulomb reaction field interactions"
-    print "# Using ", epsilonwat, " for water and wat-prot and ", epsilonprot, " for protein"
+    print("# Setting up Coulomb reaction field interactions")
+    print("# Using ", epsilonwat, " for water and wat-prot and ", epsilonprot, " for protein")
 
     pref = 138.935485  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2
 
@@ -1121,7 +1121,7 @@ def setCoulombInteractionsProtein(system, verletlist, rc, types, epsilon1, epsil
                                                               epsilon2=epsilonprot, cutoff=rc)
 
     if hadress and adress:
-        print "Error! In gromacs.setCoulombInteractions, you cannot use adress and hadress at the same time"
+        print("Error! In gromacs.setCoulombInteractions, you cannot use adress and hadress at the same time")
         return
     if hadress:
         interaction = espressopp.interaction.VerletListHadressReactionFieldGeneralized(verletlist, ftpl)
@@ -1149,11 +1149,11 @@ def setCoulombInteractionsProtein(system, verletlist, rc, types, epsilon1, epsil
 
 def setCoulomb14Interactions(system, defaults, onefourlist, rc, types):
     # in Gromas, 1-4 interactions don't have reaction field correction
-    print "# Setting up 1-4 Coulomb interactions"
+    print("# Setting up 1-4 Coulomb interactions")
 
     if defaults:
         fudge = float(defaults['fudgeQQ'])
-        print "# Using electrostatics 1-4 fudge factor ", fudge
+        print("# Using electrostatics 1-4 fudge factor ", fudge)
 
     pref = 138.935485 * fudge  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2, scaled by fudge factor
 
@@ -1179,8 +1179,8 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
 
     type_pairs = {
         tuple(sorted([type_1, type_2]))
-        for type_1, v1 in atomtypeparams.iteritems()
-        for type_2, v2 in atomtypeparams.iteritems()
+        for type_1, v1 in atomtypeparams.items()
+        for type_2, v2 in atomtypeparams.items()
         if (v1['atnum'] in table_groups and v2['atnum'] in table_groups)
         }
     if len(type_pairs) > 0:
@@ -1194,15 +1194,15 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
                 interaction = espressopp.interaction.VerletListTabulated(vl)
 
         for type_1, type_2 in type_pairs:
-            print('Set tabulated potential {}-{}'.format(type_1, type_2))
+            print(('Set tabulated potential {}-{}'.format(type_1, type_2)))
             name_1 = atomtypeparams[type_1]['atnum']
             name_2 = atomtypeparams[type_2]['atnum']
             name_1, name_2 = sorted([name_1, name_2])
             table_name = 'table_{}_{}.pot'.format(name_1, name_2)
             if not os.path.exists(table_name):
                 orig_table_name = 'table_{}_{}.xvg'.format(name_1, name_2)
-                print('Converting table_{name1}_{name2}.xvg to table_{name1}_{name2}.pot'.format(
-                    name1=name_1, name2=name_2))
+                print(('Converting table_{name1}_{name2}.xvg to table_{name1}_{name2}.pot'.format(
+                    name1=name_1, name2=name_2)))
                 convertTable(orig_table_name, table_name)
             if ftpl:
                 interaction.setPotentialCG(

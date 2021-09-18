@@ -26,8 +26,8 @@ import os
 import numpy
 import networkx
 
-from logger import logger
-from logger import logger
+from .logger import logger
+from .logger import logger
 
 __doc__ = "Set of I/O classes and functions."""
 
@@ -237,7 +237,7 @@ class GROFile(CoordinateFile):
 
         # Reads the box size, the last line.
         self.box = numpy.array(
-            map(float, filter(None, self.content[number_of_atoms + 2].split(' ')))
+            list(map(float, [_f for _f in self.content[number_of_atoms + 2].split(' ') if _f]))
             ) * self.scale_factor
 
     def remove_atoms(self, atom_ids, renumber=True):
@@ -392,7 +392,7 @@ class PDBFile(CoordinateFile):
             if line.startswith('CRYST1'):
                 # Box size
                 self.box = numpy.array(
-                    map(float, filter(None, line.split(' '))[1:4])
+                    list(map(float, [_f for _f in line.split(' ') if _f][1:4]))
                     ) * self.scale_factor
             elif line.startswith('ATOM') or line.startswith('HETATM'):
                 atom_id = int(line[6:11].strip())
@@ -545,7 +545,7 @@ class GROMACSTopologyFile(TopologyFile):
     def get_graph(self):
         """Returns graph."""
         output_graph = networkx.Graph(box=None)
-        for at_id, g_at in self.atoms.iteritems():
+        for at_id, g_at in self.atoms.items():
             output_graph.add_node(
                 at_id,
                 name=g_at.name,
@@ -553,15 +553,15 @@ class GROMACSTopologyFile(TopologyFile):
                 position=(-1, -1, -1),
                 chain_name=g_at.chain_name)
 
-        for (b1, b2), params in self.bonds.iteritems():
+        for (b1, b2), params in self.bonds.items():
             output_graph.add_edge(b1, b2, params=params, cross=False)
 
         if 'bonds' in self.new_data:
-            for (b1, b2), params in self.new_data['bonds'].iteritems():
+            for (b1, b2), params in self.new_data['bonds'].items():
                 output_graph.add_edge(b1, b2, params=params, cross=False)
 
         if 'cross_bonds' in self.new_data:
-            for (b1, b2), params in self.new_data['cross_bonds'].iteritems():
+            for (b1, b2), params in self.new_data['cross_bonds'].items():
                 output_graph.add_edge(b1, b2, params=params, cross=True)
 
         for n_id in output_graph.nodes():
@@ -584,8 +584,8 @@ class GROMACSTopologyFile(TopologyFile):
 
         def replicate_list(N_molecules, N_single, input_dict, shift=0):
             return {
-                tuple(map(lambda x: shift + x + (n * N_single), z)): v
-                for n in range(N_molecules) for z, v in input_dict.items()
+                tuple([shift + x + (n * N_single) for x in z]): v
+                for n in range(N_molecules) for z, v in list(input_dict.items())
                 }
         # Replicate other lists.
         self.bonds = replicate_list(molecules, atoms_per_molecule, self.bonds)
@@ -602,7 +602,7 @@ class GROMACSTopologyFile(TopologyFile):
           pdbfile: The pdb file.
         """
         logger.info('Update position from file %s', pdbfile.file_name)
-        for k, v in pdbfile.atoms.iteritems():
+        for k, v in pdbfile.atoms.items():
             self.atoms[k].position = v.position
 
     def remove_atoms(self, atom_ids, renumber=True):
@@ -629,19 +629,19 @@ class GROMACSTopologyFile(TopologyFile):
             self.atoms = new_atoms
 
         # Clean bonded structures.
-        self.bonds = {k: v for k, v in self.bonds.items() if not atom_ids.intersection(k)}
-        self.angles = {k: v for k, v in self.angles.items() if not atom_ids.intersection(k)}
-        self.dihedrals = {k: v for k, v in self.dihedrals.items() if not atom_ids.intersection(k)}
-        self.pairs = {k: v for k, v in self.pairs.items() if not atom_ids.intersection(k)}
-        self.cross_bonds = {k: v for k, v in self.cross_bonds.items() if not atom_ids.intersection(k)}
-        self.cross_angles = {k: v for k, v in self.cross_angles.items() if not atom_ids.intersection(k)}
-        self.cross_dihedrals = {k: v for k, v in self.cross_dihedrals.items() if not atom_ids.intersection(k)}
-        self.cross_pairs = {k: v for k, v in self.cross_pairs.items() if not atom_ids.intersection(k)}
-        self.improper_dihedrals = {k: v for k, v in self.improper_dihedrals.items() if not atom_ids.intersection(k)}
+        self.bonds = {k: v for k, v in list(self.bonds.items()) if not atom_ids.intersection(k)}
+        self.angles = {k: v for k, v in list(self.angles.items()) if not atom_ids.intersection(k)}
+        self.dihedrals = {k: v for k, v in list(self.dihedrals.items()) if not atom_ids.intersection(k)}
+        self.pairs = {k: v for k, v in list(self.pairs.items()) if not atom_ids.intersection(k)}
+        self.cross_bonds = {k: v for k, v in list(self.cross_bonds.items()) if not atom_ids.intersection(k)}
+        self.cross_angles = {k: v for k, v in list(self.cross_angles.items()) if not atom_ids.intersection(k)}
+        self.cross_dihedrals = {k: v for k, v in list(self.cross_dihedrals.items()) if not atom_ids.intersection(k)}
+        self.cross_pairs = {k: v for k, v in list(self.cross_pairs.items()) if not atom_ids.intersection(k)}
+        self.improper_dihedrals = {k: v for k, v in list(self.improper_dihedrals.items()) if not atom_ids.intersection(k)}
 
         # And new_data
         for k in self.new_data:
-            self.new_data[k] = {p: v for p, v in self.new_data[k].items() if not atom_ids.intersection(p)}
+            self.new_data[k] = {p: v for p, v in list(self.new_data[k].items()) if not atom_ids.intersection(p)}
 
 
     def renumber(self):
@@ -658,27 +658,27 @@ class GROMACSTopologyFile(TopologyFile):
         self.atoms = new_atoms
 
         self.bonds = {tuple(map(old2new.get, k)): v
-                      for k, v in self.bonds.items()}
+                      for k, v in list(self.bonds.items())}
         self.angles = {tuple(map(old2new.get, k)): v
-                       for k, v in self.angles.items()}
+                       for k, v in list(self.angles.items())}
         self.dihedrals = {tuple(map(old2new.get, k)): v
-                          for k, v in self.dihedrals.items()}
+                          for k, v in list(self.dihedrals.items())}
         self.pairs = {tuple(map(old2new.get, k)): v
-                      for k, v in self.pairs.items()}
+                      for k, v in list(self.pairs.items())}
         self.cross_bonds = {tuple(map(old2new.get, k)): v
-                            for k, v in self.cross_bonds.items()}
+                            for k, v in list(self.cross_bonds.items())}
         self.cross_angles = {tuple(map(old2new.get, k)): v
-                             for k, v in self.cross_angles.items()}
+                             for k, v in list(self.cross_angles.items())}
         self.cross_dihedrals = {tuple(map(old2new.get, k)): v
-                                for k, v in self.cross_dihedrals.items()}
+                                for k, v in list(self.cross_dihedrals.items())}
         self.cross_pairs = {tuple(map(old2new.get, k)): v
-                            for k, v in self.cross_pairs.items()}
+                            for k, v in list(self.cross_pairs.items())}
         self.improper_dihedrals = {tuple(map(old2new.get, k)): v
-                                   for k, v in self.improper_dihedrals.items()}
+                                   for k, v in list(self.improper_dihedrals.items())}
 
         # And new_data
         for k in self.new_data:
-            self.new_data[k] = {tuple(map(old2new.get, p)): v for p, v in self.new_data[k].items()}
+            self.new_data[k] = {tuple(map(old2new.get, p)): v for p, v in list(self.new_data[k].items())}
 
     def read(self):
         """Reads the topology file."""
@@ -714,7 +714,7 @@ class GROMACSTopologyFile(TopologyFile):
                 visited_sections.add(previous_section)
             else:
                 if current_parser is not None and section_name not in visited_sections:
-                    raw_data = filter(None, line.split())
+                    raw_data = [_f for _f in line.split() if _f]
                     if raw_data:
                         current_parser(raw_data)  # pylint:disable=E1102
 
@@ -953,7 +953,7 @@ class GROMACSTopologyFile(TopologyFile):
 
     def _write_atomtypes(self):
         return_data = []
-        for atom_type, values in self.atomtypes.iteritems():
+        for atom_type, values in self.atomtypes.items():
             return_data.append('{name} {mass} {charge} {type} {sigma} {epsilon}'.format(
                 **values))
         return return_data
@@ -961,7 +961,7 @@ class GROMACSTopologyFile(TopologyFile):
     def _write_bondtypes(self):
         return_data = []
         for i in self.bondtypes:
-            for j, params in self.bondtypes[i].items():
+            for j, params in list(self.bondtypes[i].items()):
                 return_data.append('{} {} {} {}'.format(i, j, params['func'], ' '.join(params['params'])))
         return return_data
 
@@ -969,7 +969,7 @@ class GROMACSTopologyFile(TopologyFile):
         return_data = []
         for i in self.angletypes:
             for j in self.angletypes[i]:
-                for k, params in self.angletypes[i][j].items():
+                for k, params in list(self.angletypes[i][j].items()):
                     return_data.append('{} {} {} {} {}'.format(
                         i, j, k, params['func'], ' '.join(params['params'])))
         return return_data
@@ -979,7 +979,7 @@ class GROMACSTopologyFile(TopologyFile):
         for i in self.dihedraltypes:
             for j in self.dihedraltypes[i]:
                 for k in self.dihedraltypes[i][j]:
-                    for l, params in self.dihedraltypes[i][j][k].items():
+                    for l, params in list(self.dihedraltypes[i][j][k].items()):
                         return_data.append('{} {} {} {} {} {}'.format(
                             i, j, k, l, params['func'], ' '.join(params['params'])))
         return return_data
@@ -1053,7 +1053,7 @@ class GROMACSTopologyFile(TopologyFile):
 
         flat_data = []
         for data in datas:
-            for key, values in data.iteritems():
+            for key, values in data.items():
                 rev_key = tuple(reversed(key))
                 if tuple(key) not in check_in or rev_key not in check_in or rev_key not in data:
                     flat_data.append(list(key) + list(values))
@@ -1216,7 +1216,7 @@ class LammpsReader(object):
         name_seq = settings.name_seq
         output_graph = networkx.Graph(box=(self.box['x'], self.box['y'], self.box['z']))
         seq_idx = {k: 0 for k in name_seq}
-        for at_id, lmp_at in self.atoms.iteritems():
+        for at_id, lmp_at in self.atoms.items():
             chain_name = type2chain_name[lmp_at['atom_type']]
             at_seq = name_seq[chain_name]
             chain_len = len(at_seq)
@@ -1232,7 +1232,7 @@ class LammpsReader(object):
             seq_idx[chain_name] += 1
 
         # Adding edges
-        for bond_id, bond_list in self.topology['bonds'].iteritems():
+        for bond_id, bond_list in self.topology['bonds'].items():
             for b1, b2 in bond_list:
                 output_graph.add_edge(b1, b2, bond_type=bond_id)
 
@@ -1249,7 +1249,7 @@ class LammpsReader(object):
         if 'types' in sp_line:
             self._type_counters[sp_line[1]] = int(sp_line[0])
         elif 'xhi' in sp_line or 'yhi' in sp_line or 'zhi' in sp_line:
-            lo, hi = map(float, sp_line[:2])
+            lo, hi = list(map(float, sp_line[:2]))
             lo *= self.distance_scale_factor
             hi *= self.distance_scale_factor
             tag = sp_line[-1].replace('hi', '')
@@ -1270,10 +1270,10 @@ class LammpsReader(object):
     def _read_atom(self, input_line, update=False):
         sp_line = input_line.split()
         # Set type
-        sp_line[:3] = map(int, sp_line[:3])
-        sp_line[3:7] = map(float, sp_line[3:7])
+        sp_line[:3] = list(map(int, sp_line[:3]))
+        sp_line[3:7] = list(map(float, sp_line[3:7]))
         if len(sp_line) == 10:
-            sp_line[7:10] = map(int, sp_line[7:10])
+            sp_line[7:10] = list(map(int, sp_line[7:10]))
             at_id, at_tag, at_type, q, x, y, z, nx, ny, nz = sp_line
         else:
             at_id, at_tag, at_type, q, x, y, z = sp_line
@@ -1328,7 +1328,7 @@ class LammpsReader(object):
     def _read_velocity(self, input_line):
         sp_line = input_line.split()
         sp_line[0] = int(sp_line[0])
-        sp_line[1:] = map(float, sp_line[1:])
+        sp_line[1:] = list(map(float, sp_line[1:]))
         at_id, vx, vy, vz = sp_line
         self.atoms[at_id]['vel'] = (
             vx*self.distance_scale_factor,
@@ -1336,7 +1336,7 @@ class LammpsReader(object):
             vz*self.distance_scale_factor)
 
     def _read_bond(self, input_line):
-        idd, bond_type, at_1, at_2 = map(int, input_line.split())
+        idd, bond_type, at_1, at_2 = list(map(int, input_line.split()))
         if idd > self._item_counters['bonds']:
             raise RuntimeError('Number of bond is wrong.')
 
@@ -1345,7 +1345,7 @@ class LammpsReader(object):
         self.topology['bonds'][bond_type].append(tuple(sorted((at_1, at_2))))
 
     def _read_angle(self, input_line):
-        idd, angle_type, at_1, at_2, at_3 = map(int, input_line.split())
+        idd, angle_type, at_1, at_2, at_3 = list(map(int, input_line.split()))
         if idd > self._item_counters['angles']:
             raise RuntimeError('Number of angle is wrong.')
 
@@ -1354,7 +1354,7 @@ class LammpsReader(object):
         self.topology['angles'][angle_type].append((at_1, at_2, at_3))
 
     def _read_dihedral(self, input_line):
-        idd, dihedral_type, at_1, at_2, at_3, at_4 = map(int, input_line.split())
+        idd, dihedral_type, at_1, at_2, at_3, at_4 = list(map(int, input_line.split()))
         if idd > self._item_counters['dihedrals']:
             raise RuntimeError('Number of dihedrals is wrong.')
 
@@ -1365,7 +1365,7 @@ class LammpsReader(object):
         self.topology['dihedrals'][dihedral_type].append((at_1, at_2, at_3, at_4))
 
     def _read_improper(self, input_line):
-        idd, dihedral_type, at_1, at_2, at_3, at_4 = map(int, input_line.split())
+        idd, dihedral_type, at_1, at_2, at_3, at_4 = list(map(int, input_line.split()))
         if idd > self._item_counters['improperss']:
             raise RuntimeError('Number of impropers is wrong.')
 

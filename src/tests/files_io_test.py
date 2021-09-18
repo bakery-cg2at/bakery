@@ -83,7 +83,7 @@ class GROFileTestCase(unittest.TestCase):
         gro_file.box = (10, 10, 10)
 
         new_gro = files_io.GROFile.copy(gro_file)
-        self.assertEquals(new_gro.atoms, gro_file.atoms)
+        self.assertEqual(new_gro.atoms, gro_file.atoms)
         self.assertEqual(new_gro.box, gro_file.box)
 
     def test_copy_part(self):
@@ -113,15 +113,15 @@ class GROFileTestCase(unittest.TestCase):
         gro_file.box = (10, 10, 10)
 
         new_gro = files_io.GROFile.copy(gro_file, particle_ids=[2], renumber=True)
-        self.assertNotEquals(new_gro.atoms, gro_file.atoms)
-        self.assertEquals(len(new_gro.atoms), 1)
-        self.assertEquals(new_gro.atoms[1].name, 'A2')
+        self.assertNotEqual(new_gro.atoms, gro_file.atoms)
+        self.assertEqual(len(new_gro.atoms), 1)
+        self.assertEqual(new_gro.atoms[1].name, 'A2')
 
         # Copy without renumber
         new_gro = files_io.GROFile.copy(gro_file, particle_ids=[2], renumber=False)
-        self.assertNotEquals(new_gro.atoms, gro_file.atoms)
-        self.assertEquals(len(new_gro.atoms), 1)
-        self.assertEquals(new_gro.atoms[2].name, 'A2')
+        self.assertNotEqual(new_gro.atoms, gro_file.atoms)
+        self.assertEqual(len(new_gro.atoms), 1)
+        self.assertEqual(new_gro.atoms[2].name, 'A2')
 
     def test_update_position(self):
         gro_file = files_io.GROFile('abc.gro')
@@ -150,7 +150,7 @@ class GROFileTestCase(unittest.TestCase):
         gro_file.box = (10, 10, 10)
 
         system = System()
-        self.assertEquals(gro_file.atoms[3].position, (2, 2, 2))
+        self.assertEqual(gro_file.atoms[3].position, (2, 2, 2))
         gro_file.update_positions(system)
-        print(gro_file.atoms[3].position)
+        print((gro_file.atoms[3].position))
         self.assertItemsEqual(gro_file.atoms[3].position, [33, 33, 33])

@@ -25,16 +25,16 @@ import random
 import os
 import time
 
-import files_io
-import tools_sim as tools
-import gromacs_topology
+from . import files_io
+from . import tools_sim as tools
+from . import gromacs_topology
 
-import tools_backmapping
-import tools as general_tools
+from . import tools_backmapping
+from . import tools as general_tools
 
-from app_args import _args_backmapping as _args
+from .app_args import _args_backmapping as _args
 
-from logger import logger
+from .logger import logger
 
 # GROMACS units, kJ/mol K
 kb = 0.0083144621
@@ -65,15 +65,15 @@ def main(args):  # NOQA
 
     if not generate_exclusions:
         exclusion_file = open(args.exclusion_list, 'r')
-        exclusions = [map(int, x.split()) for x in exclusion_file.readlines()]
-        print('Read exclusion list from {} (total: {})'.format(args.exclusion_list, len(exclusions)))
+        exclusions = [list(map(int, x.split())) for x in exclusion_file.readlines()]
+        print(('Read exclusion list from {} (total: {})'.format(args.exclusion_list, len(exclusions))))
         input_conf = input_conf._replace(exclusions=exclusions)
     else:
         exclusion_list_file = 'exclusion_{}.list'.format(args.top.split('.')[0])
         with open(exclusion_list_file, 'w') as fel:
             for p in input_conf.exclusions:
                 fel.write('{} {}\n'.format(*p))
-        print('Save exclusion list: {} ({})'.format(exclusion_list_file, len(input_conf.exclusions)))
+        print(('Save exclusion list: {} ({})'.format(exclusion_list_file, len(input_conf.exclusions))))
 
     box = input_gro_conf.box
     print('\nSetting up simulation...')
@@ -89,7 +89,7 @@ def main(args):  # NOQA
         dynamic_res_time = int(int(1.0 / args.alpha) / integrator_step) + 2
         if args.nonuniform_lambda:
             dynamic_res_time += int(10000/integrator_step)
-            print('Running nonuniform lambda, extended running time by {} steps'.format(10000))
+            print(('Running nonuniform lambda, extended running time by {} steps'.format(10000)))
 
     if args.skin:
         skin = args.skin
@@ -105,22 +105,22 @@ def main(args):  # NOQA
 
     _args().save_to_file('{}_{}_params.out'.format(args.output_prefix, rng_seed), args)
 
-    print('Skin: {}'.format(skin))
-    print('RNG Seed: {}'.format(rng_seed))
-    print('Time step: {}'.format(args.dt))
-    print('LJ cutoff: {}'.format(lj_cutoff))
-    print('CG cutoff: {}'.format(cg_cutoff))
-    print('Boltzmann constant = {}'.format(kb))
+    print(('Skin: {}'.format(skin)))
+    print(('RNG Seed: {}'.format(rng_seed)))
+    print(('Time step: {}'.format(args.dt)))
+    print(('LJ cutoff: {}'.format(lj_cutoff)))
+    print(('CG cutoff: {}'.format(cg_cutoff)))
+    print(('Boltzmann constant = {}'.format(kb)))
 
     system = espressopp.System()
     system.rng = espressopp.esutil.RNG(rng_seed)
 
     part_prop, all_particles, adress_tuple = tools.genParticleList(
         input_conf, input_gro_conf, adress=True, use_charge=True)
-    print('Reads {} particles with properties {}'.format(len(all_particles), part_prop))
+    print(('Reads {} particles with properties {}'.format(len(all_particles), part_prop)))
 
     if input_conf.charges:
-        print('Total charge: {}'.format(sum(input_conf.charges)))
+        print(('Total charge: {}'.format(sum(input_conf.charges))))
 
     # Make output from AT particles.
     at_gro_conf = files_io.GROFile.copy(input_gro_conf, [x for p in adress_tuple for x in p[1:]], renumber=True)
@@ -129,8 +129,8 @@ def main(args):  # NOQA
     # Generate initial velocities, only for CG particles, AT particles will get the CG particle velocity.
     particle_list = []
     index_adrat = part_prop.index('adrat')
-    print('Generating velocities from Maxwell-Boltzmann distribution for T={}'.format(
-        args.temperature))
+    print(('Generating velocities from Maxwell-Boltzmann distribution for T={}'.format(
+        args.temperature)))
     part_prop.append('v')
     cg_particles = [x for x in all_particles if x.adrat == 0]
     vx, vy, vz = espressopp.tools.velocities.gaussian(
@@ -159,27 +159,27 @@ def main(args):  # NOQA
 
     del part_prop[index_adrat]
 
-    print('Running with box {}'.format(box))
+    print(('Running with box {}'.format(box)))
     system.bc = espressopp.bc.OrthorhombicBC(system.rng, box)
     system.skin = skin
     if args.node_grid:
-        nodeGrid = map(int, args.node_grid.split(','))
+        nodeGrid = list(map(int, args.node_grid.split(',')))
     else:
         nodeGrid = espressopp.tools.decomp.nodeGrid(MPI.COMM_WORLD.size)
-    print('Number of nodes {}, node-grid: {}'.format(
-        MPI.COMM_WORLD.size, nodeGrid))
+    print(('Number of nodes {}, node-grid: {}'.format(
+        MPI.COMM_WORLD.size, nodeGrid)))
     if args.cell_grid:
-        cellGrid = map(int, args.cell_grid.split(','))
+        cellGrid = list(map(int, args.cell_grid.split(',')))
     else:
         cellGrid = espressopp.tools.decomp.cellGrid(box, nodeGrid, max_cutoff, skin)
-    print('Cell grid: {}'.format(cellGrid))
+    print(('Cell grid: {}'.format(cellGrid)))
 
     hook_after_init = lambda *_, **__: True
     hook_setup_interactions = lambda *_, **__: True
     if args.hooks and os.path.exists(args.hooks):
-        print('Found {}'.format(args.hooks))
+        print(('Found {}'.format(args.hooks)))
         l = {}
-        execfile(args.hooks, globals(), l)
+        exec(compile(open(args.hooks, "rb").read(), args.hooks, 'exec'), globals(), l)
         hook_after_init = l.get('hook_after_init', hook_after_init)
         hook_setup_interactions = l.get('hook_setup_interactions', hook_setup_interactions)
 
@@ -187,7 +187,7 @@ def main(args):  # NOQA
 
     hook_after_init(system, particle_list, adress_tuple, input_conf, part_prop)
 
-    system.storage.addParticles(map(tuple, particle_list), *part_prop)
+    system.storage.addParticles(list(map(tuple, particle_list)), *part_prop)
     system.storage.decompose()
 
     vs_list = espressopp.FixedVSList(system.storage)
@@ -213,12 +213,12 @@ def main(args):  # NOQA
     system.storage.decompose()
 
     print('Prepared:')
-    print('Bonds: {}'.format(sum(len(x) for x in input_conf.bondtypes.values())))
-    print('Angles: {}'.format(sum(len(x) for x in input_conf.angletypes.values())))
-    print('Dihedrals: {}'.format(sum(len(x) for x in input_conf.dihedraltypes.values())))
-    print('Pairs: {}'.format(sum(len(x) for x in input_conf.pairtypes.values())))
-    print('CG particles: {}'.format(len(cg_particle_ids)))
-    print('AT particles: {}'.format(len(at_particle_ids)))
+    print(('Bonds: {}'.format(sum(len(x) for x in list(input_conf.bondtypes.values())))))
+    print(('Angles: {}'.format(sum(len(x) for x in list(input_conf.angletypes.values())))))
+    print(('Dihedrals: {}'.format(sum(len(x) for x in list(input_conf.dihedraltypes.values())))))
+    print(('Pairs: {}'.format(sum(len(x) for x in list(input_conf.pairtypes.values())))))
+    print(('CG particles: {}'.format(len(cg_particle_ids))))
+    print(('AT particles: {}'.format(len(at_particle_ids))))
 
     print('Setting dynamic resolution')
     dynamic_res = espressopp.integrator.DynamicResolution(
@@ -233,7 +233,7 @@ def main(args):  # NOQA
         table_groups = []
     else:
         table_groups = args.table_groups.split(',')
-        print('Using table groups: {}'.format(table_groups))
+        print(('Using table groups: {}'.format(table_groups)))
 
     # Define interactions.
     verletlistAT, verletlistCG = tools_backmapping.setupSinglePhase(
@@ -241,12 +241,12 @@ def main(args):  # NOQA
 
     hook_setup_interactions(system, input_conf, verletlistAT, verletlistCG)
 
-    print('Number of interactions: {}'.format(system.getNumberOfInteractions()))
+    print(('Number of interactions: {}'.format(system.getNumberOfInteractions())))
 
     # Define the thermostat
     temperature = args.temperature * kb
-    print('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma))
-    print('Thermostat: {}'.format(args.thermostat))
+    print(('Temperature: {} ({}), gamma: {}'.format(args.temperature, temperature, args.thermostat_gamma)))
+    print(('Thermostat: {}'.format(args.thermostat)))
     if args.thermostat == 'lv':
         if args.thermostat_whole:
             print('Enable thermostat on all particles, not only atomistic')
@@ -271,7 +271,7 @@ def main(args):  # NOQA
         args.output_prefix,
         rng_seed, args.alpha,
         output_file)
-    print('Trajectory saved to: {}'.format(h5file))
+    print(('Trajectory saved to: {}'.format(h5file)))
     traj_file = espressopp.io.DumpH5MD(
         system, h5file,
         group_name=h5md_group,
@@ -305,12 +305,12 @@ def main(args):  # NOQA
     if k_trj_collect == 0:
         k_trj_flush = 0
 
-    print('Dynamic resolution, rate={}'.format(args.alpha))
-    print('CG equilibration for {}'.format(k_eq_step * integrator_step))
-    print('Collect trajectory every {} step'.format(k_trj_collect * integrator_step))
-    print('Flush trajectory every {} step'.format(k_trj_flush * integrator_step))
-    print('Collect energy every {} step'.format(args.energy_collect))
-    print('Atomistic long run for {}'.format(long_step * integrator_step))
+    print(('Dynamic resolution, rate={}'.format(args.alpha)))
+    print(('CG equilibration for {}'.format(k_eq_step * integrator_step)))
+    print(('Collect trajectory every {} step'.format(k_trj_collect * integrator_step)))
+    print(('Flush trajectory every {} step'.format(k_trj_flush * integrator_step)))
+    print(('Collect energy every {} step'.format(args.energy_collect)))
+    print(('Atomistic long run for {}'.format(long_step * integrator_step)))
 
     system.storage.decompose()
 
@@ -321,10 +321,10 @@ def main(args):  # NOQA
         ext_dump_conf_gro = espressopp.integrator.ExtAnalyze(
             dump_conf_gro, args.gro_collect)
         integrator.addExtension(ext_dump_conf_gro)
-        print('Store .gro file {}'.format(gro_collect_filename))
+        print(('Store .gro file {}'.format(gro_collect_filename)))
 
     if args.remove_com > 0:
-        print('Removes total velocity of the system every {} steps'.format(args.remove_com))
+        print(('Removes total velocity of the system every {} steps'.format(args.remove_com)))
         total_velocity = espressopp.analysis.CMVelocity(system)
         ext_remove_com = espressopp.integrator.ExtAnalyze(total_velocity, args.remove_com)
         integrator.addExtension(ext_remove_com)
@@ -333,7 +333,7 @@ def main(args):  # NOQA
     gro_whole.write(
         '{}confout_full_{}_{}_before.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
 
-    print('Number of particles: {}'.format(len(particle_list)))
+    print(('Number of particles: {}'.format(len(particle_list))))
 
     time_sim0 = time.time()
 
@@ -357,20 +357,20 @@ def main(args):  # NOQA
     has_capforce = False
     if args.cap_force and not args.cap_force_lj:
         has_capforce = True
-        print('Define maximum cap-force during the backmapping (max: {})'.format(args.cap_force))
+        print(('Define maximum cap-force during the backmapping (max: {})'.format(args.cap_force)))
         cap_force = espressopp.integrator.CapForce(system, args.cap_force)
 
     print('Activating dynamic resolution changer')
     dynamic_res.active = True
 
-    print('Change time-step to {}'.format(args.dt_dyn))
+    print(('Change time-step to {}'.format(args.dt_dyn)))
     integrator.dt = args.dt_dyn
     if has_capforce:
         thermostat.disconnect()
         integrator.addExtension(cap_force)
         thermostat.connect()
-    print('End of CG simulation. Start dynamic resolution, dt={}'.format(
-        args.dt_dyn))
+    print(('End of CG simulation. Start dynamic resolution, dt={}'.format(
+        args.dt_dyn)))
     two_phase = args.two_phase or args.second_phase_em
 
     if two_phase:
@@ -405,17 +405,17 @@ def main(args):  # NOQA
         gro_whole.update_positions(system)
         gro_whole.write(
             '{}confout_full_{}_{}_phase_one.gro'.format(args.output_prefix, args.alpha, args.rng_seed), force=True)
-        print('Atomistic configuration write to: {}'.format(confout_aa))
+        print(('Atomistic configuration write to: {}'.format(confout_aa)))
 
         ########## SECOND PHASE ################
         # Change interactions.
-        print('Second phase, switch on non-bonded interactions, time-step: {}'.format(args.dt_dyn))
+        print(('Second phase, switch on non-bonded interactions, time-step: {}'.format(args.dt_dyn)))
         verletlistCG.disconnect()
         verletlistAT, verletlistCG = tools_backmapping.setupSecondPhase(
             system, args, input_conf, at_particle_ids, cg_particle_ids)
         # Reset dynamic res, start again.
         if args.alpha2 is not None:
-            print('Change dynamic resolution alpha: {}'.format(args.alpha2))
+            print(('Change dynamic resolution alpha: {}'.format(args.alpha2)))
             dynamic_res.rate = args.alpha2
             dynamic_res_time = int(int(1.0 / args.alpha2) / integrator_step) + 1 if args.alpha2 > 0.0 else 0
         dynamic_res.active = True
@@ -467,12 +467,12 @@ def main(args):  # NOQA
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
 
-    print('Atomistic configuration write to: {}'.format(confout_aa))
+    print(('Atomistic configuration write to: {}'.format(confout_aa)))
 
     ############ Now run normal AT simulation.############
-    print('End of dynamic resolution, change energy measuring accuracy to {}'.format(
-        args.energy_collect))
-    print('Set back time-step to: {}'.format(args.dt))
+    print(('End of dynamic resolution, change energy measuring accuracy to {}'.format(
+        args.energy_collect)))
+    print(('Set back time-step to: {}'.format(args.dt)))
     time_sim0 = time.time()
     ext_analysis.interval = args.energy_collect
     if two_phase:
@@ -486,10 +486,10 @@ def main(args):  # NOQA
             print('Cap-force switched off')
         else:
             cap_force.ramp = args.cap_force_ramp
-            print('Cap-force switched gradually, decrease of {}'.format(cap_force.ramp))
+            print(('Cap-force switched gradually, decrease of {}'.format(cap_force.ramp)))
 
     integrator.dt = args.dt
-    print('Running for {} steps'.format(long_step * integrator_step))
+    print(('Running for {} steps'.format(long_step * integrator_step)))
     for k in range(long_step):
         if k_trj_collect > 0 and k % k_trj_collect == 0:
             traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
@@ -540,9 +540,9 @@ def main(args):  # NOQA
     confout_aa = '{}confout_final_aa_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)
     at_gro_conf.update_positions(system)
     at_gro_conf.write(confout_aa, force=True)
-    print('Final atomistic configuration write to: {}'.format(confout_aa))
-    print('Final hybrid configuration write to: {}'.format(
-        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed)))
+    print(('Final atomistic configuration write to: {}'.format(confout_aa)))
+    print(('Final hybrid configuration write to: {}'.format(
+        '{}confout_final_full_{}_{}.gro'.format(args.output_prefix, args.alpha, rng_seed))))
 
     # Write atomistic topology
     hyb_top = files_io.GROMACSTopologyFile(args.top)
@@ -550,15 +550,15 @@ def main(args):  # NOQA
     at_topology = general_tools.get_atomistic_topology(
         hyb_top,
         virtual_atomtypes=[
-            v['atnum'] for v in input_conf.atomtypeparams.values() if v['particletype'] == 'V'])
+            v['atnum'] for v in list(input_conf.atomtypeparams.values()) if v['particletype'] == 'V'])
     topol_aa = '{}topol_final_aa_{}_{}.top'.format(args.output_prefix, args.alpha, rng_seed)
     at_topology.write(topol_aa)
-    print('Final AA topology: {}'.format(topol_aa))
+    print(('Final AA topology: {}'.format(topol_aa)))
 
     traj_file.close()
 
     print('Finished!')
-    print('Total time: {}'.format(time.time() - time0))
+    print(('Total time: {}'.format(time.time() - time0)))
     espressopp.tools.analyse.final_info(system, integrator, verletlistAT, time0, time.time())
 
 

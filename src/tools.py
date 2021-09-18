@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import argparse
-import files_io
+from . import files_io
 import networkx as nx
 import sys
 
@@ -49,7 +49,7 @@ class MyArgParser(argparse.ArgumentParser):
             namespace: The namespace with arguements.
         """
         with open(output_file, "w") as of:
-            for k, v in namespace.__dict__.iteritems():
+            for k, v in namespace.__dict__.items():
                 if v is not None:
                     of.write('{}={}\n'.format(k, v))
 
@@ -69,12 +69,12 @@ def gen_bonded_tuples(g, num, bond_pair):
     paths = []
     if num > 3:
         for nb0 in g[b0]:
-            paths.extend(nx.single_source_shortest_path(g, nb0, num-1).values())
+            paths.extend(list(nx.single_source_shortest_path(g, nb0, num-1).values()))
         for nb1 in g[b1]:
-            paths.extend(nx.single_source_shortest_path(g, nb1, num-1).values())
+            paths.extend(list(nx.single_source_shortest_path(g, nb1, num-1).values()))
 
-    paths.extend(nx.single_source_shortest_path(g, b0, num-1).values())
-    paths.extend(nx.single_source_shortest_path(g, b1, num-1).values())
+    paths.extend(list(nx.single_source_shortest_path(g, b0, num-1).values()))
+    paths.extend(list(nx.single_source_shortest_path(g, b1, num-1).values()))
     output = set()
     for b in paths:
         if len(b) == num and b0 in b and b1 in b:
@@ -89,7 +89,7 @@ def get_graph(settings):
     gro.read()
 
     g = nx.Graph(box=gro.box)
-    for at_id, at in gro.atoms.iteritems():
+    for at_id, at in gro.atoms.items():
         g.add_node(
             at_id,
             name=at.name,
@@ -102,13 +102,13 @@ def get_graph(settings):
         try:
             cg_bonds = settings.cg_molecules[mol].molecule_topology.get('bond')
         except KeyError:
-            print(('\nError:\nMolecule \'{}\' not found in input CG trajectory'
+            print((('\nError:\nMolecule \'{}\' not found in input CG trajectory'
                    '(valid molecule\' names: {})\nExit, nothing to do.'
-                   ).format(mol, settings.cg_molecules.keys()))
+                   ).format(mol, list(settings.cg_molecules.keys()))))
             sys.exit(1)
         if cg_bonds:
             for chain_idx in gro.chains[mol]:
-                for bond_name, bond_def in cg_bonds.iteritems():
+                for bond_name, bond_def in cg_bonds.items():
                     for b1, b2 in bond_def['list']:
                         a1 = gro.chains[mol][chain_idx][b1]
                         a2 = gro.chains[mol][chain_idx][b2]
@@ -122,9 +122,9 @@ def get_graph(settings):
 
 def generate_list(input_list, id_map):
     output = {}
-    for k, v in input_list.items():
+    for k, v in list(input_list.items()):
         try:
-            new_k = tuple(map(lambda x: id_map[x], k))
+            new_k = tuple([id_map[x] for x in k])
             output[new_k] = v
         except KeyError:
             continue
@@ -142,7 +142,7 @@ def get_atomistic_topology(in_top, virtual_atomtypes=None):
     """
 
     if virtual_atomtypes is None:
-        virtual_atomtypes = {k for k, v in in_top.atomtypes.items() if v['type'] == 'V'}
+        virtual_atomtypes = {k for k, v in list(in_top.atomtypes.items()) if v['type'] == 'V'}
 
     # Map topol id -> atom_id
     topol_old2new = {}
@@ -158,12 +158,12 @@ def get_atomistic_topology(in_top, virtual_atomtypes=None):
         topol_old2new[old_id] = new_id
         new_id += 1
 
-    in_top.atomtypes = {k: v for k, v in in_top.atomtypes.items() if v['type'] != 'V'}
+    in_top.atomtypes = {k: v for k, v in list(in_top.atomtypes.items()) if v['type'] != 'V'}
     in_top.old2new_ids = topol_old2new
 
     bondtypes = {}
     for i in in_top.bondtypes:
-        for j, params in in_top.bondtypes[i].items():
+        for j, params in list(in_top.bondtypes[i].items()):
             if not {i, j}.intersection(virtual_atomtypes):
                 if i not in bondtypes:
                     bondtypes[i] = {}
@@ -172,7 +172,7 @@ def get_atomistic_topology(in_top, virtual_atomtypes=None):
     angletypes = {}
     for i in in_top.angletypes:
         for j in in_top.angletypes[i]:
-            for k, params in in_top.angletypes[i][j].items():
+            for k, params in list(in_top.angletypes[i][j].items()):
                 if not {i, j, k}.intersection(virtual_atomtypes):
                     if i not in angletypes:
                         angletypes[i] = {j: {k: params}}

@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import argparse
 import logging
 
-import structures
-from logger import logger
+from . import structures
+from .logger import logger
 
 __doc__ = 'Prepare step of bakery'
 
