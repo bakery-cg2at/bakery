@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
-Copyright (C) 2015-2016 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2015-2021 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is distributed under free software licence:
 you can redistribute it and/or modify it under the terms of the
@@ -25,16 +25,16 @@ import random
 import os
 import time
 
-from . import files_io
-from . import tools_sim as tools
-from . import gromacs_topology
+from src import files_io
+from src import tools_sim as tools
+from src import gromacs_topology
 
-from . import tools_backmapping
-from . import tools as general_tools
+from src import tools_backmapping
+from src import tools as general_tools
 
-from .app_args import _args_backmapping as _args
+from src.app_args import _args_backmapping as _args
 
-from .logger import logger
+from src.logger import logger
 
 # GROMACS units, kJ/mol K
 kb = 0.0083144621

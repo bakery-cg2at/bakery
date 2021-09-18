@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
-Copyright (C) 2014-2017 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2014-2021 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is part of Backmapper.
 
@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import argparse
 import logging
 
-from . import structures
-from .logger import logger
+from src import structures
+from src.logger import logger
 
 __doc__ = 'Prepare step of bakery'
 
