@@ -413,13 +413,12 @@ def ParseDihedralTypeParam(line):
     elif type == 3:
         tmp[5:11] = map(float, tmp[5:11])
         p = RyckaertBellemansDihedralInteractionType({'K0': tmp[5], 'K1': tmp[6], 'K2': tmp[7], 'K3': tmp[8], 'K4': tmp[9], 'K5': tmp[10]})
-    elif type == 1:
+    elif type == 1 or type == 4:
         p = HarmonicNCosDihedralInteractionType({'theta0': float(tmp[5]), 'k': float(tmp[6]), 'n': int(tmp[7])})
     elif type == 2:
         p = HarmonicDihedralInteractionType({'theta0': float(tmp[0]), 'k': float(tmp[1])})
     else:
-        print "Unsupported dihedral type", type, "in line:"
-        print line
+        print('Unsupported dihedral type {type} in line: {line}'.format(type=type, line=line))
         return False
     return p
 

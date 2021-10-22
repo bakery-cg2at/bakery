@@ -122,6 +122,8 @@ def _args_backmapping():
     parser.add_argument('--save_interactions', default=False, type=ast.literal_eval)
     parser.add_argument('--hooks', default=None)
 
+    parser.add_argument('--disable_h5md', default=False, type=ast.literal_eval)
+
     disable_interactions = parser.add_argument_group('Disabled interactions')
     disable_interactions.add_argument('--disable_angles', default=False, type=ast.literal_eval)
     disable_interactions.add_argument('--disable_dihedrals', default=False, type=ast.literal_eval)

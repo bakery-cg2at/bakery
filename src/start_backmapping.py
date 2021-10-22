@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 Copyright (C) 2015-2016 Jakub Krajniak <jkrajniak@gmail.com>
 
@@ -266,35 +266,36 @@ def main(args):  # NOQA
 
     print("Added tuples, decomposing now ...")
 
-    output_file = 'trjout.h5'
-    h5file = '{}_{}_{}_{}'.format(
-        args.output_prefix,
-        rng_seed, args.alpha,
-        output_file)
-    print('Trajectory saved to: {}'.format(h5file))
-    traj_file = espressopp.io.DumpH5MD(
-        system, h5file,
-        group_name=h5md_group,
-        static_box=True,
-        author=simulation_author,
-        email=simulation_email,
-        store_lambda=True,
-        store_species=True,
-        store_force=args.store_force,
-        store_state=args.store_state,
-        is_single_prec=True,
-        chunk_size=256)
-    traj_file.set_parameters({
-        'temperature': temperature,
-        'thermostat': args.thermostat,
-        'skin': skin,
-        'rng_seed': rng_seed,
-        'lj_cutoff': lj_cutoff,
-        'cg_cutoff': cg_cutoff,
-        'vl_cutoff': max_cutoff,
-        'integrator_step': integrator_step,
-        'dt': args.dt
-    })
+    if not args.disable_h5md:
+        output_file = 'trjout.h5'
+        h5file = '{}_{}_{}_{}'.format(
+            args.output_prefix,
+            rng_seed, args.alpha,
+            output_file)
+        print('Trajectory saved to: {}'.format(h5file))
+        traj_file = espressopp.io.DumpH5MD(
+            system, h5file,
+            group_name=h5md_group,
+            static_box=True,
+            author=simulation_author,
+            email=simulation_email,
+            store_lambda=True,
+            store_species=True,
+            store_force=args.store_force,
+            store_state=args.store_state,
+            is_single_prec=True,
+            chunk_size=256)
+        traj_file.set_parameters({
+            'temperature': temperature,
+            'thermostat': args.thermostat,
+            'skin': skin,
+            'rng_seed': rng_seed,
+            'lj_cutoff': lj_cutoff,
+            'cg_cutoff': cg_cutoff,
+            'vl_cutoff': max_cutoff,
+            'integrator_step': integrator_step,
+            'dt': args.dt
+        })
 
     ext_analysis, system_analysis = tools.setSystemAnalysis(
         system, integrator, args, args.energy_collect, '_first', dynamic_res, particle_groups)
@@ -342,9 +343,9 @@ def main(args):  # NOQA
     global_int_step = 0
     for k in range(k_eq_step):
         system_analysis.info()
-        if k_trj_collect > 0 and k % k_trj_collect == 0:
+        if not args.disable_h5md and k_trj_collect > 0 and k % k_trj_collect == 0:
             traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
-        if k_trj_flush > 0 and k % k_trj_flush == 0:
+        if not args.disable_h5md and k_trj_flush > 0 and k % k_trj_flush == 0:
             traj_file.flush()  # Write HDF5 to disk.
         integrator.run(integrator_step)
         global_int_step += 1
@@ -391,9 +392,9 @@ def main(args):  # NOQA
 
         # Run first phase, only bonded terms and non-bonded CG term is enabled.
         for k in range(dynamic_res_time):
-            if k_trj_collect > 0 and k % k_trj_collect == 0:
+            if not args.disable_h5md and k_trj_collect > 0 and k % k_trj_collect == 0:
                 traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
-            if k_trj_flush > 0 and k % k_trj_flush == 0:
+            if not args.disable_h5md and k_trj_flush > 0 and k % k_trj_flush == 0:
                 traj_file.flush()  # Write HDF5 to disk.
             system_analysis2.info()
             integrator.run(integrator_step)
@@ -434,9 +435,9 @@ def main(args):  # NOQA
         else:
             # Simulation
             for k in range(dynamic_res_time):
-                if k_trj_collect > 0 and k % k_trj_collect == 0:
+                if not args.disable_h5md and k_trj_collect > 0 and k % k_trj_collect == 0:
                     traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
-                if k_trj_flush > 0 and k % k_trj_flush == 0:
+                if not args.disable_h5md and k_trj_flush > 0 and k % k_trj_flush == 0:
                     traj_file.flush()  # Write HDF5 to disk.
                 system_analysis3.info()
                 integrator.run(integrator_step)
@@ -446,9 +447,9 @@ def main(args):  # NOQA
         ext_analysis.interval = args.energy_collect_bck
         print('Running a single-phase backmapping.')
         for k in range(dynamic_res_time):
-            if k_trj_collect > 0 and k % k_trj_collect == 0:
+            if not args.disable_h5md and k_trj_collect > 0 and k % k_trj_collect == 0:
                 traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
-            if k_trj_flush > 0 and k % k_trj_flush == 0 and k > 0:
+            if not args.disable_h5md and k_trj_flush > 0 and k % k_trj_flush == 0 and k > 0:
                 traj_file.flush()  # Write HDF5 to disk.
             system_analysis.info()
             integrator.run(integrator_step)
@@ -491,9 +492,9 @@ def main(args):  # NOQA
     integrator.dt = args.dt
     print('Running for {} steps'.format(long_step * integrator_step))
     for k in range(long_step):
-        if k_trj_collect > 0 and k % k_trj_collect == 0:
+        if not args.disable_h5md and k_trj_collect > 0 and k % k_trj_collect == 0:
             traj_file.dump(global_int_step * integrator_step, global_int_step * integrator_step * args.dt)
-        if k_trj_flush > 0 and k % k_trj_flush == 0:
+        if not args.disable_h5md and k_trj_flush > 0 and k % k_trj_flush == 0:
             traj_file.flush()  # Write HDF5 to disk.
         if two_phase:
             system_analysis3.info()
@@ -555,7 +556,8 @@ def main(args):  # NOQA
     at_topology.write(topol_aa)
     print('Final AA topology: {}'.format(topol_aa))
 
-    traj_file.close()
+    if not args.disable_h5md:
+        traj_file.close()
 
     print('Finished!')
     print('Total time: {}'.format(time.time() - time0))
