@@ -1,9 +1,9 @@
 """
 Copyright (C) 2014-2016 Jakub Krajniak <jkrajniak@gmail.com>
 
-This file is part of Backmapper.
+This file is part of Bakery.
 
-Backmapper is free software: you can redistribute it and/or modify
+Bakery is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -26,8 +26,7 @@ import os
 import numpy
 import networkx
 
-from logger import logger
-from logger import logger
+from .logger import logger
 
 __doc__ = "Set of I/O classes and functions."""
 

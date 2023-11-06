@@ -18,9 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import argparse
-import files_io
 import networkx as nx
 import sys
+
+from . import files_io
 
 __doc__ = "Tool functions."
 

@@ -1,5 +1,5 @@
 """
-Copyright (C) 2015-2019 Jakub Krajniak <jkrajniak@gmail.com>
+Copyright (C) 2015-2023 Jakub Krajniak <jkrajniak@gmail.com>
 
 This file is part of bakery.
 
@@ -20,22 +20,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import collections
 import copy
-import files_io
-import tools
+import logging
+import os
+import random
+import sys
+import warnings
 import xml.etree.ElementTree as etree
 
-import datetime
-import numpy as np
-import random
 import networkx
-import logging
-import sys
-import os
-import warnings
+import numpy as np
 
-import cPickle
-
-from logger import logger
+from . import files_io
+from . import tools
+from .logger import logger
 
 __doc__ = "Data structures."""
 
