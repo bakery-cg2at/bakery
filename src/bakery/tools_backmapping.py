@@ -6,9 +6,9 @@
 #
 
 import espressopp
-import tools_sim as tools
+
 import gromacs_topology
-import cPickle
+import tools_sim as tools
 
 
 def setupSinglePhase(system, args, input_conf, at_particle_ids, cg_particle_ids, table_groups):

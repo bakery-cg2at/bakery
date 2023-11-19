@@ -194,6 +194,9 @@ class BackmapperSettings2:
 
         self.global_graph = networkx.Graph()
 
+        # Get dirname from the input_xml path
+        self.dirname = os.path.dirname(input_xml)
+
         # Parse XML file
         tree = etree.parse(input_xml)
         self.root = tree.getroot()
@@ -206,8 +209,8 @@ class BackmapperSettings2:
 
     def _parse(self):
         cg_configuration = self.root.find('cg_configuration')
-        self.cg_topology = files_io.GROMACSTopologyFile(
-            cg_configuration.find('topology').text.strip())
+        topology_file_path = os.path.join(self.dirname, cg_configuration.find('topology').text.strip())
+        self.cg_topology = files_io.GROMACSTopologyFile(topology_file_path)
         self.cg_topology.read()
 
         # Fix the res_id;
@@ -230,7 +233,7 @@ class BackmapperSettings2:
             coordinate_file = cg_configuration.find('coordinate').text.strip()
         else:
             raise RuntimeError('Missing tag cg_configuration.coordinate')
-        self.cg_coordinate = files_io.read_coordinates(coordinate_file)
+        self.cg_coordinate = files_io.read_coordinates(os.path.join(self.dirname, coordinate_file))
         logger.debug('Read coordinate file {} (num: {})'.format(coordinate_file, len(self.cg_coordinate.atoms)))
 
         if len(self.cg_coordinate.atoms) != len(self.cg_topology.atoms):
@@ -418,8 +421,8 @@ class BackmapperSettings2:
                     cg_mol_name,
                     cg_mol_ident,
                     fragment_name,
-                    files_io.read_coordinates(cg_mol_source_coordinate[mol_deg_bead_name]),
-                    files_io.GROMACSTopologyFile(cg_mol_source_topologies[mol_deg_bead_name]))
+                    files_io.read_coordinates(os.path.join(self.dirname, cg_mol_source_coordinate[mol_deg_bead_name])),
+                    files_io.GROMACSTopologyFile(os.path.join(self.dirname, cg_mol_source_topologies[mol_deg_bead_name])))
                 cg_molecule.source_topology.read()
                 cg_molecule.source_coordinate.read()
 

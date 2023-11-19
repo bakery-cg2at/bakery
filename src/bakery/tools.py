@@ -50,7 +50,7 @@ class MyArgParser(argparse.ArgumentParser):
             namespace: The namespace with arguements.
         """
         with open(output_file, "w") as of:
-            for k, v in namespace.__dict__.iteritems():
+            for k, v in namespace.__dict__.items():
                 if v is not None:
                     of.write('{}={}\n'.format(k, v))
 
@@ -90,7 +90,7 @@ def get_graph(settings):
     gro.read()
 
     g = nx.Graph(box=gro.box)
-    for at_id, at in gro.atoms.iteritems():
+    for at_id, at in gro.atoms.items():
         g.add_node(
             at_id,
             name=at.name,
@@ -109,7 +109,7 @@ def get_graph(settings):
             sys.exit(1)
         if cg_bonds:
             for chain_idx in gro.chains[mol]:
-                for bond_name, bond_def in cg_bonds.iteritems():
+                for bond_name, bond_def in cg_bonds.items():
                     for b1, b2 in bond_def['list']:
                         a1 = gro.chains[mol][chain_idx][b1]
                         a2 = gro.chains[mol][chain_idx][b2]

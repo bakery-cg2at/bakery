@@ -195,7 +195,7 @@ def PostProcessFileBuffer(filebuffer, defines):
 
 
 def FindType(proposedtype, typelist):
-    type_list=[typeid for (typeid,atype) in typelist.iteritems() if atype==proposedtype ]
+    type_list=[typeid for (typeid,atype) in typelist.items() if atype==proposedtype ]
     if len(type_list)>1:
         print "Error: duplicate type definitons", proposedtype.parameters
         exit()
@@ -220,7 +220,7 @@ class InteractionType:
         self.parameters=parameters
     def __eq__(self,other):
         # interaction types are defined to be equal if all parameters are equal
-        for k, v in self.parameters.iteritems():
+        for k, v in self.parameters.items():
             if k not in other.parameters: return False
             if other.parameters[k]!=v: return False
         return True

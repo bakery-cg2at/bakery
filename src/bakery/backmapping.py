@@ -40,15 +40,15 @@ def calculate_com_fragments(backmapper_settings):
     print('Calculate COM of atomistic fragments')
     cg_com = {}
     cg_aa_beads = {}
-    for mol_name, cg_mol in backmapper_settings.cg_molecules.iteritems():
+    for mol_name, cg_mol in backmapper_settings.cg_molecules.items():
         aa_file = files_io.GROFile(cg_mol.source_coordinates)
         aa_file.read()
         cg_com_coords = {}
         cg_aa = collections.defaultdict(list)
-        for cg_bead, aa_beads in cg_mol.mass_map.iteritems():
+        for cg_bead, aa_beads in cg_mol.mass_map.items():
             c_mp = [0.0, 0.0, 0.0]
             tot_mass = 0.0
-            for aa_bead, aa_mass in aa_beads.iteritems():
+            for aa_bead, aa_mass in aa_beads.items():
                 chain_id, chain_name, atom_name = aa_bead.split(':')
                 pos = aa_file.fragments[chain_name][atom_name].position
                 tot_mass += aa_mass
@@ -86,7 +86,7 @@ def prepare_hyb_coordinates(settings, cg_graph, cg_com, cg_aa, plain=False):
     input_aa_top = {}
     atom_id_old2new = {}
     # Reads AT topologies
-    for mol_name, cg_mol in settings.cg_molecules.iteritems():
+    for mol_name, cg_mol in settings.cg_molecules.items():
         input_aa_top[mol_name] = files_io.GROMACSTopologyFile(cg_mol.source_topology)
         input_aa_top[mol_name].read()
         atom_id_old2new[mol_name] = collections.defaultdict(dict)
@@ -247,7 +247,7 @@ def update_atomistic_bonds(output_topology, settings, plain=False):
     print('Update atomistic bonded terms')
     input_aa_top = {}
     bonded_terms = ['bonds', 'angles', 'dihedrals', 'pairs']
-    for mol_name, cg_mol in settings.cg_molecules.iteritems():
+    for mol_name, cg_mol in settings.cg_molecules.items():
         input_aa_top[mol_name] = files_io.GROMACSTopologyFile(cg_mol.source_topology)
         input_aa_top[mol_name].read()
 
@@ -259,15 +259,15 @@ def update_atomistic_bonds(output_topology, settings, plain=False):
 
     # Replicate bonded lists by taking list from atomistic topology and
     # replicate those bonded terms which are involved in current atom set.
-    for mol_name, chains in output_topology.atom_id_old2new.iteritems():
+    for mol_name, chains in output_topology.atom_id_old2new.items():
         aa_top = input_aa_top[mol_name]
         for chain_idx in chains:
             old2new = chains[chain_idx]
             for bt in bonded_terms:
                 bonded_list = getattr(aa_top, bt)
-                for at_old, at_new in old2new.iteritems():
+                for at_old, at_new in old2new.items():
                     at_cg_bead_id = output_topology.atom_id2cg_bead_id[at_new]
-                    for b_def, b_pref in bonded_list.iteritems():
+                    for b_def, b_pref in bonded_list.items():
                         if at_old in b_def:  # Found bonded term.
                             new_b_def = tuple(map(old2new.get, b_def))
                             # If one of the term in bonded tuple, triplet, quadruplet
@@ -315,10 +315,10 @@ def generate_crosslink_at_terms(settings, output_topology, plain=False):
                 if hyb_bond_def is not None:
                     new_bonds[(as0.atom_id, as1.atom_id)] = hyb_bond_def
     output_topology.new_data['{}bonds'.format(b_prefix)].update(
-        {k: v['bond_params'] for k, v in new_bonds.iteritems()})
+        {k: v['bond_params'] for k, v in new_bonds.items()})
     # Search for angles and dihedrals if angle_params and dihedral_params present.
     g = output_topology.get_graph()
-    for pair, hyb_params in new_bonds.iteritems():
+    for pair, hyb_params in new_bonds.items():
         gen_angle_params = hyb_params.get('angle_params')
         gen_dih_params = hyb_params.get('dihedral_params')
         gen_pair_params = hyb_params.get('pair_params')

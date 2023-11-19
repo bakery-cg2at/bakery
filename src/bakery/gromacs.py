@@ -43,7 +43,7 @@ def generate_cg_bonded_terms(settings, cg_graph, output_topology, plain=False):
         for k in ff[mol]:
             k0 = k[:-1]
             top_term = settings.cg_molecules[mol].molecule_topology.get(k0, {})
-            for b, b_def in top_term.iteritems():
+            for b, b_def in top_term.items():
                 for l in b_def['list']:
                     ff[mol][k][tuple(l)] = b_def['params'].split()
                     ff[mol][k][tuple(l)].append(b)
@@ -79,7 +79,7 @@ def generate_cg_bonded_terms(settings, cg_graph, output_topology, plain=False):
                     tuple(map(lambda x: output_topology.atoms[x].name, z)): tuple(z)
                     for z in tools.gen_bonded_tuples(new_g, 3, (b1, b2))
                 }
-                for tr, tr_ids in triplets.iteritems():
+                for tr, tr_ids in triplets.items():
                     a_params = angle_params.get(tr, angle_params.get(tuple(reversed(tr))))
                     if (a_params and tr_ids not in output_topology.new_data[ang_label] and
                             tuple(reversed(tr_ids)) not in output_topology.new_data[ang_label]):
@@ -90,7 +90,7 @@ def generate_cg_bonded_terms(settings, cg_graph, output_topology, plain=False):
                     tuple(map(lambda x: output_topology.atoms[x].name, z)): tuple(z)
                     for z in tools.gen_bonded_tuples(new_g, 4, (b1, b2))
                 }
-                for q, q_ids in quadruplets.iteritems():
+                for q, q_ids in quadruplets.items():
                     d_params = dihedral_params.get(q, dihedral_params.get(tuple(reversed(q))))
                     p_params = pairs_params.get((q[0], q[3]), pairs_params.get((q[3], q[0])))
                     rq_ids = tuple(reversed(q_ids))

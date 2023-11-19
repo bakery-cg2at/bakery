@@ -236,7 +236,7 @@ class GROFile(CoordinateFile):
 
         # Reads the box size, the last line.
         self.box = numpy.array(
-            map(float, filter(None, self.content[number_of_atoms + 2].split(' ')))
+            list(map(float, filter(None, self.content[number_of_atoms + 2].split(' '))))
             ) * self.scale_factor
 
     def remove_atoms(self, atom_ids, renumber=True):
@@ -544,7 +544,7 @@ class GROMACSTopologyFile(TopologyFile):
     def get_graph(self):
         """Returns graph."""
         output_graph = networkx.Graph(box=None)
-        for at_id, g_at in self.atoms.iteritems():
+        for at_id, g_at in self.atoms.items():
             output_graph.add_node(
                 at_id,
                 name=g_at.name,
@@ -552,19 +552,19 @@ class GROMACSTopologyFile(TopologyFile):
                 position=(-1, -1, -1),
                 chain_name=g_at.chain_name)
 
-        for (b1, b2), params in self.bonds.iteritems():
+        for (b1, b2), params in self.bonds.items():
             output_graph.add_edge(b1, b2, params=params, cross=False)
 
         if 'bonds' in self.new_data:
-            for (b1, b2), params in self.new_data['bonds'].iteritems():
+            for (b1, b2), params in self.new_data['bonds'].items():
                 output_graph.add_edge(b1, b2, params=params, cross=False)
 
         if 'cross_bonds' in self.new_data:
-            for (b1, b2), params in self.new_data['cross_bonds'].iteritems():
+            for (b1, b2), params in self.new_data['cross_bonds'].items():
                 output_graph.add_edge(b1, b2, params=params, cross=True)
 
         for n_id in output_graph.nodes():
-            output_graph.node[n_id]['degree'] = output_graph.degree(n_id)
+            output_graph.nodes[n_id]['degree'] = output_graph.degree(n_id)
         return output_graph
 
     def replicate(self):
@@ -601,7 +601,7 @@ class GROMACSTopologyFile(TopologyFile):
           pdbfile: The pdb file.
         """
         logger.info('Update position from file %s', pdbfile.file_name)
-        for k, v in pdbfile.atoms.iteritems():
+        for k, v in pdbfile.atoms.items():
             self.atoms[k].position = v.position
 
     def remove_atoms(self, atom_ids, renumber=True):
@@ -713,7 +713,7 @@ class GROMACSTopologyFile(TopologyFile):
                 visited_sections.add(previous_section)
             else:
                 if current_parser is not None and section_name not in visited_sections:
-                    raw_data = filter(None, line.split())
+                    raw_data = list(filter(None, line.split()))
                     if raw_data:
                         current_parser(raw_data)  # pylint:disable=E1102
 
@@ -952,7 +952,7 @@ class GROMACSTopologyFile(TopologyFile):
 
     def _write_atomtypes(self):
         return_data = []
-        for atom_type, values in self.atomtypes.iteritems():
+        for atom_type, values in self.atomtypes.items():
             return_data.append('{name} {mass} {charge} {type} {sigma} {epsilon}'.format(
                 **values))
         return return_data
@@ -1052,7 +1052,7 @@ class GROMACSTopologyFile(TopologyFile):
 
         flat_data = []
         for data in datas:
-            for key, values in data.iteritems():
+            for key, values in data.items():
                 rev_key = tuple(reversed(key))
                 if tuple(key) not in check_in or rev_key not in check_in or rev_key not in data:
                     flat_data.append(list(key) + list(values))
@@ -1215,7 +1215,7 @@ class LammpsReader(object):
         name_seq = settings.name_seq
         output_graph = networkx.Graph(box=(self.box['x'], self.box['y'], self.box['z']))
         seq_idx = {k: 0 for k in name_seq}
-        for at_id, lmp_at in self.atoms.iteritems():
+        for at_id, lmp_at in self.atoms.items():
             chain_name = type2chain_name[lmp_at['atom_type']]
             at_seq = name_seq[chain_name]
             chain_len = len(at_seq)
@@ -1231,7 +1231,7 @@ class LammpsReader(object):
             seq_idx[chain_name] += 1
 
         # Adding edges
-        for bond_id, bond_list in self.topology['bonds'].iteritems():
+        for bond_id, bond_list in self.topology['bonds'].items():
             for b1, b2 in bond_list:
                 output_graph.add_edge(b1, b2, bond_type=bond_id)
 

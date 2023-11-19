@@ -398,11 +398,11 @@ def read(top_file="", doRegularExcl=True, defines=None):
 
     # Update typeparams
     use_keys = [s[0] for s in bonds]
-    bondtypeparams = {k: v for k, v in bondtypeparams.iteritems() if k in use_keys}
+    bondtypeparams = {k: v for k, v in bondtypeparams.items() if k in use_keys}
     use_keys = [s[0] for s in angles]
-    angletypeparams = {k: v for k, v in angletypeparams.iteritems() if k in use_keys}
+    angletypeparams = {k: v for k, v in angletypeparams.items() if k in use_keys}
     use_keys = [s[0] for s in dihedrals]
-    dihedraltypeparams = {k: v for k, v in dihedraltypeparams.iteritems() if k in use_keys}
+    dihedraltypeparams = {k: v for k, v in dihedraltypeparams.items() if k in use_keys}
 
     # The data is packed into a touple, unpackvars contains a string which
     # tells the user which kind of data was read.
@@ -509,7 +509,7 @@ def storeAtoms(f, defaults, types, atomtypes,
 
     # Convert to sigma/epsilon
     if combinationrule == 1:
-        for k, v in use_atomtypeparams.iteritems():
+        for k, v in use_atomtypeparams.items():
             c6, c12 = float(v['sig']), float(v['eps'])
             sig, eps = convertc6c12(c6, c12)
             print '{}, Convert C6({}), C12({}) to sig({}), eps({})'.format(
@@ -518,7 +518,7 @@ def storeAtoms(f, defaults, types, atomtypes,
             use_atomtypeparams[k]['eps'] = eps
 
     # Prepare nonbonded params to contains only that store in atomtypes
-    for k, v in nonbondedparams.iteritems():
+    for k, v in nonbondedparams.items():
         if k[0] in use_atomtypeparams and k[1] in use_atomtypeparams:
             use_nonbond_params.update({k: v})
             if combinationrule == 1:
@@ -941,7 +941,7 @@ def genParticleList(input_conf, use_velocity=False, use_charge=False, use_adress
 
 def setBondedInteractions(system, bonds, bondtypeparams, ftpl=None):
     ret_list = {}
-    for (bid, _), bondlist in bonds.iteritems():
+    for (bid, _), bondlist in bonds.items():
         if ftpl:
             fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
         else:
@@ -956,7 +956,7 @@ def setBondedInteractions(system, bonds, bondtypeparams, ftpl=None):
 
 def setPairInteractions(system, pairs, pairtypeparams, cutoff, ftpl=None):
     ret_list = {}
-    for (pid, _), pair_list in pairs.iteritems():
+    for (pid, _), pair_list in pairs.items():
         if ftpl:
             fpl = espressopp.FixedPairListAdress(system.storage, ftpl)
         else:
@@ -981,7 +981,7 @@ def setPairInteractions(system, pairs, pairtypeparams, cutoff, ftpl=None):
 def setAngleInteractions(system, angles, angletypeparams, ftpl=None):
     ret_list = {}
 
-    for (aid, _), anglelist in angles.iteritems():
+    for (aid, _), anglelist in angles.items():
         if ftpl:
             fpl = espressopp.FixedTripleListAdress(system.storage, ftpl)
         else:
@@ -997,7 +997,7 @@ def setAngleInteractions(system, angles, angletypeparams, ftpl=None):
 def setDihedralInteractions(system, dihedrals, dihedraltypeparams, ftpl=None):
     ret_list = {}
 
-    for (did, _), dihedrallist in dihedrals.iteritems():
+    for (did, _), dihedrallist in dihedrals.items():
         if ftpl:
             fpl = espressopp.FixedQuadrupleListAdress(system.storage, ftpl)
         else:
@@ -1031,8 +1031,8 @@ def setLennardJonesInteractions(system, defaults, atomtypeparams, verletlist, cu
 
     type_pairs = sorted({
                             tuple(sorted([type_1, type_2]))
-                            for type_1, pi in atomtypeparams.iteritems()
-                            for type_2, pj in atomtypeparams.iteritems()
+                            for type_1, pi in atomtypeparams.items()
+                            for type_2, pj in atomtypeparams.items()
                             if ((pi['atnum'] not in table_groups and pj['atnum'] not in table_groups) and \
                                 (pi.get('atname') not in table_groups and pj.get('atname') not in table_groups))
                             })
@@ -1075,8 +1075,8 @@ def setCoulombInteractions(system, verletlist, rc, atomtypeparams,
     pref = 138.935485  # we want gromacs units, so this is 1/(4 pi eps_0) ins units of kJ mol^-1 e^-2
     type_pairs = sorted({
                             tuple(sorted([type_1, type_2]))
-                            for type_1, pi in atomtypeparams.iteritems()
-                            for type_2, pj in atomtypeparams.iteritems()
+                            for type_1, pi in atomtypeparams.items()
+                            for type_2, pj in atomtypeparams.items()
                             if (#(pi.get('charge', 0.0) != 0.0 and pj.get('charge', 0.0) != 0.0) and \
                                 (pi['particletype'] != 'V' and pj['particletype'] != 'V'))
                             })
@@ -1179,8 +1179,8 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
 
     type_pairs = {
         tuple(sorted([type_1, type_2]))
-        for type_1, v1 in atomtypeparams.iteritems()
-        for type_2, v2 in atomtypeparams.iteritems()
+        for type_1, v1 in atomtypeparams.items()
+        for type_2, v2 in atomtypeparams.items()
         if (v1['atnum'] in table_groups and v2['atnum'] in table_groups)
         }
     if len(type_pairs) > 0:

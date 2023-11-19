@@ -32,8 +32,8 @@ def generate_cg_bonded_terms(lmp_input, ff_definition, output_topology, plain=Fa
     """
     b_prefix = '' if plain else 'cross_'
 
-    for bond_name, v in lmp_input.topology.iteritems():
-        for b_type, b_lists in v.iteritems():
+    for bond_name, v in lmp_input.topology.items():
+        for b_type, b_lists in v.items():
             for l in b_lists:
                 l_new = map(output_topology.cg_old_new_id.get, l)
                 assert None not in l_new
@@ -61,13 +61,13 @@ def lammps2gromacs_ff(lmp_input):
     if 'bond' in lmp_input.force_field:
         bond_style = lmp_input.force_field['bond_style'][0]
         if bond_style == 'harmonic':
-            coeff = {k: map(float, v) for k, v in lmp_input.force_field['bond'].iteritems()}
+            coeff = {k: map(float, v) for k, v in lmp_input.force_field['bond'].items()}
             for k in coeff:
                 K = kcal2kJ(coeff[k][0]) * 100.0
                 r = coeff[k][1] / 10.0
                 output_ff['bonds'][k] = [1, r, K, '; cg term']
         elif bond_style == 'table':
-            for k, v in lmp_input.force_field['bond'].iteritems():
+            for k, v in lmp_input.force_field['bond'].items():
                 output_ff['bonds'][k] = [8, k, 0.0, '; cg term', v]
         else:
             raise RuntimeError('bond_style {} not supported'.format(bond_style))
@@ -75,12 +75,12 @@ def lammps2gromacs_ff(lmp_input):
     if 'angle' in lmp_input.force_field:
         angle_style = lmp_input.force_field['angle_style'][0]
         if angle_style == 'harmonic':
-            coeff = {k: map(float, v) for k, v in lmp_input.force_field['angle'].iteritems()}
+            coeff = {k: map(float, v) for k, v in lmp_input.force_field['angle'].items()}
             for k in coeff:
                 K = kcal2kJ(coeff[k][0])
                 output_ff['angles'][k] = [1, coeff[k][1], K, '; cg term']
         elif angle_style == 'table':
-            for k, v in lmp_input.force_field['angle'].iteritems():
+            for k, v in lmp_input.force_field['angle'].items():
                 output_ff['angles'][k] = [8, k, 0.0, '; cg term', v]
         else:
             raise RuntimeError('angle_style {} not supported'.format(angle_style))
@@ -88,12 +88,12 @@ def lammps2gromacs_ff(lmp_input):
     if 'dihedral' in lmp_input.force_field:
         dihedral_style = lmp_input.force_field['dihedral_style'][0]
         if dihedral_style == 'harmonic':
-            coeff = {k: map(float, v) for k, v in lmp_input.force_field['dihedral'].iteritems()}
+            coeff = {k: map(float, v) for k, v in lmp_input.force_field['dihedral'].items()}
             for k in coeff:
                 K = kcal2kJ(coeff[k][0])
                 output_ff['dihedrals'][k] = [1, coeff[k][1], K, '; cg term']
         elif dihedral_style == 'table':
-            for k, v in lmp_input.force_field['dihedral'].iteritems():
+            for k, v in lmp_input.force_field['dihedral'].items():
                 output_ff['dihedrals'][k] = [8, k, 0.0, '; cg term', v]
         else:
             raise RuntimeError('dihedral_style {} not supported'.format(dihedral_style))

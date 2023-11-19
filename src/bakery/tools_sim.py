@@ -100,8 +100,8 @@ def setLennardJonesInteractions(system, input_conf, verletlist, cutoff, nonbonde
     print("Setting up Lennard-Jones interactions")
 
     type_pairs = set()
-    for type_1, pi in atomtypeparams.iteritems():
-        for type_2, pj in atomtypeparams.iteritems():
+    for type_1, pi in atomtypeparams.items():
+        for type_2, pj in atomtypeparams.items():
             if (pi.get('atnum') in table_groups and pj.get('atnum') in table_groups) or (
                 pi.get('atname') in table_groups and pj.get('atname') in table_groups):
                 continue
@@ -160,8 +160,8 @@ def setTabulatedInteractions(system, atomtypeparams, vl, cutoff, interaction=Non
         nonbonded_params = {}
 
     type_pairs = set()
-    for type_1, v1 in atomtypeparams.iteritems():
-        for type_2, v2 in atomtypeparams.iteritems():
+    for type_1, v1 in atomtypeparams.items():
+        for type_2, v2 in atomtypeparams.items():
             if (type_1, type_2) in nonbonded_params or (type_2, type_1) in nonbonded_params:
                 continue
             if v1.get('particletype', 'A') == 'V' and v2.get('particletype', 'A') == 'V':
@@ -295,7 +295,7 @@ def setBondedInteractions(system, input_conf, force_static=False, only_at=False,
     bonds = input_conf.bondtypes
     bondtypeparams = input_conf.bondtypeparams
 
-    for (bid, cross_bonds), bondlist in bonds.iteritems():
+    for (bid, cross_bonds), bondlist in bonds.items():
         b1 = bondlist[0][0]
         is_cg = input_conf.atomtypeparams[input_conf.types[b1-1]]['particletype'] == 'V'
 
@@ -329,7 +329,7 @@ def setPairInteractions(system, input_conf, cutoff, coulomb_cutoff, ftpl=None):
     cross_14_pairs_cg = []
     cross_14_pairs_at = []
 
-    for (pid, cross_bonds), pair_list in pairs.iteritems():
+    for (pid, cross_bonds), pair_list in pairs.items():
         params = pairtypeparams[pid]
         is_cg = input_conf.atomtypeparams[
                     input_conf.types[pair_list[0][0] - 1]]['particletype'] == 'V'
@@ -368,8 +368,8 @@ def setPairInteractions(system, input_conf, cutoff, coulomb_cutoff, ftpl=None):
     # Set Coulomb14
     if static_14_pairs or cross_14_pairs_cg or cross_14_pairs_at:
         type_pairs = set()
-        for type_1, pi in input_conf.atomtypeparams.iteritems():
-            for type_2, pj in input_conf.atomtypeparams.iteritems():
+        for type_1, pi in input_conf.atomtypeparams.items():
+            for type_2, pj in input_conf.atomtypeparams.items():
                 if pi['particletype'] != 'V' and pj['particletype'] != 'V':
                     type_pairs.add(tuple(sorted([type_1, type_2])))
 
@@ -413,7 +413,7 @@ def setAngleInteractions(system, input_conf, force_static=False, only_at=False, 
     angletypeparams = input_conf.angletypeparams
     angles = input_conf.angletypes
 
-    for (aid, cross_angles), anglelist in angles.iteritems():
+    for (aid, cross_angles), anglelist in angles.items():
         b1 = anglelist[0][0]
         is_cg = input_conf.atomtypeparams[input_conf.types[b1-1]]['particletype'] == 'V'
 
@@ -441,7 +441,7 @@ def setDihedralInteractions(system, input_conf, force_static=False, only_at=Fals
     dihedrals = input_conf.dihedraltypes
     dihedraltypeparams = input_conf.dihedraltypeparams
 
-    for (did, cross_dih), dihedrallist in dihedrals.iteritems():
+    for (did, cross_dih), dihedrallist in dihedrals.items():
         b1 = dihedrallist[0][0]
         is_cg = input_conf.atomtypeparams[input_conf.types[b1-1]]['particletype'] == 'V'
 

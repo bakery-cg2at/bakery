@@ -25,8 +25,9 @@ def _args_analyze():
     parser = general_tools.MyArgParser(description='Analyze GROMACS topology',
                                        fromfile_prefix_chars='@')
     parser.add_argument('--top', '--topology', required=True, help='Topology file')
-    
+
     return parser
+
 
 def _args_backmapping():
     parser = general_tools.MyArgParser(
@@ -95,7 +96,7 @@ def _args_backmapping():
                         help='Collect trajectory every (step)')
     parser.add_argument('--gro_collect', default=0, type=int, help='If set then collect trajcectory in .gro')
     parser.add_argument('--cap_force', default=None, type=float,
-        help='Max force or 0.0 to switch it off cap-force')
+                        help='Max force or 0.0 to switch it off cap-force')
     parser.add_argument('--cap_force_ramp', default=None, type=float,
                         help='Gradually switch off cap-force')
     parser.add_argument('--cap_force_lj', default=500000.0, type=float, help='Max force only for non-bonded terms')
@@ -127,13 +128,11 @@ def _args_backmapping():
     disable_interactions = parser.add_argument_group('Disabled interactions')
     disable_interactions.add_argument('--disable_angles', default=False, type=ast.literal_eval)
     disable_interactions.add_argument('--disable_dihedrals', default=False, type=ast.literal_eval)
-    
+
     em_group = parser.add_argument_group('Energy minimization')
     em_group.add_argument('--em', help='Maximum number of steps to perform in EM', type=int, default=0)
     em_group.add_argument('--em_gamma', help='Gamma parameter for force damping', type=float, default=0.0001)
     em_group.add_argument('--em_ftol', help='Force tolerance', type=float, default=10.0)
     em_group.add_argument('--em_max_d', help='Max displacement x box dimension', default=0.001, type=float)
-
-
 
     return parser
