@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "bakery"
+version = "3.0.0"
+description = "Backmapping tool for complex polymer systems."
+authors = ["Jakub Krajniak <jkrajniak@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/bakery-cg2at/bakery"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+numpy = "^1.26.0"
+networkx = "^3.1"
+h5py = "^3.10.0"
+click = "^8.1.7"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
